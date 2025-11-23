@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Workout = require('../models/Workout');
 
-// HOME PAGE
 router.get('/', async (req, res) => {
   try {
     const today = new Date();
