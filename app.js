@@ -8,6 +8,7 @@ const indexRoutes = require('./routes/index');
 const workoutRoutes = require('./routes/workoutRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { attachUser } = require('./middleware/auth');
+const setTheme = require('./middleware/setTheme');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(
   })
 );
 
+app.use(setTheme);
 app.use(attachUser);
 
 app.use('/', indexRoutes);

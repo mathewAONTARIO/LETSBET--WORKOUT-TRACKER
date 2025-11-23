@@ -19,4 +19,9 @@ router.post('/goal', requireLogin, async (req, res) => {
   }
 });
 
+router.post('/account/theme', (req, res) => {
+  req.session.theme = req.body.theme;
+  res.redirect('back');
+});
+
 module.exports = router;
