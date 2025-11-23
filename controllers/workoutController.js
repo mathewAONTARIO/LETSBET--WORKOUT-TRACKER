@@ -4,13 +4,14 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
+// LIST ALL WORKOUTS FOR THE LOGGED-IN USER
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const workouts = await Workout.find({ user: userId }).sort({ date: -1 });
 
+    // 👈 IMPORTANT: this matches views/workouts/list.ejs
     res.render('workouts/list', {
       workouts,
       currentPath: '/workouts'
@@ -31,8 +32,6 @@ exports.showNewForm = (req, res) => {
 exports.createWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
 
     await Workout.create({
@@ -57,7 +56,6 @@ exports.createWorkout = async (req, res) => {
 exports.duplicateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const original = await Workout.findOne({
       _id: req.params.id,
@@ -88,7 +86,6 @@ exports.duplicateWorkout = async (req, res) => {
 exports.showEditForm = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({
       _id: req.params.id,
@@ -110,8 +107,6 @@ exports.showEditForm = async (req, res) => {
 exports.updateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
 
     await Workout.findOneAndUpdate(
@@ -138,7 +133,6 @@ exports.updateWorkout = async (req, res) => {
 exports.showDeleteConfirm = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({
       _id: req.params.id,
@@ -160,7 +154,6 @@ exports.showDeleteConfirm = async (req, res) => {
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     await Workout.findOneAndDelete({
       _id: req.params.id,
@@ -177,8 +170,6 @@ exports.deleteWorkout = async (req, res) => {
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const daySet = new Set();
@@ -250,8 +241,6 @@ exports.getStreak = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const totalWorkouts = workouts.length;
@@ -310,8 +299,6 @@ exports.getStats = async (req, res) => {
 exports.getCalendar = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const today = new Date();
@@ -364,7 +351,6 @@ exports.getCalendar = async (req, res) => {
 exports.getDaySummary = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const day = new Date(req.params.date);
     const nextDay = new Date(day);
