@@ -11,9 +11,13 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 
-<body class="<%= currentTheme === 'light' ? 'theme-light' : (currentTheme === 'dark' ? 'theme-dark' : '') %>">
+<body class="<%= currentTheme === 'light'
+  ? 'theme-light bg-light text-dark'
+  : 'bg-dark text-light' %>">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
+<nav class="navbar navbar-expand-lg <%= currentTheme === 'light'
+  ? 'navbar-light bg-white border-bottom border-light-subtle'
+  : 'navbar-dark bg-black border-bottom border-secondary' %>">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center gap-2" href="/">
       <img src="/img/letsbet-logo.png" alt="Lets Bet logo" style="height:28px;width:auto;" />
@@ -30,7 +34,18 @@
           <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <%= currentPath.startsWith('/workouts') && !currentPath.includes('streak') && !currentPath.includes('stats') && !currentPath.includes('calendar') && !currentPath.includes('settings') && !currentPath.includes('library') ? 'active' : '' %>" href="/workouts">Workouts</a>
+          <a
+            class="nav-link <%= currentPath.startsWith('/workouts')
+              && !currentPath.includes('streak')
+              && !currentPath.includes('stats')
+              && !currentPath.includes('calendar')
+              && !currentPath.includes('settings')
+              && !currentPath.includes('library')
+              ? 'active'
+              : '' %>"
+            href="/workouts">
+            Workouts
+          </a>
         </li>
         <li class="nav-item">
           <a class="nav-link <%= currentPath === '/workouts/streak' ? 'active' : '' %>" href="/workouts/streak">Streak</a>
@@ -50,10 +65,7 @@
       </ul>
 
       <div class="d-flex align-items-center gap-2">
-        <button
-          id="themeToggle"
-          class="btn btn-outline-light btn-sm"
-          type="button">
+        <button id="themeToggle" class="btn btn-outline-light btn-sm" type="button">
           🌓
         </button>
 
@@ -63,9 +75,13 @@
         <% } else { %>
           <div class="profile-pill">
             <div class="avatar-circle me-2">
-              <%= (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase() %>
+              <%= (currentUser.displayName || currentUser.email || '?')
+                    .charAt(0)
+                    .toUpperCase() %>
             </div>
-            <span style="font-size:0.85rem;"><%= currentUser.displayName || currentUser.email %></span>
+            <span style="font-size:0.85rem;">
+              <%= currentUser.displayName || currentUser.email %>
+            </span>
           </div>
           <form action="/auth/logout" method="POST" class="d-inline ms-2">
             <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
