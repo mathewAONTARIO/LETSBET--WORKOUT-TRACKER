@@ -29,7 +29,7 @@
           <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <%= currentPath.startsWith('/workouts') && !currentPath.includes('streak') && !currentPath.includes('stats') && !currentPath.includes('calendar') && !currentPath.includes('settings') ? 'active' : '' %>" href="/workouts">Workouts</a>
+          <a class="nav-link <%= currentPath.startsWith('/workouts') && !currentPath.includes('streak') && !currentPath.includes('stats') && !currentPath.includes('calendar') && !currentPath.includes('settings') && !currentPath.includes('library') ? 'active' : '' %>" href="/workouts">Workouts</a>
         </li>
         <li class="nav-item">
           <a class="nav-link <%= currentPath === '/workouts/streak' ? 'active' : '' %>" href="/workouts/streak">Streak</a>
@@ -41,21 +41,32 @@
           <a class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>" href="/workouts/calendar">Calendar</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/workouts/settings">Settings</a>
         </li>
       </ul>
 
       <div class="d-flex align-items-center gap-2">
+        <button
+          id="themeToggle"
+          class="btn btn-outline-light btn-sm"
+          type="button">
+          🌓
+        </button>
+
         <% if (!currentUser) { %>
           <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
           <a href="/auth/register" class="btn btn-primary btn-sm">Sign Up</a>
         <% } else { %>
-          <span class="profile-pill text-uppercase">
-            <%= currentUser.displayName
-                  ? currentUser.displayName.split(' ')[0]
-                  : currentUser.email %>
-          </span>
-          <form action="/auth/logout" method="POST" class="d-inline">
+          <div class="profile-pill">
+            <div class="avatar-circle me-2">
+              <%= (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase() %>
+            </div>
+            <span style="font-size:0.85rem;"><%= currentUser.displayName || currentUser.email %></span>
+          </div>
+          <form action="/auth/logout" method="POST" class="d-inline ms-2">
             <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
           </form>
         <% } %>

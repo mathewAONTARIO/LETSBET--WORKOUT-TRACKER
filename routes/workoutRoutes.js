@@ -9,6 +9,9 @@ router.post('/', requireLogin, workoutController.createWorkout);
 
 router.get('/streak', requireLogin, workoutController.getStreak);
 router.get('/stats', requireLogin, workoutController.getStats);
+router.get('/prs', requireLogin, workoutController.getPRs);
+router.get('/library', requireLogin, workoutController.getLibrary);
+
 router.get('/calendar', requireLogin, workoutController.getCalendar);
 router.get('/day/:date', requireLogin, workoutController.getDaySummary);
 

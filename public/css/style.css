@@ -266,6 +266,28 @@ a:hover {
   color: #f9fafb;
 }
 
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  text-align: center;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+.calendar-weekdays div {
+  padding-bottom: 4px;
+}
+
+.calendar-grid-month {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-day-outside {
+  opacity: 0.35;
+}
+
 .footer-text {
   font-size: 0.8rem;
   color: #6b7280;

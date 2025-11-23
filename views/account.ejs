@@ -1,0 +1,58 @@
+<%- include('./partials/header', { currentPath: '/workouts/settings' }) %>
+
+<section class="mb-5">
+  <h1 class="mb-4">Account</h1>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="glass-card p-4 mb-4">
+        <h5 class="mb-3">Profile</h5>
+        <form action="/account" method="POST" class="vstack gap-3">
+          <div>
+            <label class="form-label">Display name</label>
+            <input
+              type="text"
+              class="form-control bg-dark text-light border-secondary"
+              name="displayName"
+              value="<%= (user && user.displayName) || (currentUser && currentUser.displayName) || '' %>"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="form-label">Weekly workout goal</label>
+            <input
+              type="number"
+              min="1"
+              max="14"
+              class="form-control bg-dark text-light border-secondary"
+              name="weeklyGoal"
+              value="<%= (user && user.weeklyGoal) || (currentUser && currentUser.weeklyGoal) || 4 %>"
+              required
+            />
+            <small class="text-secondary">How many workouts you want to hit each week.</small>
+          </div>
+
+          <button class="btn btn-primary mt-2" type="submit">Save changes</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="glass-card p-4 mb-4">
+        <h5 class="mb-3">Appearance</h5>
+        <p class="text-secondary small mb-3">Switch between light and dark mode.</p>
+
+        <form action="/account/theme" method="POST" class="d-flex align-items-center gap-3">
+          <input type="hidden" name="theme" value="<%= currentTheme === 'dark' ? 'light' : 'dark' %>" />
+          <span>Current: <strong><%= currentTheme === 'dark' ? 'Dark' : 'Light' %></strong></span>
+          <button type="submit" class="btn btn-outline-light btn-sm">
+            Switch to <%= currentTheme === 'dark' ? 'Light' : 'Dark' %> mode
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('./partials/footer') %>

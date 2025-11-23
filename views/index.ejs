@@ -1,17 +1,28 @@
 <%- include('./partials/header', { currentPath: '/' }) %>
 
 <section class="hero text-center mb-5">
+  <h1 class="display-4 fw-bold mb-3">
+    <% if (currentUser) { %>
+      Welcome back, <%= currentUser.displayName || 'coach' %>.
+    <% } else { %>
+      Lets Bet – Keep Going
+    <% } %>
+  </h1>
+
   <% if (currentUser) { %>
-    <p class="text-secondary mb-2" style="font-size:0.9rem;">
-      Welcome back, <%= currentUser.displayName %>.
-    </p>
+    <p class="lead mb-4">Track your workouts, stay consistent, and keep betting on yourself.</p>
+  <% } else { %>
+    <p class="lead mb-4">Create an account to track your workouts, stay consistent, and keep betting on yourself.</p>
   <% } %>
 
-  <h1 class="display-4 fw-bold mb-3">Lets Bet – Keep Going</h1>
-  <p class="lead mb-4">Track your workouts, stay consistent, and keep betting on yourself.</p>
   <div class="d-flex justify-content-center gap-3">
-    <a href="/workouts" class="btn btn-primary btn-lg">See Workouts</a>
-    <a href="/workouts/new" class="btn btn-outline-light btn-lg">Add a Workout</a>
+    <% if (currentUser) { %>
+      <a href="/workouts" class="btn btn-primary btn-lg">See Workouts</a>
+      <a href="/workouts/new" class="btn btn-outline-light btn-lg">Add a Workout</a>
+    <% } else { %>
+      <a href="/auth/register" class="btn btn-primary btn-lg">Get Started</a>
+      <a href="/auth/login" class="btn btn-outline-light btn-lg">Log In</a>
+    <% } %>
   </div>
 </section>
 
@@ -50,6 +61,9 @@
         </div>
         <p class="stat-value h6 mt-2 mb-0">
           <%= weeklyWorkouts %> / <%= weeklyGoal %> this week
+        </p>
+        <p class="text-secondary mb-0 mt-1" style="font-size:0.85rem;">
+          <%= weeklyProgressPercent.toFixed ? weeklyProgressPercent.toFixed(0) : weeklyProgressPercent %>% of your weekly goal
         </p>
       </div>
     </div>

@@ -1,0 +1,23 @@
+<%- include('../partials/header', { currentPath: '/workouts/stats' }) %>
+
+<h2 class="mb-1">Personal Records</h2>
+<p class="text-secondary mb-4">Your strongest lifts logged in Lets Bet.</p>
+
+<div class="glass-card p-3">
+  <% if (!prs || prs.length === 0) { %>
+    <p class="text-secondary mb-0">No PRs yet. Log some workouts with weight and mark them as PR.</p>
+  <% } else { %>
+    <div class="row">
+      <% prs.forEach(pr => { %>
+        <div class="col-md-4 mb-3">
+          <div class="d-flex justify-content-between align-items-center text-secondary" style="font-size:0.9rem;">
+            <span><strong><%= pr.exercise %></strong></span>
+            <span><%= pr.weight %> kg · <%= pr.date %></span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,13 +1,28 @@
 </main>
 
-<a href="/workouts/new" class="fab-add">+</a>
-
-<footer class="mt-5 py-3 text-center border-top border-secondary">
-  <span class="footer-text">
+<footer class="py-4 mt-5 text-center">
+  <p class="footer-text mb-0">
     © 2025 lets bet — built by Mathew Arogbo.
-  </span>
+  </p>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function () {
+    const body = document.body;
+    const saved = localStorage.getItem('letsbet-theme');
+    if (saved === 'light') {
+      body.classList.add('theme-light');
+    }
+
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      const isLight = body.classList.toggle('theme-light');
+      localStorage.setItem('letsbet-theme', isLight ? 'light' : 'dark');
+    });
+  })();
+</script>
 </body>
 </html>

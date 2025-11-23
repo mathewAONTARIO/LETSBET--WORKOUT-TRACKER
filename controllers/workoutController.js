@@ -25,7 +25,11 @@ exports.getWorkouts = async (req, res) => {
 };
 
 exports.showNewForm = (req, res) => {
-  res.render('workouts/new', { currentPath: '/workouts/new' });
+  const todayStr = new Date().toISOString().slice(0, 10);
+  res.render('workouts/new', {
+    currentPath: '/workouts/new',
+    today: todayStr
+  });
 };
 
 exports.createWorkout = async (req, res) => {
@@ -109,8 +113,6 @@ exports.showEditForm = async (req, res) => {
 exports.updateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
 
     await Workout.findOneAndUpdate(
@@ -158,7 +160,6 @@ exports.showDeleteConfirm = async (req, res) => {
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     await Workout.findOneAndDelete({
       _id: req.params.id,
@@ -175,8 +176,6 @@ exports.deleteWorkout = async (req, res) => {
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const daySet = new Set();
@@ -248,8 +247,6 @@ exports.getStreak = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const totalWorkouts = workouts.length;
@@ -305,55 +302,136 @@ exports.getStats = async (req, res) => {
   }
 };
 
+exports.getPRs = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
+
+    const prMap = {};
+    workouts.forEach(w => {
+      if (!w.isPR || !w.weight) return;
+      if (!prMap[w.exercise] || w.weight > prMap[w.exercise].weight) {
+        prMap[w.exercise] = {
+          weight: w.weight,
+          date: w.date
+        };
+      }
+    });
+
+    const prs = Object.keys(prMap).map(ex => ({
+      exercise: ex,
+      weight: prMap[ex].weight,
+      date: prMap[ex].date.toLocaleDateString()
+    }));
+
+    res.render('workouts/prs', {
+      prs,
+      currentPath: '/workouts/stats'
+    });
+  } catch (err) {
+    console.error('getPRs error:', err);
+    res.render('workouts/prs', {
+      prs: [],
+      currentPath: '/workouts/stats'
+    });
+  }
+};
+
+exports.getLibrary = (req, res) => {
+  res.render('workouts/library', { currentPath: '/workouts/library' });
+};
+
 exports.getCalendar = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
+    let baseDate;
+    if (req.query.month) {
+      const [yearStr, monthStr] = req.query.month.split('-');
+      const year = parseInt(yearStr, 10);
+      const monthIndex = parseInt(monthStr, 10) - 1;
+      baseDate = new Date(year, monthIndex, 1);
+    } else {
+      baseDate = new Date();
+    }
 
-    const today = new Date();
-    const start = new Date();
-    start.setDate(today.getDate() - 29);
+    const year = baseDate.getFullYear();
+    const monthIndex = baseDate.getMonth();
+
+    const firstOfMonth = new Date(year, monthIndex, 1);
+    const lastOfMonth = new Date(year, monthIndex + 1, 0);
+
+    const start = new Date(firstOfMonth);
+    start.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
+
+    const end = new Date(lastOfMonth);
+    end.setDate(lastOfMonth.getDate() + (6 - lastOfMonth.getDay()));
+
+    const workouts = await Workout.find({
+      user: userId,
+      date: { $gte: start, $lte: end }
+    }).sort({ date: 1 });
 
     const counts = {};
     workouts.forEach(w => {
       const d = new Date(w.date);
-      if (d < start || d > today) return;
       const key = d.toISOString().slice(0, 10);
       counts[key] = (counts[key] || 0) + 1;
     });
 
     const days = [];
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
 
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().slice(0, 10);
       const count = counts[key] || 0;
 
       let intensity = 0;
       if (count === 1) intensity = 1;
-      else if (count <= 3) intensity = 2;
+      else if (count > 1 && count <= 3) intensity = 2;
       else if (count > 3) intensity = 3;
 
       days.push({
         label: key,
-        short: d.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }),
+        day: d.getDate(),
+        inMonth: d.getMonth() === monthIndex,
         intensity,
         hasWorkout: count > 0,
-        isToday: key === today.toISOString().slice(0, 10)
+        isToday: key === todayKey
       });
     }
 
+    const monthLabel = firstOfMonth.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const prevMonth = new Date(year, monthIndex - 1, 1);
+    const nextMonth = new Date(year, monthIndex + 1, 1);
+
+    const prevMonthParam = `${prevMonth.getFullYear()}-${String(
+      prevMonth.getMonth() + 1
+    ).padStart(2, '0')}`;
+    const nextMonthParam = `${nextMonth.getFullYear()}-${String(
+      nextMonth.getMonth() + 1
+    ).padStart(2, '0')}`;
+
     res.render('workouts/calendar', {
       days,
+      monthLabel,
+      prevMonthParam,
+      nextMonthParam,
       currentPath: '/workouts/calendar'
     });
   } catch (err) {
     console.error('getCalendar error:', err);
     res.render('workouts/calendar', {
       days: [],
+      monthLabel: '',
+      prevMonthParam: '',
+      nextMonthParam: '',
       currentPath: '/workouts/calendar'
     });
   }
@@ -362,13 +440,8 @@ exports.getCalendar = async (req, res) => {
 exports.getDaySummary = async (req, res) => {
   try {
     const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
 
     const day = new Date(req.params.date);
-    if (Number.isNaN(day.getTime())) {
-      return res.redirect('/workouts/calendar');
-    }
-
     const nextDay = new Date(day);
     nextDay.setDate(day.getDate() + 1);
 
