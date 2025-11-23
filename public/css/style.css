@@ -298,6 +298,56 @@ a:hover {
   font-weight: 600;
 }
 
+/* ---------- LIGHT THEME OVERRIDES ---------- */
+
+body.theme-light {
+  background: radial-gradient(circle at top, #f3f4f6, #e5e7eb);
+  color: #111827;
+}
+
+body.theme-light .navbar {
+  background-color: #ffffff !important;
+  border-bottom-color: #e5e7eb !important;
+}
+
+body.theme-light .navbar-brand span {
+  color: #111827;
+}
+
+body.theme-light .nav-link {
+  color: #4b5563 !important;
+}
+
+body.theme-light .nav-link.active {
+  color: #111827 !important;
+}
+
+body.theme-light .glass-card {
+  background: rgba(255,255,255,0.9);
+  border-color: rgba(209,213,219,0.9);
+  box-shadow: 0 18px 40px rgba(148,163,184,0.6);
+}
+
+body.theme-light .workout-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+body.theme-light .workout-meta,
+body.theme-light .text-secondary {
+  color: #6b7280 !important;
+}
+
+body.theme-light .calendar-day {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+body.theme-light .footer-text {
+  color: #9ca3af;
+}
+
 @media (max-width: 767px) {
   .hero {
     padding-top: 3rem;

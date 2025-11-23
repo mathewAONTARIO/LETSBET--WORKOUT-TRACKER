@@ -1,14 +1,20 @@
 const mongoose = require('mongoose');
 
 const workoutSchema = new mongoose.Schema({
-  workoutName: { type: String },
-  exercise: { type: String, required: true },
-  category: { type: String, default: 'Other' },
-  sets: { type: Number, required: true },
-  reps: { type: Number, required: true },
-  weight: { type: Number },
-  date: { type: Date, default: Date.now },
-  notes: { type: String }
+  exercise: String,
+  category: String,
+  sets: Number,
+  reps: Number,
+  weight: Number,
+  date: Date,
+  notes: String,
+  isPR: Boolean,
+
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }
 });
 
 module.exports = mongoose.model('Workout', workoutSchema);

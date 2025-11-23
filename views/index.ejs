@@ -1,6 +1,12 @@
 <%- include('./partials/header', { currentPath: '/' }) %>
 
 <section class="hero text-center mb-5">
+  <% if (currentUser) { %>
+    <p class="text-secondary mb-2" style="font-size:0.9rem;">
+      Welcome back, <%= currentUser.displayName %>.
+    </p>
+  <% } %>
+
   <h1 class="display-4 fw-bold mb-3">Lets Bet – Keep Going</h1>
   <p class="lead mb-4">Track your workouts, stay consistent, and keep betting on yourself.</p>
   <div class="d-flex justify-content-center gap-3">

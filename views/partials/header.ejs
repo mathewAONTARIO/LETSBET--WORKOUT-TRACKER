@@ -45,11 +45,16 @@
         </li>
       </ul>
 
-      <div class="d-flex gap-2">
+      <div class="d-flex align-items-center gap-2">
         <% if (!currentUser) { %>
           <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
           <a href="/auth/register" class="btn btn-primary btn-sm">Sign Up</a>
         <% } else { %>
+          <span class="profile-pill text-uppercase">
+            <%= currentUser.displayName
+                  ? currentUser.displayName.split(' ')[0]
+                  : currentUser.email %>
+          </span>
           <form action="/auth/logout" method="POST" class="d-inline">
             <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
           </form>
