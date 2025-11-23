@@ -9,13 +9,14 @@ exports.getWorkouts = async (req, res) => {
     const userId = getUserId(req);
     const workouts = await Workout.find({ user: userId }).sort({ date: -1 });
 
-    res.render('workouts/index', {
+    // use the correct EJS file name here
+    res.render('workouts/list', {
       workouts,
       currentPath: '/workouts'
     });
   } catch (err) {
     console.error(err);
-    res.render('workouts/index', {
+    res.render('workouts/list', {
       workouts: [],
       currentPath: '/workouts'
     });
