@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Workout = require('../models/Workout');
 
+// HOME PAGE
 router.get('/', async (req, res) => {
   try {
     const today = new Date();
@@ -12,11 +13,13 @@ router.get('/', async (req, res) => {
       date: { $gte: weekAgo }
     }).sort({ date: -1 });
 
-    const totalWorkouts = weeklyWorkoutsDocs.length;
+    const weeklyWorkouts = weeklyWorkoutsDocs.length;
 
-    const totalVolume = weeklyWorkoutsDocs.reduce((sum, w) => {
-      const weight = w.weight || 1;
-      return sum + w.sets * w.reps * weight;
+    const weeklyVolume = weeklyWorkoutsDocs.reduce((sum, w) => {
+      const sets = w.sets || 0;
+      const reps = w.reps || 0;
+      const weight = w.weight || 0;
+      return sum + sets * reps * weight;
     }, 0);
 
     const countByDay = {};
@@ -34,43 +37,34 @@ router.get('/', async (req, res) => {
       }
     });
 
+    const weeklyGoal = 4; 
+    const weeklyProgressPercent =
+      weeklyWorkouts === 0
+        ? 0
+        : Math.min((weeklyWorkouts / weeklyGoal) * 100, 100);
+
     const workoutOfDay = weeklyWorkoutsDocs[0] || null;
 
-    const profileName = 'Mathew';
-    const weeklyGoal = 4;
-    const weeklyProgress = totalWorkouts;
-    const goalPercent = Math.min(
-      100,
-      Math.round((weeklyProgress / weeklyGoal) * 100) || 0
-    );
-
     res.render('index', {
-      profileName,
-      weeklyWorkouts: totalWorkouts,
-      weeklyVolume: totalVolume,
+      weeklyWorkouts,
+      weeklyVolume,
       bestDay,
-      workoutOfDay,
       weeklyGoal,
-      weeklyProgress,
-      goalPercent
+      weeklyProgressPercent,
+      workoutOfDay
     });
+
   } catch (err) {
     console.error(err);
     res.render('index', {
-      profileName: 'Mathew',
       weeklyWorkouts: 0,
       weeklyVolume: 0,
       bestDay: null,
-      workoutOfDay: null,
       weeklyGoal: 4,
-      weeklyProgress: 0,
-      goalPercent: 0
+      weeklyProgressPercent: 0,
+      workoutOfDay: null
     });
   }
-});
-
-router.get('/settings', (req, res) => {
-  res.render('settings');
 });
 
 module.exports = router;
