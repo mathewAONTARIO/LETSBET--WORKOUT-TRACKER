@@ -17,4 +17,11 @@ const attachUser = async (req, res, next) => {
   }
 };
 
-module.exports = { attachUser };
+const requireLogin = (req, res, next) => {
+  if (!req.session || !req.session.userId) {
+    return res.redirect('/auth/login');
+  }
+  next();
+};
+
+module.exports = { attachUser, requireLogin };

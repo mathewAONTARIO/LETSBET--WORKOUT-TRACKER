@@ -2,12 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Workout = require('../models/Workout');
 
-// Home page – stats are per logged-in user
 router.get('/', async (req, res) => {
   try {
     const currentUser = res.locals.currentUser;
 
-    // If not logged in, just show a neutral dashboard
     if (!currentUser) {
       return res.render('index', {
         weeklyWorkouts: 0,
@@ -23,7 +21,6 @@ router.get('/', async (req, res) => {
     const weekAgo = new Date();
     weekAgo.setDate(today.getDate() - 6);
 
-    // 🔥 Only pull workouts that belong to THIS user
     const weeklyWorkoutsDocs = await Workout.find({
       user: currentUser._id,
       date: { $gte: weekAgo }
