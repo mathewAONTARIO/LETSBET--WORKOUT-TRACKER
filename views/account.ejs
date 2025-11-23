@@ -1,22 +1,65 @@
-<%- include('./partials/header', { currentPath: '/workouts/settings' }) %>
+<%- include('../partials/header', { currentPath: '/workouts/settings' }) %>
 
 <section class="mb-5">
-  <h1 class="mb-4">Account</h1>
+  <h1 class="mb-2">Settings</h1>
+  <p class="text-secondary mb-4">
+    Customize how Lets Bet looks and how it keeps you on track.
+  </p>
 
   <div class="row g-4">
-    <div class="col-md-6">
+    <!-- PROFILE -->
+    <div class="col-lg-6">
       <div class="glass-card p-4 mb-4">
         <h5 class="mb-3">Profile</h5>
-        <form action="/account" method="POST" class="vstack gap-3">
+
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <% if (user && user.profilePhotoUrl) { %>
+            <img
+              src="<%= user.profilePhotoUrl %>"
+              alt="Profile picture"
+              class="rounded-circle"
+              style="width:48px;height:48px;object-fit:cover;"
+            />
+          <% } else { %>
+            <div class="avatar-circle">
+              <%= (user && user.displayName
+                    ? user.displayName
+                    : (currentUser && currentUser.email) || '?'
+                  ).charAt(0).toUpperCase() %>
+            </div>
+          <% } %>
+          <div>
+            <div class="fw-semibold">
+              <%= (user && user.displayName) || (currentUser && currentUser.email) || 'Your account' %>
+            </div>
+            <div class="text-secondary small">Update how your profile looks.</div>
+          </div>
+        </div>
+
+        <form action="/account/profile" method="POST" class="vstack gap-3">
           <div>
             <label class="form-label">Display name</label>
             <input
               type="text"
-              class="form-control bg-dark text-light border-secondary"
               name="displayName"
-              value="<%= (user && user.displayName) || (currentUser && currentUser.displayName) || '' %>"
-              required
+              class="form-control bg-dark text-light border-secondary"
+              value="<%= (user && user.displayName) || '' %>"
+              placeholder="What should we call you?"
             />
+          </div>
+
+          <div>
+            <label class="form-label">Profile picture URL</label>
+            <input
+              type="url"
+              name="profilePhotoUrl"
+              class="form-control bg-dark text-light border-secondary"
+              value="<%= (user && user.profilePhotoUrl) || '' %>"
+              placeholder="Paste an image link (e.g. from Imgur)"
+            />
+            <small class="text-secondary">
+              We’ll show this in the header instead of your initial.
+            </small>
           </div>
 
           <div>
@@ -25,34 +68,121 @@
               type="number"
               min="1"
               max="14"
-              class="form-control bg-dark text-light border-secondary"
               name="weeklyGoal"
-              value="<%= (user && user.weeklyGoal) || (currentUser && currentUser.weeklyGoal) || 4 %>"
-              required
+              class="form-control bg-dark text-light border-secondary"
+              value="<%= (user && user.weeklyGoal) || 4 %>"
             />
-            <small class="text-secondary">How many workouts you want to hit each week.</small>
+            <small class="text-secondary">
+              How many workouts you’re aiming for each week.
+            </small>
           </div>
 
-          <button class="btn btn-primary mt-2" type="submit">Save changes</button>
+          <button class="btn btn-primary mt-1" type="submit">
+            Save profile
+          </button>
         </form>
       </div>
     </div>
 
-    <div class="col-md-6">
+    <!-- THEME + REMINDERS -->
+    <div class="col-lg-6">
+      <!-- Theme -->
       <div class="glass-card p-4 mb-4">
         <h5 class="mb-3">Appearance</h5>
-        <p class="text-secondary small mb-3">Switch between light and dark mode.</p>
+        <p class="text-secondary small mb-3">
+          Switch between light and dark mode.
+        </p>
 
-        <form action="/account/theme" method="POST" class="d-flex align-items-center gap-3">
-          <input type="hidden" name="theme" value="<%= currentTheme === 'dark' ? 'light' : 'dark' %>" />
-          <span>Current: <strong><%= currentTheme === 'dark' ? 'Dark' : 'Light' %></strong></span>
-          <button type="submit" class="btn btn-outline-light btn-sm">
-            Switch to <%= currentTheme === 'dark' ? 'Light' : 'Dark' %> mode
+        <form action="/account/theme" method="POST" class="vstack gap-3">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="theme"
+              id="themeDark"
+              value="dark"
+              <%= (currentTheme || (user && user.theme) || 'dark') === 'dark' ? 'checked' : '' %>
+            />
+            <label class="form-check-label" for="themeDark">
+              Dark mode
+            </label>
+          </div>
+
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="theme"
+              id="themeLight"
+              value="light"
+              <%= (currentTheme || (user && user.theme)) === 'light' ? 'checked' : '' %>
+            />
+            <label class="form-check-label" for="themeLight">
+              Light mode
+            </label>
+          </div>
+
+          <button class="btn btn-outline-light btn-sm mt-2" type="submit">
+            Update theme
+          </button>
+        </form>
+      </div>
+
+      <!-- Reminders -->
+      <div class="glass-card p-4 mb-4">
+        <h5 class="mb-3">Workout reminders</h5>
+        <p class="text-secondary small mb-3">
+          Let Lets Bet remind you to log a workout.
+        </p>
+
+        <form action="/account/reminders" method="POST" class="vstack gap-3">
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="reminderEnabled"
+              name="reminderEnabled"
+              <%= user && user.reminderEnabled ? 'checked' : '' %>
+            />
+            <label class="form-check-label" for="reminderEnabled">
+              Enable reminders
+            </label>
+          </div>
+
+          <div>
+            <label class="form-label">Reminder time</label>
+            <input
+              type="time"
+              name="reminderTime"
+              class="form-control bg-dark text-light border-secondary"
+              value="<%= (user && user.reminderTime) || '18:00' %>"
+            />
+            <small class="text-secondary">
+              Used for future email / push notifications.
+            </small>
+          </div>
+
+          <button class="btn btn-primary mt-1" type="submit">
+            Save reminder settings
           </button>
         </form>
       </div>
     </div>
   </div>
+
+  <!-- DANGER ZONE -->
+  <div class="glass-card p-4 border-danger border-opacity-50 mt-2">
+    <h5 class="mb-2 text-danger">Danger zone</h5>
+    <p class="text-secondary small">
+      Delete your account and all workouts. This can’t be undone.
+    </p>
+
+    <form action="/account/delete" method="POST" onsubmit="return confirm('Really delete your account and all workouts?');">
+      <button type="submit" class="btn btn-danger btn-sm">
+        Delete my account
+      </button>
+    </form>
+  </div>
 </section>
 
-<%- include('./partials/footer') %>
+<%- include('../partials/footer') %>
