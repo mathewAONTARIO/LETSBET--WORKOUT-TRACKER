@@ -1,0 +1,50 @@
+<%- include('../partials/header', { currentPath: '/workouts/edit' }) %>
+
+<h2 class="mb-3">Edit Workout</h2>
+
+<form action="/workouts/<%= workout._id %>/edit" method="POST" class="glass-card p-4">
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label" for="exercise">Exercise</label>
+      <input type="text" id="exercise" name="exercise" class="form-control" value="<%= workout.exercise %>" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="category">Category</label>
+      <select id="category" name="category" class="form-select">
+        <% const cats = ['Other','Push','Pull','Legs','Upper Body','Lower Body','Cardio','Core','Full Body']; %>
+        <% cats.forEach(c => { %>
+          <option value="<%= c %>" <%= workout.category === c ? 'selected' : '' %>><%= c %></option>
+        <% }) %>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label" for="sets">Sets</label>
+      <input type="number" id="sets" name="sets" class="form-control" min="1" value="<%= workout.sets %>" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="reps">Reps</label>
+      <input type="number" id="reps" name="reps" class="form-control" min="1" value="<%= workout.reps %>" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="weight">Weight (kg)</label>
+      <input type="number" id="weight" name="weight" class="form-control" min="0" value="<%= workout.weight %>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="date">Date</label>
+      <input type="date" id="date" name="date" class="form-control" value="<%= workout.date.toISOString().slice(0,10) %>" required>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="3" class="form-control"><%= workout.notes %></textarea>
+  </div>
+
+  <button type="submit" class="btn btn-primary me-2">Save Changes</button>
+  <a href="/workouts" class="btn btn-outline-light">Cancel</a>
+</form>
+
+<%- include('../partials/footer') %>

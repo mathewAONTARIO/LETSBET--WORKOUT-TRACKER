@@ -1,0 +1,305 @@
+body {
+  background: radial-gradient(circle at top, #1f2937, #020617);
+  min-height: 100vh;
+}
+
+.navbar-brand {
+  letter-spacing: 0.08em;
+}
+
+.navbar-brand svg {
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+  0% { transform: scale(1); opacity: 0.9; }
+  25% { transform: scale(1.12); opacity: 1; }
+  40% { transform: scale(1); opacity: 0.95; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+.nav-link {
+  position: relative;
+  font-weight: 500;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: #3b82f6;
+  transition: width 0.25s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+.btn-primary {
+  border-radius: 999px;
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.btn-outline-light {
+  border-radius: 999px;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.hero {
+  padding: 4rem 0 3rem;
+  text-align: center;
+  color: #e5e7eb;
+  position: relative;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 480px;
+  height: 480px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59,130,246,0.35), transparent 60%);
+  filter: blur(4px);
+  z-index: -1;
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.27);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  animation: fadeUp 0.35s ease-out;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.workout-card {
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.workout-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.9);
+  border-color: #3b82f6;
+}
+
+.workout-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workout-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.workout-meta {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.badge-category {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.badge-push { background: rgba(37,99,235,0.2); border-color:#60a5fa; color:#bfdbfe; }
+.badge-pull { background: rgba(129,140,248,0.2); border-color:#a5b4fc; color:#e0e7ff; }
+.badge-legs { background: rgba(34,197,94,0.22); border-color:#6ee7b7; color:#bbf7d0; }
+.badge-upper { background: rgba(59,130,246,0.18); border-color:#93c5fd; color:#dbeafe; }
+.badge-lower { background: rgba(251,146,60,0.18); border-color:#fed7aa; color:#ffedd5; }
+.badge-cardio { background: rgba(248,113,113,0.18); border-color:#fecaca; color:#fee2e2; }
+.badge-core { background: rgba(244,114,182,0.18); border-color:#f9a8d4; color:#fce7f3; }
+.badge-full { background: rgba(34,197,235,0.18); border-color:#67e8f9; color:#cffafe; }
+.badge-other { background: rgba(31,41,55,0.9); border-color:#6b7280; color:#e5e7eb; }
+
+.badge-pr {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  background: rgba(249,115,22,0.18);
+  border: 1px solid #fdba74;
+  color: #fed7aa;
+  margin-left: 6px;
+}
+
+.badge-date {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #e5e7eb;
+}
+
+.streak-bar-wrapper {
+  margin-top: 10px;
+}
+
+.streak-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(31,41,55,0.9);
+  overflow: hidden;
+}
+
+.streak-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, #22c55e, #4ade80, #22c55e);
+}
+
+.fab-add {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #2563eb;
+  color: #f9fafb;
+  font-size: 28px;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.7);
+  border: none;
+  z-index: 40;
+}
+
+.fab-add:hover {
+  background: #1d4ed8;
+  text-decoration: none;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-day {
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  background: rgba(15, 23, 42, 0.9);
+  color: #9ca3af;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  padding: 8px 0;
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.calendar-day.has-workout {
+  color: #f9fafb;
+}
+
+.calendar-day.today {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+.calendar-day:hover {
+  transform: translateY(-1px);
+}
+
+.calendar-day.intensity-1 {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #60a5fa;
+  color: #e5f2ff;
+}
+
+.calendar-day.intensity-2 {
+  background: rgba(37, 99, 235, 0.45);
+  border-color: #60a5fa;
+  color: #f9fafb;
+}
+
+.calendar-day.intensity-3 {
+  background: rgba(37, 99, 235, 0.8);
+  border-color: #93c5fd;
+  color: #f9fafb;
+}
+
+.footer-text {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.footer-text svg {
+  vertical-align: middle;
+  margin: 0 4px;
+}
+
+.profile-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(75,85,99,0.9);
+}
+
+.avatar-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2563eb;
+  color: #f9fafb;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .hero {
+    padding-top: 3rem;
+  }
+}

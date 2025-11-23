@@ -1,0 +1,56 @@
+<%- include('../partials/header', { currentPath: '/workouts/new' }) %>
+
+<h2 class="mb-1">Your Workouts</h2>
+<p class="text-secondary mb-4">Log your sessions and keep track of what you've done.</p>
+
+<form action="/workouts" method="POST" class="glass-card p-4">
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <label class="form-label" for="exercise">Exercise</label>
+      <input type="text" id="exercise" name="exercise" class="form-control" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="category">Category</label>
+      <select id="category" name="category" class="form-select">
+        <option>Other</option>
+        <option>Push</option>
+        <option>Pull</option>
+        <option>Legs</option>
+        <option>Upper Body</option>
+        <option>Lower Body</option>
+        <option>Cardio</option>
+        <option>Core</option>
+        <option>Full Body</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label" for="sets">Sets</label>
+      <input type="number" id="sets" name="sets" class="form-control" min="1" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="reps">Reps</label>
+      <input type="number" id="reps" name="reps" class="form-control" min="1" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="weight">Weight (kg)</label>
+      <input type="number" id="weight" name="weight" class="form-control" min="0">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="date">Date</label>
+      <input type="date" id="date" name="date" class="form-control" required>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="notes">Notes</label>
+    <textarea id="notes" name="notes" rows="3" class="form-control"></textarea>
+  </div>
+
+  <button type="submit" class="btn btn-primary me-2">Save Workout</button>
+  <a href="/workouts" class="btn btn-outline-light">Cancel</a>
+</form>
+
+<%- include('../partials/footer') %>

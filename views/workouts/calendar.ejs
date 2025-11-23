@@ -1,0 +1,23 @@
+<%- include('../partials/header', { currentPath: '/workouts/calendar' }) %>
+
+<h2 class="mb-1">Calendar</h2>
+<p class="text-secondary mb-4">Last 30 days — darker blue means more sessions.</p>
+
+<div class="glass-card mb-3">
+  <div class="card-body p-3">
+    <div class="calendar-grid">
+      <% days.forEach(day => { %>
+        <a href="/workouts/day/<%= day.label %>"
+           class="calendar-day intensity-<%= day.intensity %> <%= day.hasWorkout ? ' has-workout' : '' %> <%= day.isToday ? ' today' : '' %>">
+          <div><%= day.short %></div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<p class="text-secondary" style="font-size: 0.85rem;">
+  Orange outline = Today. Click a day to see your workouts for that date.
+</p>
+
+<%- include('../partials/footer') %>
