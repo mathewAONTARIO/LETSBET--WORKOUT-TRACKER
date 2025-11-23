@@ -4,20 +4,20 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-// LIST ALL WORKOUTS FOR THE LOGGED-IN USER
+// LIST ALL WORKOUTS FOR LOGGED-IN USER
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
 
     const workouts = await Workout.find({ user: userId }).sort({ date: -1 });
 
-    // 👈 IMPORTANT: this matches views/workouts/list.ejs
     res.render('workouts/list', {
       workouts,
       currentPath: '/workouts'
     });
   } catch (err) {
-    console.error(err);
+    console.error('getWorkouts error:', err);
     res.render('workouts/list', {
       workouts: [],
       currentPath: '/workouts'
@@ -25,13 +25,17 @@ exports.getWorkouts = async (req, res) => {
   }
 };
 
+// SHOW NEW WORKOUT FORM
 exports.showNewForm = (req, res) => {
   res.render('workouts/new', { currentPath: '/workouts/new' });
 };
 
+// CREATE WORKOUT
 exports.createWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
     const { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
 
     await Workout.create({
@@ -48,14 +52,16 @@ exports.createWorkout = async (req, res) => {
 
     res.redirect('/workouts');
   } catch (err) {
-    console.error(err);
+    console.error('createWorkout error:', err);
     res.redirect('/workouts');
   }
 };
 
+// DUPLICATE WORKOUT
 exports.duplicateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
 
     const original = await Workout.findOne({
       _id: req.params.id,
@@ -78,11 +84,12 @@ exports.duplicateWorkout = async (req, res) => {
 
     res.redirect('/workouts');
   } catch (err) {
-    console.error(err);
+    console.error('duplicateWorkout error:', err);
     res.redirect('/workouts');
   }
 };
 
+// EDIT FORM
 exports.showEditForm = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -99,11 +106,12 @@ exports.showEditForm = async (req, res) => {
       currentPath: '/workouts'
     });
   } catch (err) {
-    console.error(err);
+    console.error('showEditForm error:', err);
     res.redirect('/workouts');
   }
 };
 
+// UPDATE WORKOUT
 exports.updateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -125,11 +133,12 @@ exports.updateWorkout = async (req, res) => {
 
     res.redirect('/workouts');
   } catch (err) {
-    console.error(err);
+    console.error('updateWorkout error:', err);
     res.redirect('/workouts');
   }
 };
 
+// DELETE CONFIRM
 exports.showDeleteConfirm = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -146,11 +155,12 @@ exports.showDeleteConfirm = async (req, res) => {
       currentPath: '/workouts'
     });
   } catch (err) {
-    console.error(err);
+    console.error('showDeleteConfirm error:', err);
     res.redirect('/workouts');
   }
 };
 
+// DELETE WORKOUT
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -162,11 +172,12 @@ exports.deleteWorkout = async (req, res) => {
 
     res.redirect('/workouts');
   } catch (err) {
-    console.error(err);
+    console.error('deleteWorkout error:', err);
     res.redirect('/workouts');
   }
 };
 
+// STREAK PAGE
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -227,7 +238,7 @@ exports.getStreak = async (req, res) => {
       currentPath: '/workouts/streak'
     });
   } catch (err) {
-    console.error(err);
+    console.error('getStreak error:', err);
     res.render('workouts/streak', {
       currentStreak: 0,
       longestStreak: 0,
@@ -238,6 +249,7 @@ exports.getStreak = async (req, res) => {
   }
 };
 
+// STATS PAGE
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -284,7 +296,7 @@ exports.getStats = async (req, res) => {
       currentPath: '/workouts/stats'
     });
   } catch (err) {
-    console.error(err);
+    console.error('getStats error:', err);
     res.render('workouts/stats', {
       totalWorkouts: 0,
       totalWeight: 0,
@@ -296,6 +308,7 @@ exports.getStats = async (req, res) => {
   }
 };
 
+// CALENDAR PAGE
 exports.getCalendar = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -340,7 +353,7 @@ exports.getCalendar = async (req, res) => {
       currentPath: '/workouts/calendar'
     });
   } catch (err) {
-    console.error(err);
+    console.error('getCalendar error:', err);
     res.render('workouts/calendar', {
       days: [],
       currentPath: '/workouts/calendar'
@@ -348,6 +361,7 @@ exports.getCalendar = async (req, res) => {
   }
 };
 
+// DAY SUMMARY
 exports.getDaySummary = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -367,7 +381,7 @@ exports.getDaySummary = async (req, res) => {
       currentPath: '/workouts/calendar'
     });
   } catch (err) {
-    console.error(err);
+    console.error('getDaySummary error:', err);
     res.redirect('/workouts/calendar');
   }
 };
