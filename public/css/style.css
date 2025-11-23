@@ -98,7 +98,7 @@ a:hover {
     transform: translateY(6px);
   }
   to {
-    opacity: 1);
+    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -298,52 +298,119 @@ a:hover {
   font-weight: 600;
 }
 
+/* --------------------- READABLE LIGHT THEME --------------------- */
+
 body.theme-light {
-  background: radial-gradient(circle at top, #f3f4f6, #e5e7eb);
-  color: #111827;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 body.theme-light .navbar {
   background-color: #ffffff !important;
-  border-bottom-color: #e5e7eb !important;
+  border-bottom-color: #cbd5e1 !important;
 }
 
 body.theme-light .navbar-brand span {
-  color: #111827;
+  color: #0f172a;
 }
 
 body.theme-light .nav-link {
-  color: #4b5563 !important;
+  color: #334155 !important;
+  font-weight: 600;
 }
 
 body.theme-light .nav-link.active {
-  color: #111827 !important;
+  color: #0f172a !important;
+  border-bottom: 2px solid #2563eb;
 }
 
 body.theme-light .glass-card {
-  background: rgba(255,255,255,0.9);
-  border-color: rgba(209,213,219,0.9);
-  box-shadow: 0 18px 40px rgba(148,163,184,0.6);
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+  color: #0f172a;
 }
 
 body.theme-light .workout-card {
   background: #ffffff;
-  border-color: #e5e7eb;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
-body.theme-light .workout-meta,
+body.theme-light .workout-title {
+  color: #0f172a;
+}
+
+body.theme-light .workout-meta {
+  color: #475569 !important;
+}
+
 body.theme-light .text-secondary {
-  color: #6b7280 !important;
+  color: #64748b !important;
 }
 
 body.theme-light .calendar-day {
   background: #ffffff;
-  border-color: #e5e7eb;
-  color: #6b7280;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+body.theme-light .calendar-day.has-workout {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1e40af;
+}
+
+body.theme-light .calendar-day.today {
+  outline: 3px solid #f97316;
+  outline-offset: 2px;
+}
+
+body.theme-light .calendar-day.intensity-1 {
+  background: rgba(37,99,235,0.16);
+  color: #1e3a8a;
+}
+
+body.theme-light .calendar-day.intensity-2 {
+  background: rgba(37,99,235,0.32);
+  color: #1e3a8a;
+}
+
+body.theme-light .calendar-day.intensity-3 {
+  background: rgba(37,99,235,0.55);
+  color: white;
 }
 
 body.theme-light .footer-text {
-  color: #9ca3af;
+  color: #64748b;
+}
+
+body.theme-light .profile-pill {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+body.theme-light .avatar-circle {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+body.theme-light .btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+body.theme-light .btn-outline-light {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+body.theme-light a:hover {
+  text-decoration: underline;
+  color: #1e40af;
 }
 
 @media (max-width: 767px) {
