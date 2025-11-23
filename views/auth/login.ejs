@@ -5,8 +5,8 @@
     <div class="glass-card p-4">
       <h2 class="mb-3 text-center">Log In</h2>
 
-      <% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
-        <div class="alert alert-danger py-2"><%= errorMessage %></div>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-danger py-2"><%= error %></div>
       <% } %>
 
       <form action="/auth/login" method="POST" class="mt-3">
@@ -14,12 +14,10 @@
           <label class="form-label">Email</label>
           <input type="email" name="email" class="form-control" required />
         </div>
-
         <div class="mb-3">
           <label class="form-label">Password</label>
           <input type="password" name="password" class="form-control" required />
         </div>
-
         <button type="submit" class="btn btn-primary w-100 mt-2">Log In</button>
       </form>
 
