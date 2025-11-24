@@ -1,48 +1,90 @@
 <%- include('../partials/header', { currentPath: '/workouts/calendar' }) %>
 
-<h2 class="mb-1">Calendar</h2>
-<p class="text-secondary mb-4">See your workouts on a monthly calendar.</p>
+<% 
+  // Simple streak + monthly stats based on the days array
+  let monthWorkouts = 0;
+  days.forEach(d => {
+    if (d.inMonth && d.hasWorkout) monthWorkouts++;
+  });
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <a href="/workouts/calendar?month=<%= prevMonthParam %>" class="btn btn-outline-light btn-sm">
-    &larr; Previous
-  </a>
-  <h4 class="mb-0"><%= monthLabel %></h4>
-  <a href="/workouts/calendar?month=<%= nextMonthParam %>" class="btn btn-outline-light btn-sm">
-    Next &rarr;
-  </a>
-</div>
+  // Current streak = consecutive in-month workout days ending with
+  // the most recent in-month day in the list
+  let currentStreak = 0;
+  let running = 0;
+  for (let i = days.length - 1; i >= 0; i--) {
+    const d = days[i];
+    if (!d.inMonth) continue;
 
-<div class="glass-card mb-3">
-  <div class="card-body p-3">
+    if (d.hasWorkout) {
+      running++;
+      currentStreak = running;
+    } else {
+      if (running > 0) break;
+      running = 0;
+    }
+  }
+%>
 
-    <div class="calendar-weekdays d-none d-md-grid">
-      <div>Sun</div>
-      <div>Mon</div>
-      <div>Tue</div>
-      <div>Wed</div>
-      <div>Thu</div>
-      <div>Fri</div>
-      <div>Sat</div>
+<div class="calendar-shell">
+  <h2 class="mb-1">Calendar</h2>
+  <p class="text-secondary mb-3">See your workouts on a monthly calendar.</p>
+
+  <!-- Mini streak / stats row -->
+  <div class="calendar-streak-row mb-3">
+    <div class="calendar-streak-pill">
+      <span class="calendar-streak-label">Current streak</span>
+      <span class="calendar-streak-value">
+        <%= currentStreak %> day<%= currentStreak === 1 ? '' : 's' %>
+      </span>
     </div>
-
-    <div class="calendar-grid calendar-grid-month">
-      <% days.forEach(d => { %>
-        <a
-          href="/workouts/day/<%= d.label %>"
-          class="calendar-day intensity-<%= d.intensity %>
-                 <%= d.hasWorkout ? ' has-workout' : '' %>
-                 <%= d.isToday ? ' today' : '' %>
-                 <%= d.inMonth ? '' : ' calendar-day-outside' %>">
-          <div><%= d.day %></div>
-        </a>
-      <% }) %>
+    <div class="calendar-streak-secondary">
+      <%= monthWorkouts %> workout<%= monthWorkouts === 1 ? '' : 's' %> logged this month
     </div>
   </div>
-</div>
 
-<p class="text-secondary" style="font-size: 0.85rem;">
-  Blue = days you trained. Orange outline = today. Faded numbers are days from the previous or next month.
-</p>
+  <div class="d-flex justify-content-between align-items-center mb-3 calendar-nav-row">
+    <a href="/workouts/calendar?month=<%= prevMonthParam %>" class="btn btn-outline-light btn-sm">
+      &larr; Previous
+    </a>
+    <h4 class="mb-0"><%= monthLabel %></h4>
+    <a href="/workouts/calendar?month=<%= nextMonthParam %>" class="btn btn-outline-light btn-sm">
+      Next &rarr;
+    </a>
+  </div>
+
+  <div class="glass-card mb-3">
+    <div class="card-body p-3">
+
+      <!-- Weekday labels -->
+      <div class="calendar-weekdays">
+        <div>Sun</div>
+        <div>Mon</div>
+        <div>Tue</div>
+        <div>Wed</div>
+        <div>Thu</div>
+        <div>Fri</div>
+        <div>Sat</div>
+      </div>
+
+      <!-- Month grid -->
+      <div class="calendar-grid calendar-grid-month">
+        <% days.forEach(d => { %>
+          <a
+            href="/workouts/day/<%= d.label %>"
+            class="calendar-day intensity-<%= d.intensity %>
+                   <%= d.hasWorkout ? ' has-workout' : '' %>
+                   <%= d.isToday ? ' today' : '' %>
+                   <%= d.inMonth ? '' : ' calendar-day-outside' %>">
+            <div><%= d.day %></div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-secondary" style="font-size: 0.85rem;">
+    Blue = days you trained. Today has a glow. Faded numbers are days from the previous or next month.
+  </p>
+</div>
 
 <%- include('../partials/footer') %>
