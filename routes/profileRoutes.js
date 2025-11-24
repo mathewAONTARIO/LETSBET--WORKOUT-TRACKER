@@ -1,161 +1,153 @@
 // routes/profileRoutes.js
 const express = require('express');
-const router = express.Router();
-const { requireLogin } = require('../middleware/auth');
+const path = require('path');
+const multer = require('multer');
 const User = require('../models/User');
-const Workout = require('../models/Workout');
+const { requireLogin } = require('../middleware/auth');
 
-// GET /account  → renders the Settings page
-router.get('/', requireLogin, async (req, res) => {
-  try {
-    const user = await User.findById(req.session.userId);
-    res.render('workouts/settings', {
-      currentPath: '/workouts/settings',
-      user
-    });
-  } catch (err) {
-    console.error('settings page error:', err);
-    res.status(500).send('Error loading settings');
+const router = express.Router();
+
+/**
+ * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
+ */
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '.png';
+    cb(null, `${req.user._id}-${Date.now()}${ext}`);
   }
 });
 
-// POST /account/profile  → update profile info
-router.post('/profile', requireLogin, async (req, res) => {
-  try {
-    const {
-      displayName,
-      weeklyGoal,
-      gender,
-      age,
-      heightValue,
-      heightUnit,
-      weightValue,
-      weightUnit,
-      primaryGoal,
-      experience
-    } = req.body;
-
-    const updates = {};
-
-    if (displayName && displayName.trim().length > 0) {
-      updates.displayName = displayName.trim();
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter(req, file, cb) {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
     }
-
-    if (weeklyGoal) {
-      updates.weeklyGoal = Number(weeklyGoal) || 4;
-    }
-
-    if (gender) {
-      updates.gender = gender;
-    }
-
-    if (age) {
-      const ageNum = Number(age);
-      if (!Number.isNaN(ageNum)) {
-        updates.age = ageNum;
-      }
-    }
-
-    // Height: store canonical as cm
-    if (heightValue) {
-      const hv = Number(heightValue);
-      if (!Number.isNaN(hv)) {
-        if (heightUnit === 'ft') {
-          updates.heightCm = Math.round(hv * 30.48); // convert ft → cm
-          updates.heightUnit = 'ft';
-        } else {
-          updates.heightCm = hv;
-          updates.heightUnit = 'cm';
-        }
-      }
-    }
-
-    // Weight: store canonical as kg
-    if (weightValue) {
-      const wv = Number(weightValue);
-      if (!Number.isNaN(wv)) {
-        if (weightUnit === 'lb') {
-          updates.weightKg = +(wv * 0.453592).toFixed(1); // lb → kg
-          updates.weightUnit = 'lb';
-        } else {
-          updates.weightKg = wv;
-          updates.weightUnit = 'kg';
-        }
-      }
-    }
-
-    if (primaryGoal) {
-      updates.primaryGoal = primaryGoal;
-    }
-
-    if (experience) {
-      updates.experience = experience;
-    }
-
-    await User.findByIdAndUpdate(req.session.userId, updates);
-    res.redirect('/workouts/settings');
-  } catch (err) {
-    console.error('update profile error:', err);
-    res.redirect('/workouts/settings');
+    cb(null, true);
   }
 });
 
-// POST /account/theme  → save dark/light preference
+/**
+ * SETTINGS PAGE
+ */
+router.get('/settings', requireLogin, (req, res) => {
+  res.render('workouts/settings', {
+    currentPath: '/workouts/settings',
+    currentUser: req.user
+  });
+});
+
+/**
+ * UPDATE PROFILE (INCLUDING PROFILE PHOTO)
+ */
+router.post(
+  '/profile',
+  requireLogin,
+  upload.single('profilePhoto'),
+  async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.redirect('/auth/login');
+      }
+
+      // Basic fields
+      user.displayName = req.body.displayName || user.displayName;
+      user.weeklyWorkoutGoal = Number(req.body.weeklyWorkoutGoal) || user.weeklyWorkoutGoal;
+
+      user.gender = req.body.gender || user.gender || 'Prefer not to say';
+      user.age = req.body.age ? Number(req.body.age) : user.age;
+
+      // Height
+      user.heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
+      if (req.body.height) {
+        user.height = Number(req.body.height);
+      }
+
+      // Weight + unit
+      user.weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
+      if (req.body.weight) {
+        user.weight = Number(req.body.weight);
+      }
+
+      // Goal / experience
+      user.primaryGoal = req.body.primaryGoal || user.primaryGoal;
+      user.trainingExperience = req.body.trainingExperience || user.trainingExperience;
+
+      // If a file was uploaded, update profilePhotoUrl
+      if (req.file) {
+        const relPath = `/uploads/avatars/${req.file.filename}`;
+        user.profilePhotoUrl = relPath;
+      }
+
+      await user.save();
+
+      // refresh user in session so header avatar updates immediately
+      req.session.user = user;
+
+      res.redirect('/workouts/settings');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      res.redirect('/workouts/settings');
+    }
+  }
+);
+
+/**
+ * UPDATE THEME
+ */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
-    const theme = req.body.theme === 'light' ? 'light' : 'dark';
-    await User.findByIdAndUpdate(req.session.userId, { theme });
-    req.session.theme = theme;
-    res.redirect('back');
+    const user = await User.findById(req.user._id);
+    if (!user) return res.redirect('/auth/login');
+
+    user.themePreference = req.body.theme === 'light' ? 'light' : 'dark';
+    await user.save();
+    req.session.user = user;
+
+    res.redirect('/workouts/settings');
   } catch (err) {
-    console.error('theme update error:', err);
+    console.error('Error updating theme:', err);
     res.redirect('/workouts/settings');
   }
 });
 
-// POST /account/reminders  → save workout reminder preference
-router.post('/reminders', requireLogin, async (req, res) => {
+/**
+ * UPDATE REMINDER SETTINGS
+ */
+router.post('/reminder', requireLogin, async (req, res) => {
   try {
-    const enabled = !!req.body.reminderEnabled;
-    const reminderTime = req.body.reminderTime || null;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.redirect('/auth/login');
 
-    await User.findByIdAndUpdate(req.session.userId, {
-      reminderEnabled: enabled,
-      reminderTime
-    });
+    user.reminderEnabled = req.body.reminderEnabled === 'on';
+    user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
+
+    await user.save();
+    req.session.user = user;
 
     res.redirect('/workouts/settings');
   } catch (err) {
-    console.error('reminder update error:', err);
+    console.error('Error updating reminders:', err);
     res.redirect('/workouts/settings');
   }
 });
 
-// POST /account/avatar  → placeholder avatar handler (no real upload yet)
-router.post('/avatar', requireLogin, async (req, res) => {
-  try {
-    // In the future you could process an uploaded file here.
-    // For now we just redirect back.
-    res.redirect('/workouts/settings');
-  } catch (err) {
-    console.error('avatar upload error:', err);
-    res.redirect('/workouts/settings');
-  }
-});
-
-// POST /account/delete  → delete user + workouts
+/**
+ * DELETE ACCOUNT
+ */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
-    const userId = req.session.userId;
-
-    await Workout.deleteMany({ user: userId });
-    await User.deleteOne({ _id: userId });
-
+    await User.deleteOne({ _id: req.user._id });
     req.session.destroy(() => {
-      res.redirect('/auth/register');
+      res.redirect('/');
     });
   } catch (err) {
-    console.error('delete account error:', err);
+    console.error('Error deleting account:', err);
     res.redirect('/workouts/settings');
   }
 });
