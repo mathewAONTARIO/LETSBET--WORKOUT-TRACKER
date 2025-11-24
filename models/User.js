@@ -1,56 +1,58 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
+const userSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true
+    },
+    password: {
+      type: String,
+      required: true
+    },
+    displayName: {
+      type: String,
+      trim: true
+    },
+    profilePhotoUrl: {
+      type: String,
+      default: ''
+    },
+    theme: {
+      type: String,
+      enum: ['dark', 'light'],
+      default: 'dark'
+    },
+    weeklyGoal: {
+      type: Number,
+      default: 4
+    },
+    remindersEnabled: {
+      type: Boolean,
+      default: false
+    },
+    reminderTime: {
+      type: String,
+      default: '09:00'
+    }
   },
-  password: {
-    type: String,
-    required: true
-  },
-  displayName: {
-    type: String,
-    default: ''
-  },
-  profilePhotoUrl: {
-    type: String,
-    default: ''
-  },
-  weeklyGoal: {
-    type: Number,
-    default: 4
-  },
-  theme: {
-    type: String,
-    enum: ['dark', 'light'],
-    default: 'dark'
-  },
-  reminderEnabled: {
-    type: Boolean,
-    default: false
-  },
-  reminderTime: {
-    // stored as "HH:MM"
-    type: String,
-    default: '18:00'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  {
+    timestamps: true
   }
-});
+);
 
-// hash password before save if modified
+const SALT_ROUNDS = 10;
+
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
   try {
-    const hash = await bcrypt.hash(this.password, 10);
+    if (!this.isModified('password')) return next();
+    if (!this.password) return next(new Error('Password is required'));
+
+    const hash = await bcrypt.hash(this.password, SALT_ROUNDS);
     this.password = hash;
     next();
   } catch (err) {
@@ -58,9 +60,30 @@ userSchema.pre('save', async function (next) {
   }
 });
 
-// used in login
-userSchema.methods.comparePassword = function (candidate) {
-  return bcrypt.compare(candidate, this.password);
+userSchema.pre('findOneAndUpdate', async function (next) {
+  try {
+    const update = this.getUpdate();
+    if (!update) return next();
+
+    if (update.password) {
+      const hash = await bcrypt.hash(update.password, SALT_ROUNDS);
+      update.password = hash;
+      this.setUpdate(update);
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+userSchema.methods.comparePassword = async function (plainPassword) {
+  if (!plainPassword || !this.password) {
+    return false;
+  }
+  return bcrypt.compare(plainPassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+module.exports = User;
