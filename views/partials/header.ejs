@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 
-<body class="<%= currentTheme === 'light' ? 'theme-light bg-light text-dark' : 'bg-dark text-light' %>">
+<!-- IMPORTANT: only 'theme-light' for light mode, nothing for dark -->
+<body class="<%= currentTheme === 'light' ? 'theme-light' : '' %>">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-black border-bottom border-secondary">
   <div class="container">
@@ -29,70 +30,41 @@
         <li class="nav-item">
           <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Home</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath.startsWith('/workouts') &&
-                                 !currentPath.includes('streak') &&
-                                 !currentPath.includes('stats') &&
-                                 !currentPath.includes('calendar') &&
-                                 !currentPath.includes('settings') &&
-                                 !currentPath.includes('library')
-                                 ? 'active' : '' %>"
-             href="/workouts">
-            Workouts
-          </a>
+          <a class="nav-link <%= currentPath.startsWith('/workouts') && !currentPath.includes('streak') && !currentPath.includes('stats') && !currentPath.includes('calendar') && !currentPath.includes('settings') && !currentPath.includes('library') ? 'active' : '' %>" href="/workouts">Workouts</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath === '/workouts/streak' ? 'active' : '' %>"
-             href="/workouts/streak">
-            Streak
-          </a>
+          <a class="nav-link <%= currentPath === '/workouts/streak' ? 'active' : '' %>" href="/workouts/streak">Streak</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath === '/workouts/stats' ? 'active' : '' %>"
-             href="/workouts/stats">
-            Stats
-          </a>
+          <a class="nav-link <%= currentPath === '/workouts/stats' ? 'active' : '' %>" href="/workouts/stats">Stats</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>"
-             href="/workouts/calendar">
-            Calendar
-          </a>
+          <a class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>" href="/workouts/calendar">Calendar</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>"
-             href="/workouts/library">
-            Library
-          </a>
+          <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
         </li>
-
         <li class="nav-item">
-          <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>"
-             href="/workouts/settings">
-            Settings
-          </a>
+          <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/workouts/settings">Settings</a>
         </li>
       </ul>
 
       <div class="d-flex align-items-center gap-2">
-        <button id="themeToggle" class="btn btn-outline-light btn-sm" type="button">
+        <!-- theme toggle -->
+        <button
+          id="themeToggle"
+          class="btn btn-outline-light btn-sm"
+          type="button">
           🌓
         </button>
 
         <% if (!currentUser) { %>
           <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
           <a href="/auth/register" class="btn btn-primary btn-sm">Sign Up</a>
-
         <% } else { %>
-
           <div class="profile-pill">
-
-            <% if (currentUser.profilePhotoUrl && currentUser.profilePhotoUrl.trim() !== "") { %>
+            <% if (currentUser.profilePhotoUrl) { %>
               <img
                 src="<%= currentUser.profilePhotoUrl %>"
                 alt="Profile picture"
@@ -101,22 +73,14 @@
               />
             <% } else { %>
               <div class="avatar-circle me-2">
-                <%= (currentUser.displayName || currentUser.email || '?')
-                      .charAt(0).toUpperCase() %>
+                <%= (currentUser.displayName || currentUser.email || '?').charAt(0).toUpperCase() %>
               </div>
             <% } %>
-
-            <span style="font-size:0.85rem;">
-              <%= currentUser.displayName || currentUser.email %>
-            </span>
+            <span style="font-size:0.85rem;"><%= currentUser.displayName || currentUser.email %></span>
           </div>
-
           <form action="/auth/logout" method="POST" class="d-inline ms-2">
-            <button type="submit" class="btn btn-outline-light btn-sm">
-              Log Out
-            </button>
+            <button type="submit" class="btn btn-outline-light btn-sm">Log Out</button>
           </form>
-
         <% } %>
       </div>
     </div>
