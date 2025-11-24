@@ -1,33 +1,30 @@
+// routes/profileRoutes.js
 const express = require('express');
 const router = express.Router();
 const { requireLogin } = require('../middleware/auth');
 const User = require('../models/User');
 const Workout = require('../models/Workout');
 
-// Show account/settings info if you ever hit /account directly
+// GET /account  → renders the Settings page
 router.get('/', requireLogin, async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId).lean();
-    res.render('workouts/account', {
+    const user = await User.findById(req.session.userId);
+    res.render('workouts/settings', {
       currentPath: '/workouts/settings',
       user
     });
   } catch (err) {
-    console.error('account page error:', err);
-    res.redirect('/workouts');
+    console.error('settings page error:', err);
+    res.status(500).send('Error loading settings');
   }
 });
 
-/**
- * Update profile core fields from the Settings page
- * (display name, weekly goal, gender, age, height, weight, goals, experience)
- */
-router.post('/', requireLogin, async (req, res) => {
+// POST /account/profile  → update profile info
+router.post('/profile', requireLogin, async (req, res) => {
   try {
     const {
       displayName,
       weeklyGoal,
-
       gender,
       age,
       heightValue,
@@ -35,23 +32,67 @@ router.post('/', requireLogin, async (req, res) => {
       weightValue,
       weightUnit,
       primaryGoal,
-      trainingExperience
+      experience
     } = req.body;
 
-    await User.findByIdAndUpdate(req.session.userId, {
-      displayName: displayName || '',
-      weeklyGoal: Number(weeklyGoal) || 4,
+    const updates = {};
 
-      gender: gender || '',
-      age: age ? Number(age) : undefined,
-      heightValue: heightValue ? Number(heightValue) : undefined,
-      heightUnit: heightUnit === 'ft' ? 'ft' : 'cm',
-      weightValue: weightValue ? Number(weightValue) : undefined,
-      weightUnit: weightUnit === 'lb' ? 'lb' : 'kg',
-      primaryGoal: primaryGoal || '',
-      trainingExperience: trainingExperience || ''
-    });
+    if (displayName && displayName.trim().length > 0) {
+      updates.displayName = displayName.trim();
+    }
 
+    if (weeklyGoal) {
+      updates.weeklyGoal = Number(weeklyGoal) || 4;
+    }
+
+    if (gender) {
+      updates.gender = gender;
+    }
+
+    if (age) {
+      const ageNum = Number(age);
+      if (!Number.isNaN(ageNum)) {
+        updates.age = ageNum;
+      }
+    }
+
+    // Height: store canonical as cm
+    if (heightValue) {
+      const hv = Number(heightValue);
+      if (!Number.isNaN(hv)) {
+        if (heightUnit === 'ft') {
+          updates.heightCm = Math.round(hv * 30.48); // convert ft → cm
+          updates.heightUnit = 'ft';
+        } else {
+          updates.heightCm = hv;
+          updates.heightUnit = 'cm';
+        }
+      }
+    }
+
+    // Weight: store canonical as kg
+    if (weightValue) {
+      const wv = Number(weightValue);
+      if (!Number.isNaN(wv)) {
+        if (weightUnit === 'lb') {
+          updates.weightKg = +(wv * 0.453592).toFixed(1); // lb → kg
+          updates.weightUnit = 'lb';
+        } else {
+          updates.weightKg = wv;
+          updates.weightUnit = 'kg';
+        }
+      }
+    }
+
+    if (primaryGoal) {
+      updates.primaryGoal = primaryGoal;
+    }
+
+    if (experience) {
+      updates.experience = experience;
+    }
+
+    await User.findByIdAndUpdate(req.session.userId, updates);
     res.redirect('/workouts/settings');
   } catch (err) {
     console.error('update profile error:', err);
@@ -59,38 +100,24 @@ router.post('/', requireLogin, async (req, res) => {
   }
 });
 
-/**
- * Theme toggle – stores the user’s choice in the session
- * (used by header.ejs to pick dark vs light CSS)
- */
-router.post('/theme', requireLogin, (req, res) => {
-  const theme = req.body.theme === 'light' ? 'light' : 'dark';
-  req.session.theme = theme;
-  res.redirect('/workouts/settings');
-});
-
-/**
- * Separate endpoint if you ever change weekly goal alone
- */
-router.post('/goal', requireLogin, async (req, res) => {
+// POST /account/theme  → save dark/light preference
+router.post('/theme', requireLogin, async (req, res) => {
   try {
-    await User.findByIdAndUpdate(req.session.userId, {
-      weeklyGoal: Number(req.body.weeklyGoal) || 4
-    });
-    res.redirect('/workouts/settings');
+    const theme = req.body.theme === 'light' ? 'light' : 'dark';
+    await User.findByIdAndUpdate(req.session.userId, { theme });
+    req.session.theme = theme;
+    res.redirect('back');
   } catch (err) {
-    console.error('update goal error:', err);
+    console.error('theme update error:', err);
     res.redirect('/workouts/settings');
   }
 });
 
-/**
- * Workout reminder prefs
- */
+// POST /account/reminders  → save workout reminder preference
 router.post('/reminders', requireLogin, async (req, res) => {
   try {
-    const enabled = req.body.reminderEnabled === 'on';
-    const reminderTime = req.body.reminderTime || '18:00';
+    const enabled = !!req.body.reminderEnabled;
+    const reminderTime = req.body.reminderTime || null;
 
     await User.findByIdAndUpdate(req.session.userId, {
       reminderEnabled: enabled,
@@ -99,23 +126,33 @@ router.post('/reminders', requireLogin, async (req, res) => {
 
     res.redirect('/workouts/settings');
   } catch (err) {
-    console.error('update reminders error:', err);
+    console.error('reminder update error:', err);
     res.redirect('/workouts/settings');
   }
 });
 
-/**
- * Danger zone – delete account + all workouts
- */
+// POST /account/avatar  → placeholder avatar handler (no real upload yet)
+router.post('/avatar', requireLogin, async (req, res) => {
+  try {
+    // In the future you could process an uploaded file here.
+    // For now we just redirect back.
+    res.redirect('/workouts/settings');
+  } catch (err) {
+    console.error('avatar upload error:', err);
+    res.redirect('/workouts/settings');
+  }
+});
+
+// POST /account/delete  → delete user + workouts
 router.post('/delete', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
 
     await Workout.deleteMany({ user: userId });
-    await User.findByIdAndDelete(userId);
+    await User.deleteOne({ _id: userId });
 
     req.session.destroy(() => {
-      res.redirect('/auth/login');
+      res.redirect('/auth/register');
     });
   } catch (err) {
     console.error('delete account error:', err);
