@@ -1,106 +1,111 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-  // Hashed password
-  password: {
-    type: String,
-    required: true
-  },
+const userSchema = new mongoose.Schema(
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true
+    },
+    // This stores the **hashed** password
+    password: {
+      type: String,
+      required: true
+    },
+    displayName: {
+      type: String,
+      trim: true
+    },
 
-  // Basic profile
-  displayName: {
-    type: String,
-    trim: true,
-    default: ''
-  },
-  profilePhotoUrl: {
-    type: String,
-    default: ''
-  },
+    // Weekly workout goal (used on dashboard/settings)
+    weeklyGoal: {
+      type: Number,
+      default: 4,
+      min: 1,
+      max: 21
+    },
 
-  // Training + goals
-  weeklyGoal: {
-    type: Number,
-    default: 4
-  },
-  gender: {
-    type: String,
-    enum: ['male', 'female', 'other', 'prefer_not_to_say'],
-    default: 'prefer_not_to_say'
-  },
-  age: {
-    type: Number
-  },
-  heightCm: {
-    type: Number // stored in centimeters
-  },
-  weightKg: {
-    type: Number // stored in kilograms
-  },
-  preferredWeightUnit: {
-    type: String,
-    enum: ['kg', 'lb'],
-    default: 'kg'
-  },
-  primaryGoal: {
-    type: String,
-    enum: ['strength', 'muscle_gain', 'fat_loss', 'performance', 'general_fitness', 'other'],
-    default: 'general_fitness'
-  },
-  trainingExperience: {
-    type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
-    default: 'beginner'
-  },
+    // Profile details
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'non-binary', 'prefer-not', ''],
+      default: ''
+    },
+    age: {
+      type: Number,
+      min: 0,
+      max: 120
+    },
 
-  // Theme + reminders
-  theme: {
-    type: String,
-    enum: ['dark', 'light'],
-    default: 'dark'
-  },
-  reminderEnabled: {
-    type: Boolean,
-    default: false
-  },
-  // Stored as "HH:MM" (24h)
-  reminderTime: {
-    type: String,
-    default: '18:00'
-  },
+    // Height with unit toggle (cm / ft)
+    heightValue: {
+      type: Number,
+      min: 0
+    },
+    heightUnit: {
+      type: String,
+      enum: ['cm', 'ft'],
+      default: 'cm'
+    },
 
-  createdAt: {
-    type: Date,
-    default: Date.now
+    // Weight with unit toggle (kg / lb)
+    weightValue: {
+      type: Number,
+      min: 0
+    },
+    weightUnit: {
+      type: String,
+      enum: ['kg', 'lb'],
+      default: 'kg'
+    },
+
+    primaryGoal: {
+      type: String,
+      trim: true
+    },
+
+    trainingExperience: {
+      type: String,
+      trim: true
+    },
+
+    // Simple reminder preferences (no real notifications yet)
+    reminderEnabled: {
+      type: Boolean,
+      default: false
+    },
+    reminderTime: {
+      type: String, // "18:00" etc
+      default: '18:00'
+    },
+
+    // Optional avatar URL if you decide to hook up uploads later
+    avatarUrl: {
+      type: String,
+      trim: true
+    }
+  },
+  {
+    timestamps: true
   }
-});
+);
 
-// Hash password before saving if it was modified
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
+// Check a plain-text password against the stored hash
+userSchema.methods.checkPassword = async function (candidatePassword) {
   try {
-    const saltRounds = 10;
-    const hash = await bcrypt.hash(this.password, saltRounds);
-    this.password = hash;
-    next();
+    if (!candidatePassword || !this.password) {
+      return false;
+    }
+    const match = await bcrypt.compare(candidatePassword, this.password);
+    return match;
   } catch (err) {
-    next(err);
+    console.error('checkPassword error:', err);
+    return false;
   }
-});
-
-// Helper to compare password on login
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+module.exports = User;
