@@ -1,188 +1,180 @@
 <%- include('../partials/header', { currentPath: '/workouts/settings' }) %>
 
-<section class="mb-5">
-  <h1 class="mb-2">Settings</h1>
-  <p class="text-secondary mb-4">
-    Customize how Lets Bet looks and how it keeps you on track.
-  </p>
+<h1 class="mb-2">Settings</h1>
+<p class="text-secondary mb-4">Customize your Lets Bet experience.</p>
 
-  <div class="row g-4">
-    <!-- PROFILE -->
-    <div class="col-lg-6">
-      <div class="glass-card p-4 mb-4">
-        <h5 class="mb-3">Profile</h5>
+<div class="row g-4">
 
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <% if (user && user.profilePhotoUrl) { %>
-            <img
-              src="<%= user.profilePhotoUrl %>"
-              alt="Profile picture"
-              class="rounded-circle"
-              style="width:48px;height:48px;object-fit:cover;"
+  <!-- PROFILE CARD -->
+  <div class="col-lg-6">
+    <div class="glass-card p-4 h-100">
+      <h5 class="mb-3">Profile</h5>
+
+      <!-- Profile picture upload -->
+      <form action="/account/photo" method="POST" enctype="multipart/form-data" class="mb-3">
+        <div class="d-flex align-items-center gap-3">
+          <img
+            src="<%= currentUser.profilePhotoUrl || '/img/letsbet-logo.png' %>"
+            alt="Profile picture"
+            class="rounded-circle"
+            style="width:56px;height:56px;object-fit:cover;"
+          />
+          <div class="flex-grow-1">
+            <label class="form-label mb-1">Profile picture</label>
+            <input type="file" name="profilePhoto" class="form-control form-control-sm" accept="image/png,image/jpeg" />
+            <small class="text-secondary">PNG or JPG, up to 2MB.</small>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-outline-light btn-sm mt-3">Upload</button>
+      </form>
+
+      <!-- Profile details -->
+      <form action="/account/profile" method="POST" class="mt-3">
+        <div class="mb-3">
+          <label class="form-label">Display name</label>
+          <input
+            type="text"
+            name="displayName"
+            class="form-control"
+            value="<%= currentUser.displayName || '' %>"
+            required
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Weekly workout goal</label>
+          <select name="weeklyGoal" class="form-select">
+            <% for (let i = 1; i <= 7; i++) { %>
+              <option value="<%= i %>" <%= currentUser.weeklyGoal === i ? 'selected' : '' %>>
+                <%= i %> workout<%= i === 1 ? '' : 's' %> per week
+              </option>
+            <% } %>
+          </select>
+          <small class="text-secondary">How many workouts you’re aiming for each week.</small>
+        </div>
+
+        <!-- NEW FIELDS -->
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Age</label>
+            <input
+              type="number"
+              name="age"
+              min="0"
+              max="120"
+              class="form-control"
+              value="<%= currentUser.age || '' %>"
             />
-          <% } else { %>
-            <div class="avatar-circle">
-              <%= (user && user.displayName
-                    ? user.displayName
-                    : (currentUser && currentUser.email) || '?'
-                  ).charAt(0).toUpperCase() %>
-            </div>
-          <% } %>
-          <div>
-            <div class="fw-semibold">
-              <%= (user && user.displayName) || (currentUser && currentUser.email) || 'Your account' %>
-            </div>
-            <div class="text-secondary small">Update how your profile looks.</div>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-select">
+              <option value="">Not set</option>
+              <option value="male" <%= currentUser.gender === 'male' ? 'selected' : '' %>>Male</option>
+              <option value="female" <%= currentUser.gender === 'female' ? 'selected' : '' %>>Female</option>
+              <option value="other" <%= currentUser.gender === 'other' ? 'selected' : '' %>>Other</option>
+              <option value="prefer_not_say" <%= currentUser.gender === 'prefer_not_say' ? 'selected' : '' %>>
+                Prefer not to say
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Current weight (kg)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              name="weightKg"
+              class="form-control"
+              value="<%= currentUser.weightKg || '' %>"
+            />
           </div>
         </div>
 
-        <form action="/account/profile" method="POST" class="vstack gap-3">
-          <div>
-            <label class="form-label">Display name</label>
-            <input
-              type="text"
-              name="displayName"
-              class="form-control bg-dark text-light border-secondary"
-              value="<%= (user && user.displayName) || '' %>"
-              placeholder="What should we call you?"
-            />
-          </div>
-
-          <div>
-            <label class="form-label">Profile picture URL</label>
-            <input
-              type="url"
-              name="profilePhotoUrl"
-              class="form-control bg-dark text-light border-secondary"
-              value="<%= (user && user.profilePhotoUrl) || '' %>"
-              placeholder="Paste an image link (e.g. from Imgur)"
-            />
-            <small class="text-secondary">
-              We’ll show this in the header instead of your initial.
-            </small>
-          </div>
-
-          <div>
-            <label class="form-label">Weekly workout goal</label>
-            <input
-              type="number"
-              min="1"
-              max="14"
-              name="weeklyGoal"
-              class="form-control bg-dark text-light border-secondary"
-              value="<%= (user && user.weeklyGoal) || 4 %>"
-            />
-            <small class="text-secondary">
-              How many workouts you’re aiming for each week.
-            </small>
-          </div>
-
-          <button class="btn btn-primary mt-1" type="submit">
-            Save profile
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- THEME + REMINDERS -->
-    <div class="col-lg-6">
-      <!-- Theme -->
-      <div class="glass-card p-4 mb-4">
-        <h5 class="mb-3">Appearance</h5>
-        <p class="text-secondary small mb-3">
-          Switch between light and dark mode.
-        </p>
-
-        <form action="/account/theme" method="POST" class="vstack gap-3">
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="theme"
-              id="themeDark"
-              value="dark"
-              <%= (currentTheme || (user && user.theme) || 'dark') === 'dark' ? 'checked' : '' %>
-            />
-            <label class="form-check-label" for="themeDark">
-              Dark mode
-            </label>
-          </div>
-
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="theme"
-              id="themeLight"
-              value="light"
-              <%= (currentTheme || (user && user.theme)) === 'light' ? 'checked' : '' %>
-            />
-            <label class="form-check-label" for="themeLight">
-              Light mode
-            </label>
-          </div>
-
-          <button class="btn btn-outline-light btn-sm mt-2" type="submit">
-            Update theme
-          </button>
-        </form>
-      </div>
-
-      <!-- Reminders -->
-      <div class="glass-card p-4 mb-4">
-        <h5 class="mb-3">Workout reminders</h5>
-        <p class="text-secondary small mb-3">
-          Let Lets Bet remind you to log a workout.
-        </p>
-
-        <form action="/account/reminders" method="POST" class="vstack gap-3">
-          <div class="form-check form-switch">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="reminderEnabled"
-              name="reminderEnabled"
-              <%= user && user.reminderEnabled ? 'checked' : '' %>
-            />
-            <label class="form-check-label" for="reminderEnabled">
-              Enable reminders
-            </label>
-          </div>
-
-          <div>
-            <label class="form-label">Reminder time</label>
-            <input
-              type="time"
-              name="reminderTime"
-              class="form-control bg-dark text-light border-secondary"
-              value="<%= (user && user.reminderTime) || '18:00' %>"
-            />
-            <small class="text-secondary">
-              Used for future email / push notifications.
-            </small>
-          </div>
-
-          <button class="btn btn-primary mt-1" type="submit">
-            Save reminder settings
-          </button>
-        </form>
-      </div>
+        <button type="submit" class="btn btn-primary w-100 mt-2">Save profile</button>
+      </form>
     </div>
   </div>
 
-  <!-- DANGER ZONE -->
-  <div class="glass-card p-4 border-danger border-opacity-50 mt-2">
-    <h5 class="mb-2 text-danger">Danger zone</h5>
-    <p class="text-secondary small">
-      Delete your account and all workouts. This can’t be undone.
-    </p>
+  <!-- APPEARANCE + REMINDERS -->
+  <div class="col-lg-6">
+    <div class="glass-card p-4 mb-4">
+      <h5 class="mb-3">Appearance</h5>
+      <form action="/account/theme" method="POST">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            name="theme"
+            id="themeDark"
+            value="dark"
+            <%= currentTheme === 'dark' ? 'checked' : '' %>
+          />
+          <label class="form-check-label" for="themeDark">
+            Dark mode (recommended)
+          </label>
+        </div>
+        <div class="form-check mt-2">
+          <input
+            class="form-check-input"
+            type="radio"
+            name="theme"
+            id="themeLight"
+            value="light"
+            <%= currentTheme === 'light' ? 'checked' : '' %>
+          />
+          <label class="form-check-label" for="themeLight">
+            Light mode
+          </label>
+        </div>
+        <button type="submit" class="btn btn-outline-light w-100 mt-3">Save appearance</button>
+      </form>
+    </div>
 
-    <form action="/account/delete" method="POST" onsubmit="return confirm('Really delete your account and all workouts?');">
-      <button type="submit" class="btn btn-danger btn-sm">
-        Delete my account
-      </button>
-    </form>
+    <div class="glass-card p-4 mb-4">
+      <h5 class="mb-3">Workout reminders</h5>
+      <form action="/account/reminder" method="POST">
+        <div class="form-check form-switch mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="reminderEnabled"
+            name="enabled"
+            <%= currentUser.dailyReminderEnabled ? 'checked' : '' %>
+          />
+          <label class="form-check-label" for="reminderEnabled">
+            Enable daily reminder
+          </label>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Reminder time</label>
+          <input
+            type="time"
+            name="time"
+            class="form-control"
+            value="<%= currentUser.dailyReminderTime || '18:00' %>"
+          />
+        </div>
+        <small class="text-secondary">
+          This just stores your preferred time — notifications would be a future feature.
+        </small>
+        <button type="submit" class="btn btn-primary w-100 mt-3">Save reminder settings</button>
+      </form>
+    </div>
   </div>
-</section>
+</div>
+
+<!-- DANGER ZONE -->
+<div class="glass-card p-4 mt-3 border border-danger-subtle" style="background:rgba(127,29,29,0.12);">
+  <h5 class="mb-2 text-danger">Danger zone</h5>
+  <p class="text-secondary mb-3">
+    Deleting your account will remove all workouts and data linked to this login. This cannot be undone.
+  </p>
+  <form action="/account/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+    <button type="submit" class="btn btn-outline-danger">Delete my account</button>
+  </form>
+</div>
 
 <%- include('../partials/footer') %>
