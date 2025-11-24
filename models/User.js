@@ -7,105 +7,80 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      lowercase: true,
       trim: true,
-      lowercase: true
-    },
-    // This stores the **hashed** password
-    password: {
-      type: String,
-      required: true
-    },
-    displayName: {
-      type: String,
-      trim: true
     },
 
-    // Weekly workout goal (used on dashboard/settings)
-    weeklyGoal: {
-      type: Number,
-      default: 4,
-      min: 1,
-      max: 21
+    // Only store the hash
+    passwordHash: {
+      type: String,
+      required: true,
     },
+
+    displayName: { type: String, trim: true },
+
+    // Original fields
+    weeklyGoal: { type: Number, default: 4 },
+    theme: {
+      type: String,
+      enum: ['dark', 'light'],
+      default: 'dark',
+    },
+    profilePhotoUrl: { type: String },
 
     // Profile details
     gender: {
       type: String,
-      enum: ['male', 'female', 'non-binary', 'prefer-not', ''],
-      default: ''
+      enum: ['male', 'female', 'other', 'prefer-not'],
+      default: 'prefer-not',
     },
-    age: {
-      type: Number,
-      min: 0,
-      max: 120
-    },
+    age: { type: Number, min: 0, max: 120 },
 
-    // Height with unit toggle (cm / ft)
-    heightValue: {
-      type: Number,
-      min: 0
-    },
+    heightCm: { type: Number, min: 0 },
     heightUnit: {
       type: String,
       enum: ['cm', 'ft'],
-      default: 'cm'
+      default: 'cm',
     },
 
-    // Weight with unit toggle (kg / lb)
-    weightValue: {
-      type: Number,
-      min: 0
-    },
+    weight: { type: Number, min: 0 },
     weightUnit: {
       type: String,
       enum: ['kg', 'lb'],
-      default: 'kg'
+      default: 'kg',
     },
 
     primaryGoal: {
       type: String,
-      trim: true
+      default: 'general_fitness',
     },
 
     trainingExperience: {
       type: String,
-      trim: true
+      default: 'beginner',
     },
 
-    // Simple reminder preferences (no real notifications yet)
-    reminderEnabled: {
-      type: Boolean,
-      default: false
-    },
-    reminderTime: {
-      type: String, // "18:00" etc
-      default: '18:00'
-    },
-
-    // Optional avatar URL if you decide to hook up uploads later
-    avatarUrl: {
-      type: String,
-      trim: true
-    }
+    reminderEnabled: { type: Boolean, default: false },
+    reminderTime: { type: String, default: '18:00' }, // "HH:MM" 24h
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-// Check a plain-text password against the stored hash
-userSchema.methods.checkPassword = async function (candidatePassword) {
-  try {
-    if (!candidatePassword || !this.password) {
-      return false;
+// Virtual password setter – whenever you assign user.password,
+// it hashes it into passwordHash.
+userSchema
+  .virtual('password')
+  .set(function (plainPassword) {
+    this._password = plainPassword;
+    if (plainPassword && plainPassword.length > 0) {
+      this.passwordHash = bcrypt.hashSync(plainPassword, 10);
     }
-    const match = await bcrypt.compare(candidatePassword, this.password);
-    return match;
-  } catch (err) {
-    console.error('checkPassword error:', err);
-    return false;
-  }
+  });
+
+// Compare a plain password to the stored hash
+userSchema.methods.comparePassword = async function (candidate) {
+  if (!candidate || !this.passwordHash) return false;
+  return bcrypt.compare(candidate, this.passwordHash);
 };
 
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
