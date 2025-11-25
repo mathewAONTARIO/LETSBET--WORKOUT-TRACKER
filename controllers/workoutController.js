@@ -91,16 +91,7 @@ exports.createWorkoutForDate = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const forcedDate = req.params.date; // YYYY-MM-DD from URL
-
-    const {
-      exercise,
-      category,
-      sets,
-      reps,
-      weight,
-      notes,
-      isPR
-    } = req.body;
+    const { exercise, category, sets, reps, weight, notes, isPR } = req.body;
 
     await Workout.create({
       exercise,
@@ -108,7 +99,7 @@ exports.createWorkoutForDate = async (req, res) => {
       sets,
       reps,
       weight,
-      date: forcedDate,   // lock to the day page you’re on
+      date: forcedDate, // lock to the day page you’re on
       notes,
       isPR: isPR === 'on',
       user: userId
