@@ -6,6 +6,8 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
+/* ---------- LIST ---------- */
+
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -25,6 +27,8 @@ exports.getWorkouts = async (req, res) => {
     });
   }
 };
+
+/* ---------- CREATE (NORMAL) ---------- */
 
 exports.showNewForm = (req, res) => {
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -60,6 +64,58 @@ exports.createWorkout = async (req, res) => {
   }
 };
 
+/* ---------- CREATE FOR SPECIFIC DAY (FROM CALENDAR) ---------- */
+
+exports.showNewFormForDate = (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.redirect('/auth/login');
+
+  const dateStr = req.params.date; // YYYY-MM-DD from URL
+  res.render('workouts/new', {
+    currentPath: '/workouts/new',
+    today: dateStr // pre-fill date field with that day
+  });
+};
+
+exports.createWorkoutForDate = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
+    const forcedDate = req.params.date; // YYYY-MM-DD from URL
+
+    const {
+      exercise,
+      category,
+      sets,
+      reps,
+      weight,
+      notes,
+      isPR
+    } = req.body;
+
+    await Workout.create({
+      exercise,
+      category,
+      sets,
+      reps,
+      weight,
+      date: forcedDate,   // lock to the day page you’re on
+      notes,
+      isPR: isPR === 'on',
+      user: userId
+    });
+
+    // After adding, go back to that day’s summary
+    res.redirect(`/workouts/day/${forcedDate}`);
+  } catch (err) {
+    console.error('createWorkoutForDate error:', err);
+    res.redirect('/workouts');
+  }
+};
+
+/* ---------- DUPLICATE ---------- */
+
 exports.duplicateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -90,6 +146,8 @@ exports.duplicateWorkout = async (req, res) => {
     res.redirect('/workouts');
   }
 };
+
+/* ---------- EDIT / UPDATE ---------- */
 
 exports.showEditForm = async (req, res) => {
   try {
@@ -138,6 +196,8 @@ exports.updateWorkout = async (req, res) => {
   }
 };
 
+/* ---------- DELETE (SAFE) ---------- */
+
 exports.showDeleteConfirm = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -159,7 +219,7 @@ exports.showDeleteConfirm = async (req, res) => {
   }
 };
 
-// *** SAFER DELETE – this is the important fix ***
+// safer delete – checks id + user, never crashes
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -187,10 +247,11 @@ exports.deleteWorkout = async (req, res) => {
     return res.redirect('/workouts');
   } catch (err) {
     console.error('deleteWorkout error:', err);
-    // Even if something goes wrong, don’t crash – just go back to list
     return res.redirect('/workouts');
   }
 };
+
+/* ---------- STREAK / STATS / PRS / LIBRARY ---------- */
 
 exports.getStreak = async (req, res) => {
   try {
@@ -359,6 +420,8 @@ exports.getPRs = async (req, res) => {
 exports.getLibrary = (req, res) => {
   res.render('workouts/library', { currentPath: '/workouts/library' });
 };
+
+/* ---------- CALENDAR / DAY SUMMARY ---------- */
 
 exports.getCalendar = async (req, res) => {
   try {
