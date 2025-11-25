@@ -5,60 +5,70 @@ const workoutController = require('../controllers/workoutController');
 
 /* ---------- MAIN LIST ---------- */
 
-// /workouts
+// GET /workouts
 router.get('/', workoutController.getWorkouts);
 
 /* ---------- CREATE (NORMAL) ---------- */
 
-// /workouts/new  (show form)
+// GET /workouts/new  (show blank form for today)
 router.get('/new', workoutController.showNewForm);
 
-// /workouts/new  (handle submit)
+// POST /workouts/new  (create workout with chosen date)
 router.post('/new', workoutController.createWorkout);
 
 /* ---------- CREATE FOR SPECIFIC DAY (FROM CALENDAR) ---------- */
 
-// /workouts/day/2025-11-26/new  (show form for that date)
+// GET /workouts/day/2025-11-26/new  (show form pre-filled with that date)
 router.get('/day/:date/new', workoutController.showNewFormForDate);
 
-// /workouts/day/2025-11-26/new  (submit form for that date)
+// POST /workouts/day/2025-11-26/new  (submit form for that same date)
 router.post('/day/:date/new', workoutController.createWorkoutForDate);
 
 /* ---------- DAY SUMMARY (CALENDAR) ---------- */
 
-// /workouts/day/2025-11-26
+// GET /workouts/day/2025-11-26
 router.get('/day/:date', workoutController.getDaySummary);
 
-/* ---------- STREAK / STATS / LIBRARY / CALENDAR PAGES ---------- */
+/* ---------- STREAK / STATS / PRS / LIBRARY / CALENDAR / SETTINGS ---------- */
 
-// /workouts/streak
+// GET /workouts/streak
 router.get('/streak', workoutController.getStreak);
 
-// /workouts/stats
+// GET /workouts/stats
 router.get('/stats', workoutController.getStats);
 
-// /workouts/stats/prs
+// PRs – make both URLs work:
+//   /workouts/stats/prs   (your current one)
+//   /workouts/prs         (shortcut if you ever link to it)
 router.get('/stats/prs', workoutController.getPRs);
+router.get('/prs', workoutController.getPRs);
 
-// /workouts/library
+// GET /workouts/library
 router.get('/library', workoutController.getLibrary);
 
-// /workouts/calendar
+// GET /workouts/calendar
 router.get('/calendar', workoutController.getCalendar);
+
+// GET /workouts/settings  (simple settings page)
+router.get('/settings', (req, res) => {
+  res.render('workouts/settings', { currentPath: '/workouts/settings' });
+});
 
 /* ---------- DUPLICATE / EDIT / DELETE ---------- */
 
-// /workouts/:id/duplicate
+// GET /workouts/:id/duplicate
 router.get('/:id/duplicate', workoutController.duplicateWorkout);
 
-// /workouts/:id/edit
+// GET /workouts/:id/edit
 router.get('/:id/edit', workoutController.showEditForm);
+
+// POST /workouts/:id/edit
 router.post('/:id/edit', workoutController.updateWorkout);
 
-// /workouts/:id/delete (confirm page)
+// GET /workouts/:id/delete (confirm page)
 router.get('/:id/delete', workoutController.showDeleteConfirm);
 
-// /workouts/:id/delete (form POST)
+// POST /workouts/:id/delete (actually delete)
 router.post('/:id/delete', workoutController.deleteWorkout);
 
 module.exports = router;

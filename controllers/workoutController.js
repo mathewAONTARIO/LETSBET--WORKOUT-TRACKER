@@ -1,5 +1,3 @@
-Here’s your fixed, full workoutController.js with proper local-date handling so the correct day glows on the calendar (and streaks/stats use local dates too).
-
 // controllers/workoutController.js
 const mongoose = require('mongoose');
 const Workout = require('../models/Workout');
