@@ -1,5 +1,5 @@
 LETSBET – Workout Tracker
-This is my INFR3120 Assignment 3 project.  
+This is my Personal Project
 LETSBET is a workout tracker built with Node.js, Express, MongoDB (Mongoose), EJS, Bootstrap, and custom CSS.
 
 Features
