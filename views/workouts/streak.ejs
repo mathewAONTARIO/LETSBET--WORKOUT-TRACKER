@@ -1,48 +1,79 @@
 <%- include('../partials/header', { currentPath: '/workouts/streak' }) %>
 
-<h2 class="mb-1">Your Workouts</h2>
-<p class="text-secondary mb-4">Log your sessions and keep track of what you've done.</p>
+<%
+  // How “full” the streak bar should look (compared to your best streak)
+  const streakPercent = longestStreak
+    ? Math.min(100, Math.round((currentStreak / longestStreak) * 100))
+    : 0;
 
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="glass-card text-light h-100">
-      <div class="card-body p-3">
-        <h6 class="text-uppercase text-secondary mb-2" style="font-size: 0.8rem;">Current Streak</h6>
-        <p class="display-6 fw-bold mb-0"><%= currentStreak %> Days</p>
-        <div class="streak-bar-wrapper">
-          <div class="streak-bar">
-            <% const maxStreak = Math.max(longestStreak || 1, 1); %>
-            <div class="streak-bar-fill" style="width:<%= Math.min(100, (currentStreak / maxStreak) * 100) %>%"></div>
+  const hasWorkouts = totalDays > 0;
+%>
+
+<div class="streak-shell">
+  <h2 class="streak-hero-title">Your streak</h2>
+  <p class="streak-hero-sub">
+    Log your sessions and keep track of how consistent you’ve been.
+  </p>
+
+  <!-- Top cards -->
+  <div class="streak-cards-row">
+    <!-- Current streak -->
+    <div class="streak-card">
+      <div class="streak-label">Current streak</div>
+      <div class="streak-value">
+        <%= currentStreak %> day<%= currentStreak === 1 ? '' : 's' %>
+      </div>
+
+      <div class="streak-bar-wrapper mt-3">
+        <div class="streak-bar">
+          <div
+            class="streak-bar-fill"
+            style="width: <%= streakPercent %>%;">
           </div>
+        </div>
+        <div class="streak-bar-caption">
+          <%= longestStreak ? `Best streak: ${longestStreak} day${longestStreak === 1 ? '' : 's'}` : 'No streak set yet' %>
         </div>
       </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="glass-card text-light h-100">
-      <div class="card-body p-3">
-        <h6 class="text-uppercase text-secondary mb-2" style="font-size: 0.8rem;">Best Streak</h6>
-        <p class="display-6 fw-bold mb-0"><%= longestStreak %> Days</p>
+
+    <!-- Best streak -->
+    <div class="streak-card">
+      <div class="streak-label">Best streak</div>
+      <div class="streak-value">
+        <%= longestStreak %> day<%= longestStreak === 1 ? '' : 's' %>
       </div>
+      <p class="streak-subtext">
+        Longest run of days you’ve trained without missing.
+      </p>
+    </div>
+
+    <!-- Days logged -->
+    <div class="streak-card">
+      <div class="streak-label">Days logged</div>
+      <div class="streak-value"><%= totalDays %></div>
+      <p class="streak-subtext">
+        Unique days you’ve tracked at least one workout.
+      </p>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="glass-card text-light h-100">
-      <div class="card-body p-3">
-        <h6 class="text-uppercase text-secondary mb-2" style="font-size: 0.8rem;">Days Logged</h6>
-        <p class="display-6 fw-bold mb-0"><%= totalDays %></p>
-      </div>
+
+  <!-- Summary / CTAs -->
+  <div class="streak-bottom-row">
+    <div class="streak-summary">
+      <% if (hasWorkouts) { %>
+        Last workout logged:
+        <strong><%= lastWorkoutDate %></strong>
+      <% } else { %>
+        You haven’t logged any workouts yet. Start your streak today.
+      <% } %>
+    </div>
+
+    <div class="streak-actions">
+      <a href="/workouts/new" class="btn btn-primary btn-sm">Add workout</a>
+      <a href="/workouts/calendar" class="btn btn-outline-light btn-sm">Open calendar</a>
     </div>
   </div>
 </div>
-
-<% if (lastWorkoutDate) { %>
-  <p class="text-secondary mb-4">Last workout logged: <%= lastWorkoutDate %></p>
-<% } else { %>
-  <p class="text-secondary mb-4">No workouts logged yet. Start today.</p>
-<% } %>
-
-<a href="/workouts/new" class="btn btn-primary me-2">Add Workout</a>
-<a href="/workouts" class="btn btn-outline-light">View All</a>
 
 <%- include('../partials/footer') %>

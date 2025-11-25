@@ -1,36 +1,48 @@
 <%- include('../partials/header', { currentPath: '/workouts/calendar' }) %>
 
 <h2 class="mb-1">Workouts for <%= selectedDate %></h2>
-<p class="text-secondary mb-4">Here are the sessions you logged on this day.</p>
+<p class="text-secondary mb-3">
+  Here are the sessions you logged on this day.
+</p>
 
-<% if (!workouts || workouts.length === 0) { %>
-  <div class="glass-card p-4 mb-3">
-    <p class="mb-0 text-secondary">No workouts logged for this date.</p>
+<a href="/workouts/new?date=<%= selectedDate %>" class="btn btn-primary mb-3">
+  Add workout for this day
+</a>
+
+<% if (workouts.length === 0) { %>
+  <div class="glass-card mb-3">
+    <div class="card-body">
+      <p class="mb-0 text-secondary">No workouts logged for this date.</p>
+    </div>
   </div>
 <% } else { %>
-  <% workouts.forEach(w => { %>
-    <div class="workout-card">
-      <div class="workout-main">
-        <div class="workout-title">
-          <%= w.exercise %>
-          <% if (w.isPR) { %>
-            <span class="badge-pr">PR</span>
-          <% } %>
+  <div class="glass-card mb-3">
+    <div class="card-body">
+      <% workouts.forEach(w => { %>
+        <div class="workout-card mb-2">
+          <div class="workout-main">
+            <div class="workout-title">
+              <%= w.exercise || 'Workout' %>
+              <% if (w.isPR) { %>
+                <span class="badge-pr">PR</span>
+              <% } %>
+            </div>
+            <div class="workout-meta">
+              <%= w.category || 'Other' %> ·
+              <%= w.sets %> x <%= w.reps %>
+              <% if (w.weight) { %>
+                · <%= w.weight %> kg
+              <% } %>
+            </div>
+          </div>
         </div>
-        <div class="workout-meta">
-          <%= w.sets %> × <%= w.reps %>
-          <% if (w.weight) { %> · <%= w.weight %> kg <% } %>
-          <% if (w.notes) { %> · <%= w.notes %> <% } %>
-        </div>
-      </div>
-      <div class="text-end">
-        <a href="/workouts/<%= w._id %>/edit" class="btn btn-sm btn-outline-light me-2">Edit</a>
-        <a href="/workouts/<%= w._id %>/delete" class="btn btn-sm btn-outline-light">Delete</a>
-      </div>
+      <% }) %>
     </div>
-  <% }) %>
+  </div>
 <% } %>
 
-<a href="/workouts/calendar" class="btn btn-outline-light mt-3">Back to Calendar</a>
+<a href="/workouts/calendar" class="btn btn-outline-light">
+  Back to Calendar
+</a>
 
 <%- include('../partials/footer') %>
