@@ -1,9 +1,19 @@
+Here’s your fixed, full workoutController.js with proper local-date handling so the correct day glows on the calendar (and streaks/stats use local dates too).
+
 // controllers/workoutController.js
 const mongoose = require('mongoose');
 const Workout = require('../models/Workout');
 
 function getUserId(req) {
   return req.session && req.session.userId;
+}
+
+// Format a Date as local YYYY-MM-DD (no UTC shift)
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /* ---------- LIST ---------- */
@@ -31,7 +41,7 @@ exports.getWorkouts = async (req, res) => {
 /* ---------- CREATE (NORMAL) ---------- */
 
 exports.showNewForm = (req, res) => {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = formatLocalDate(new Date());
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: todayStr
@@ -261,7 +271,7 @@ exports.getStreak = async (req, res) => {
     const daySet = new Set();
     workouts.forEach(w => {
       const d = new Date(w.date);
-      const key = d.toISOString().slice(0, 10);
+      const key = formatLocalDate(d);
       daySet.add(key);
     });
 
@@ -272,11 +282,11 @@ exports.getStreak = async (req, res) => {
 
     if (days.length > 0) {
       const today = new Date();
-      const todayKey = today.toISOString().slice(0, 10);
+      const todayKey = formatLocalDate(today);
 
       let cursor = new Date(todayKey);
       while (true) {
-        const key = cursor.toISOString().slice(0, 10);
+        const key = formatLocalDate(cursor);
         if (daySet.has(key)) {
           currentStreak++;
           cursor.setDate(cursor.getDate() - 1);
@@ -338,7 +348,7 @@ exports.getStats = async (req, res) => {
     const volumeByDay = {};
     workouts.forEach(w => {
       const d = new Date(w.date);
-      const key = d.toISOString().slice(0, 10);
+      const key = formatLocalDate(d);
       const weight = w.weight || 1;
       const vol = (w.sets || 0) * (w.reps || 0) * weight;
       volumeByDay[key] = (volumeByDay[key] || 0) + vol;
@@ -458,16 +468,16 @@ exports.getCalendar = async (req, res) => {
     const counts = {};
     workouts.forEach(w => {
       const d = new Date(w.date);
-      const key = d.toISOString().slice(0, 10);
+      const key = formatLocalDate(d);
       counts[key] = (counts[key] || 0) + 1;
     });
 
     const days = [];
     const today = new Date();
-    const todayKey = today.toISOString().slice(0, 10);
+    const todayKey = formatLocalDate(today);
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = d.toISOString().slice(0, 10);
+      const key = formatLocalDate(d);
       const count = counts[key] || 0;
 
       let intensity = 0;
