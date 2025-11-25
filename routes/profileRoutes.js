@@ -1,7 +1,6 @@
 // routes/profileRoutes.js
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 const User = require('../models/User');
 const { requireLogin } = require('../middleware/auth');
@@ -10,20 +9,16 @@ const router = express.Router();
 
 /**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
- * - Ensures the avatars folder exists (fixes 502 on Render)
  */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
-
-    // Make sure the folder exists even on a fresh Render deploy
-    fs.mkdirSync(uploadPath, { recursive: true });
-
-    cb(null, uploadPath);
+    cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
-    cb(null, `${req.user._id}-${Date.now()}${ext}`);
+    // Safety: never crash if req.user is missing
+    const userId = req.user && req.user._id ? String(req.user._id) : 'anon';
+    cb(null, `${userId}-${Date.now()}${ext}`);
   }
 });
 
@@ -51,9 +46,9 @@ router.get('/settings', requireLogin, (req, res) => {
 /**
  * Helper: parse height string
  * Supports:
- *  - 180          (cm)
- *  - 5.11         (feet as decimal)
- *  - 5'11, 5'11"  (feet + inches)
+ *  - 180  (cm or ft depending on unit)
+ *  - 5.11 (feet.decimal)
+ *  - 5'11, 5'11", 5 ft 11 in
  */
 function parseHeight(raw, unit) {
   if (!raw) return null;
@@ -61,7 +56,7 @@ function parseHeight(raw, unit) {
   if (!cleaned) return null;
 
   if (unit === 'ft') {
-    // 5'11 or 5 11
+    // Try 5'11 style
     const match = cleaned.match(/(\d+)\s*'?[\s-]*(\d+)?/);
     if (match) {
       const feet = parseInt(match[1], 10);
@@ -70,7 +65,7 @@ function parseHeight(raw, unit) {
       return Number(totalFeet.toFixed(2));
     }
 
-    // Fallback: 5.9 style
+    // Fallback: feet as decimal
     const asNum = parseFloat(cleaned);
     if (!isNaN(asNum)) return asNum;
     return null;
@@ -96,7 +91,7 @@ router.post(
         return res.redirect('/auth/login');
       }
 
-      // ----- BASIC FIELDS -----
+      // Basic fields
       if (req.body.displayName && req.body.displayName.trim()) {
         user.displayName = req.body.displayName.trim();
       }
@@ -108,7 +103,7 @@ router.post(
         }
       }
 
-      // ----- GENDER / AGE -----
+      // Gender / age
       if (req.body.gender) {
         user.gender = req.body.gender;
       } else {
@@ -122,7 +117,7 @@ router.post(
         }
       }
 
-      // ----- HEIGHT (supports 5'11, 5.11, 180) -----
+      // Height (with unit; allow 5'11, 5.11, 180, etc.)
       const heightUnit = req.body.heightUnit === 'ft' ? 'ft' : 'cm';
       user.heightUnit = heightUnit;
 
@@ -131,7 +126,7 @@ router.post(
         user.heightValue = heightValueParsed;
       }
 
-      // ----- WEIGHT (allow decimals) -----
+      // Weight + unit (allow decimals)
       const weightUnit = req.body.weightUnit === 'lb' ? 'lb' : 'kg';
       user.weightUnit = weightUnit;
 
@@ -142,7 +137,7 @@ router.post(
         }
       }
 
-      // ----- GOAL / EXPERIENCE -----
+      // Goal / experience (align with enum values in User.js)
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
@@ -151,7 +146,7 @@ router.post(
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // ----- PROFILE PHOTO -----
+      // If a file was uploaded, update profilePhotoUrl
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -159,7 +154,7 @@ router.post(
 
       await user.save();
 
-      // Refresh user in session so header + settings see latest data
+      // Keep session + req.user in sync so everything updates instantly
       req.session.user = user;
       req.user = user;
 
@@ -182,7 +177,7 @@ router.post('/theme', requireLogin, async (req, res) => {
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
     await user.save();
 
-    // Sync with session so setTheme picks it up
+    // sync session + req.user
     req.session.user = user;
     req.session.theme = user.theme;
     req.user = user;
