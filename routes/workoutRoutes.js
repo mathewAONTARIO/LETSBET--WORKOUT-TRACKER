@@ -2,38 +2,63 @@
 const express = require('express');
 const router = express.Router();
 const workoutController = require('../controllers/workoutController');
-const { requireAuth } = require('../middleware/auth');
 
-// list
-router.get('/', requireAuth, workoutController.getWorkouts);
+/* ---------- MAIN LIST ---------- */
 
-// new
-router.get('/new', requireAuth, workoutController.showNewForm);
-router.post('/new', requireAuth, workoutController.createWorkout);
+// /workouts
+router.get('/', workoutController.getWorkouts);
 
-// edit
-router.get('/:id/edit', requireAuth, workoutController.showEditForm);
-router.post('/:id/edit', requireAuth, workoutController.updateWorkout);
+/* ---------- CREATE (NORMAL) ---------- */
 
-// duplicate
-router.post('/:id/duplicate', requireAuth, workoutController.duplicateWorkout);
+// /workouts/new  (show form)
+router.get('/new', workoutController.showNewForm);
 
-// optional confirm page (not used right now, but kept safe)
-router.get('/:id/delete/confirm', requireAuth, workoutController.showDeleteConfirm);
+// /workouts/new  (handle submit)
+router.post('/new', workoutController.createWorkout);
 
-// actual delete – this is what the button in list.ejs posts to
-router.post('/:id/delete', requireAuth, workoutController.deleteWorkout);
+/* ---------- CREATE FOR SPECIFIC DAY (FROM CALENDAR) ---------- */
 
-// streak + stats + prs
-router.get('/streak/overview', requireAuth, workoutController.getStreak);
-router.get('/stats', requireAuth, workoutController.getStats);
-router.get('/stats/prs', requireAuth, workoutController.getPRs);
+// /workouts/day/2025-11-26/new  (show form for that date)
+router.get('/day/:date/new', workoutController.showNewFormForDate);
 
-// library
-router.get('/library', requireAuth, workoutController.getLibrary);
+// /workouts/day/2025-11-26/new  (submit form for that date)
+router.post('/day/:date/new', workoutController.createWorkoutForDate);
 
-// calendar
-router.get('/calendar', requireAuth, workoutController.getCalendar);
-router.get('/day/:date', requireAuth, workoutController.getDaySummary);
+/* ---------- DAY SUMMARY (CALENDAR) ---------- */
+
+// /workouts/day/2025-11-26
+router.get('/day/:date', workoutController.getDaySummary);
+
+/* ---------- STREAK / STATS / LIBRARY / CALENDAR PAGES ---------- */
+
+// /workouts/streak
+router.get('/streak', workoutController.getStreak);
+
+// /workouts/stats
+router.get('/stats', workoutController.getStats);
+
+// /workouts/stats/prs
+router.get('/stats/prs', workoutController.getPRs);
+
+// /workouts/library
+router.get('/library', workoutController.getLibrary);
+
+// /workouts/calendar
+router.get('/calendar', workoutController.getCalendar);
+
+/* ---------- DUPLICATE / EDIT / DELETE ---------- */
+
+// /workouts/:id/duplicate
+router.get('/:id/duplicate', workoutController.duplicateWorkout);
+
+// /workouts/:id/edit
+router.get('/:id/edit', workoutController.showEditForm);
+router.post('/:id/edit', workoutController.updateWorkout);
+
+// /workouts/:id/delete (confirm page)
+router.get('/:id/delete', workoutController.showDeleteConfirm);
+
+// /workouts/:id/delete (form POST)
+router.post('/:id/delete', workoutController.deleteWorkout);
 
 module.exports = router;
