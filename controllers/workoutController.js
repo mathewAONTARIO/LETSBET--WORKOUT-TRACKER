@@ -1,3 +1,5 @@
+// controllers/workoutController.js
+const mongoose = require('mongoose');
 const Workout = require('../models/Workout');
 
 function getUserId(req) {
@@ -24,17 +26,11 @@ exports.getWorkouts = async (req, res) => {
   }
 };
 
-// UPDATED: can pre-fill the date from ?date=YYYY-MM-DD (used by calendar/day view)
 exports.showNewForm = (req, res) => {
-  const userId = getUserId(req);
-  if (!userId) return res.redirect('/auth/login');
-
-  // If a date was passed in the query, use it; otherwise default to today
-  const prefillDate = req.query.date || new Date().toISOString().slice(0, 10);
-
+  const todayStr = new Date().toISOString().slice(0, 10);
   res.render('workouts/new', {
     currentPath: '/workouts/new',
-    today: prefillDate
+    today: todayStr
   });
 };
 
@@ -163,19 +159,36 @@ exports.showDeleteConfirm = async (req, res) => {
   }
 };
 
+// *** SAFER DELETE – this is the important fix ***
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
+    const { id } = req.params;
 
-    await Workout.findOneAndDelete({
-      _id: req.params.id,
+    if (!userId) {
+      console.warn('deleteWorkout: no user in session');
+      return res.redirect('/auth/login');
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.warn('deleteWorkout: invalid workout id', id);
+      return res.redirect('/workouts');
+    }
+
+    const deleted = await Workout.findOneAndDelete({
+      _id: id,
       user: userId
     });
 
-    res.redirect('/workouts');
+    if (!deleted) {
+      console.warn('deleteWorkout: nothing deleted for id', id);
+    }
+
+    return res.redirect('/workouts');
   } catch (err) {
     console.error('deleteWorkout error:', err);
-    res.redirect('/workouts');
+    // Even if something goes wrong, don’t crash – just go back to list
+    return res.redirect('/workouts');
   }
 };
 

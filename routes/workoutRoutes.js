@@ -1,34 +1,39 @@
+// routes/workoutRoutes.js
 const express = require('express');
 const router = express.Router();
 const workoutController = require('../controllers/workoutController');
-const { requireLogin } = require('../middleware/auth');
-const User = require('../models/User');
+const { requireAuth } = require('../middleware/auth');
 
-router.get('/', requireLogin, workoutController.getWorkouts);
-router.get('/new', requireLogin, workoutController.showNewForm);
-router.post('/', requireLogin, workoutController.createWorkout);
+// list
+router.get('/', requireAuth, workoutController.getWorkouts);
 
-router.get('/streak', requireLogin, workoutController.getStreak);
-router.get('/stats', requireLogin, workoutController.getStats);
-router.get('/prs', requireLogin, workoutController.getPRs);
-router.get('/library', requireLogin, workoutController.getLibrary);
+// new
+router.get('/new', requireAuth, workoutController.showNewForm);
+router.post('/new', requireAuth, workoutController.createWorkout);
 
-router.get('/calendar', requireLogin, workoutController.getCalendar);
-router.get('/day/:date', requireLogin, workoutController.getDaySummary);
+// edit
+router.get('/:id/edit', requireAuth, workoutController.showEditForm);
+router.post('/:id/edit', requireAuth, workoutController.updateWorkout);
 
-router.get('/settings', requireLogin, async (req, res) => {
-  const user = await User.findById(req.session.userId).lean();
+// duplicate
+router.post('/:id/duplicate', requireAuth, workoutController.duplicateWorkout);
 
-  res.render('workouts/settings', {
-    currentPath: '/workouts/settings',
-    user
-  });
-});
+// optional confirm page (not used right now, but kept safe)
+router.get('/:id/delete/confirm', requireAuth, workoutController.showDeleteConfirm);
 
-router.post('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
-router.get('/:id/edit', requireLogin, workoutController.showEditForm);
-router.post('/:id/edit', requireLogin, workoutController.updateWorkout);
-router.get('/:id/delete', requireLogin, workoutController.showDeleteConfirm);
-router.post('/:id/delete', requireLogin, workoutController.deleteWorkout);
+// actual delete – this is what the button in list.ejs posts to
+router.post('/:id/delete', requireAuth, workoutController.deleteWorkout);
+
+// streak + stats + prs
+router.get('/streak/overview', requireAuth, workoutController.getStreak);
+router.get('/stats', requireAuth, workoutController.getStats);
+router.get('/stats/prs', requireAuth, workoutController.getPRs);
+
+// library
+router.get('/library', requireAuth, workoutController.getLibrary);
+
+// calendar
+router.get('/calendar', requireAuth, workoutController.getCalendar);
+router.get('/day/:date', requireAuth, workoutController.getDaySummary);
 
 module.exports = router;
