@@ -1,86 +1,132 @@
 <%- include('../partials/header', { currentPath: '/workouts/stats' }) %>
 
-<div class="main-shell">
-  <h2 class="mb-1">Stats</h2>
-  <p class="text-secondary mb-4">
-    See how your training volume is trending over time.
+<h2 class="mb-1">Stats</h2>
+<p class="text-secondary mb-4">
+  See how your training is trending over time.
+</p>
+
+<div class="streak-grid mb-4" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+  <div class="streak-card">
+    <div class="streak-label">Total workouts logged</div>
+    <div class="streak-value"><%= totalWorkouts %></div>
+    <div class="streak-subtext">All time on Letsbet Fit.</div>
+  </div>
+
+  <div class="streak-card">
+    <div class="streak-label">Total volume entered</div>
+    <div class="streak-value">
+      <%= totalWeight.toLocaleString() %>
+    </div>
+    <div class="streak-subtext">Sum of sets × reps × weight.</div>
+  </div>
+
+  <div class="streak-card">
+    <div class="streak-label">Average last 30 days</div>
+    <div class="streak-value">
+      <% const daysCount = JSON.parse(chartLabels || '[]').length || 1; %>
+      <% const avg30 = daysCount ? Math.round(totalWeight / daysCount) : 0; %>
+      <%= avg30.toLocaleString() %>
+    </div>
+    <div class="streak-subtext">
+      Approx. daily volume over your recent month.
+    </div>
+  </div>
+</div>
+
+<div class="glass-card p-4 mb-4">
+  <h5 class="mb-3">Volume over time (last 30 days)</h5>
+  <p class="text-secondary mb-3" style="font-size: 0.9rem;">
+    Each point is the total volume you logged that day (sets × reps × weight).
   </p>
 
-  <!-- Top summary row -->
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">
-            Total workouts
-          </span>
-          <span style="font-size: 0.85rem; opacity: 0.8;">Lifetime</span>
-        </div>
-        <div style="font-size: 1.8rem; font-weight: 700;">
-          <%= totalWorkouts %>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">
-            Total volume
-          </span>
-          <span style="font-size: 0.85rem; opacity: 0.8;">sets × reps × weight</span>
-        </div>
-        <div style="font-size: 1.5rem; font-weight: 700;">
-          <%= totalWeight.toLocaleString() %>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-4">
-      <div class="glass-card p-3 h-100 d-flex flex-column justify-content-between">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="text-secondary" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em;">
-            Personal bests
-          </span>
-          <span style="font-size: 0.85rem; opacity: 0.8;">Tracked by exercise</span>
-        </div>
-        <div style="font-size: 1.5rem; font-weight: 700;">
-          <%= prs.length %> PR<%= prs.length === 1 ? '' : 's' %>
-        </div>
-      </div>
-    </div>
+  <div style="height: 260px;">
+    <canvas id="volumeChart"></canvas>
   </div>
+</div>
 
-  <!-- Volume chart card -->
-  <div class="glass-card p-4 mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 class="mb-0">Volume over time</h5>
-      <small class="text-secondary">
-        Last 12 training days · Volume = sets × reps × weight
-      </small>
+<div class="glass-card p-4">
+  <h5 class="mb-3">Personal bests</h5>
+
+  <% if (prs && prs.length > 0) { %>
+    <div class="table-responsive">
+      <table class="table table-dark table-borderless align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Exercise</th>
+            <th scope="col">Best weight</th>
+            <th scope="col">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% prs.forEach(function(pr) { %>
+            <tr>
+              <td><%= pr.exercise %></td>
+              <td><%= pr.weight %></td>
+              <td><%= pr.date %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
+  <% } else { %>
+    <p class="text-secondary mb-0" style="font-size: 0.9rem;">
+      Log some workouts and mark them as PRs to see them here.
+    </p>
+  <% } %>
+</div>
 
-    <% if (JSON.parse(labels || '[]').length === 0) { %>
-      <p class="text-secondary mb-0" style="font-size: 0.9rem;">
-        Log a few workouts with weight to see your training volume chart.
-      </p>
-    <% } else { %>
-      <div style="width: 100%; max-width: 100%; height: 260px;">
-        <canvas id="volumeChart"></canvas>
-      </div>
-    <% } %>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function () {
+    try {
+      const labels = <%- chartLabels || '[]' %>;
+      const data = <%- chartData || '[]' %>;
 
-  <!-- PR table -->
-  <div class="glass-card p-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h5 class="mb-0">Personal records</h5>
-      <small class="text-secondary">Mark sets as PR when you log a workout.</small>
-    </div>
+      const ctx = document.getElementById('volumeChart');
+      if (!ctx) return;
 
-    <% if (prs.length === 0) { %>
-      <p class="text-secondary mb-0" style="font-size: 0.9rem;">
-        No PRs yet. Log some heavy sets and mark them as “PR” to track your best lifts.
-      </p>
-    <% } else { %>
-      <
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Volume (sets × reps × weight)',
+              data,
+              tension: 0.35,
+              fill: true,
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: {
+                maxTicksLimit: 6
+              }
+            },
+            y: {
+              beginAtZero: true
+            }
+          },
+          plugins: {
+            legend: {
+              display: true
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          }
+        }
+      });
+    } catch (e) {
+      console.error('Stats chart error', e);
+    }
+  })();
+</script>
+
+<%- include('../partials/footer') %>

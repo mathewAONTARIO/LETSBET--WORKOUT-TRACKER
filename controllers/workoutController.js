@@ -6,14 +6,6 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-// Format a Date as local YYYY-MM-DD (no UTC shift)
-function formatLocalDate(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
 /* ---------- LIST ---------- */
 
 exports.getWorkouts = async (req, res) => {
@@ -39,7 +31,7 @@ exports.getWorkouts = async (req, res) => {
 /* ---------- CREATE (NORMAL) ---------- */
 
 exports.showNewForm = (req, res) => {
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   // Normal "Add Workout" form
   res.render('workouts/new', {
@@ -98,15 +90,7 @@ exports.createWorkoutForDate = async (req, res) => {
 
     const forcedDate = req.params.date; // YYYY-MM-DD from URL
 
-    const {
-      exercise,
-      category,
-      sets,
-      reps,
-      weight,
-      notes,
-      isPR
-    } = req.body;
+    const { exercise, category, sets, reps, weight, notes, isPR } = req.body;
 
     await Workout.create({
       exercise,
@@ -275,7 +259,7 @@ exports.getStreak = async (req, res) => {
     const daySet = new Set();
     workouts.forEach(w => {
       const d = new Date(w.date);
-      const key = formatLocalDate(d);
+      const key = d.toISOString().slice(0, 10);
       daySet.add(key);
     });
 
@@ -286,11 +270,11 @@ exports.getStreak = async (req, res) => {
 
     if (days.length > 0) {
       const today = new Date();
-      const todayKey = formatLocalDate(today);
+      const todayKey = today.toISOString().slice(0, 10);
 
       let cursor = new Date(todayKey);
       while (true) {
-        const key = formatLocalDate(cursor);
+        const key = cursor.toISOString().slice(0, 10);
         if (daySet.has(key)) {
           currentStreak++;
           cursor.setDate(cursor.getDate() - 1);
@@ -338,49 +322,88 @@ exports.getStreak = async (req, res) => {
   }
 };
 
+/**
+ * Nicer stats:
+ * - Total workouts + volume
+ * - Line chart for LAST 30 DAYS only (shorter, cleaner)
+ * - PR list stays the same
+ */
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const totalWorkouts = workouts.length;
     const totalWeight = workouts.reduce((sum, w) => {
       const weight = w.weight || 0;
-      return sum + weight * (w.sets || 1) * (w.reps || 1);
+      const sets = w.sets || 0;
+      const reps = w.reps || 0;
+      return sum + weight * sets * reps;
     }, 0);
 
-    const volumeByDay = {};
+    // ----- Build volume over LAST 30 DAYS -----
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const start = new Date(today);
+    start.setDate(start.getDate() - 29); // 30 days including today
+
+    const volumeByDay = new Map(); // key: YYYY-MM-DD, value: volume
+
     workouts.forEach(w => {
+      if (!w.date) return;
+
       const d = new Date(w.date);
-      const key = formatLocalDate(d);
-      const weight = w.weight || 1;
-      const vol = (w.sets || 0) * (w.reps || 0) * weight;
-      volumeByDay[key] = (volumeByDay[key] || 0) + vol;
+      d.setHours(0, 0, 0, 0);
+
+      if (d < start || d > today) return; // ignore outside 30-day window
+
+      const key = d.toISOString().slice(0, 10);
+      const sets = w.sets || 0;
+      const reps = w.reps || 0;
+      const weight = w.weight || 0;
+      const vol = sets * reps * weight;
+
+      volumeByDay.set(key, (volumeByDay.get(key) || 0) + vol);
     });
 
-    const dayKeys = Object.keys(volumeByDay).sort();
-    const labelsArr = dayKeys;
-    const dataArr = dayKeys.map(k => volumeByDay[k]);
+    const chartLabels = [];
+    const chartData = [];
 
+    const cursor = new Date(start);
+    while (cursor <= today) {
+      const key = cursor.toISOString().slice(0, 10);
+      chartLabels.push(key);
+      chartData.push(volumeByDay.get(key) || 0);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    // ----- Personal records (same idea as before) -----
     const prMap = {};
     workouts.forEach(w => {
       if (!w.isPR || !w.weight) return;
-      if (!prMap[w.exercise] || w.weight > prMap[w.exercise]) {
-        prMap[w.exercise] = w.weight;
+      if (!prMap[w.exercise] || w.weight > prMap[w.exercise].weight) {
+        prMap[w.exercise] = {
+          weight: w.weight,
+          date: w.date
+        };
       }
     });
 
     const prs = Object.keys(prMap).map(ex => ({
       exercise: ex,
-      weight: prMap[ex]
+      weight: prMap[ex].weight,
+      date: prMap[ex].date.toLocaleDateString()
     }));
 
     res.render('workouts/stats', {
       totalWorkouts,
       totalWeight,
       prs,
-      labels: JSON.stringify(labelsArr),
-      data: JSON.stringify(dataArr),
+      chartLabels: JSON.stringify(chartLabels),
+      chartData: JSON.stringify(chartData),
       currentPath: '/workouts/stats'
     });
   } catch (err) {
@@ -389,8 +412,8 @@ exports.getStats = async (req, res) => {
       totalWorkouts: 0,
       totalWeight: 0,
       prs: [],
-      labels: JSON.stringify([]),
-      data: JSON.stringify([]),
+      chartLabels: JSON.stringify([]),
+      chartData: JSON.stringify([]),
       currentPath: '/workouts/stats'
     });
   }
@@ -472,16 +495,16 @@ exports.getCalendar = async (req, res) => {
     const counts = {};
     workouts.forEach(w => {
       const d = new Date(w.date);
-      const key = formatLocalDate(d);
+      const key = d.toISOString().slice(0, 10);
       counts[key] = (counts[key] || 0) + 1;
     });
 
     const days = [];
     const today = new Date();
-    const todayKey = formatLocalDate(today);
+    const todayKey = today.toISOString().slice(0, 10);
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = formatLocalDate(d);
+      const key = d.toISOString().slice(0, 10);
       const count = counts[key] || 0;
 
       let intensity = 0;
@@ -489,17 +512,13 @@ exports.getCalendar = async (req, res) => {
       else if (count > 1 && count <= 3) intensity = 2;
       else if (count > 3) intensity = 3;
 
-      const isToday = key === todayKey;
-      const isFuture = key > todayKey;
-
       days.push({
         label: key,
         day: d.getDate(),
         inMonth: d.getMonth() === monthIndex,
         intensity,
         hasWorkout: count > 0,
-        isToday,
-        isFuture
+        isToday: key === todayKey
       });
     }
 
