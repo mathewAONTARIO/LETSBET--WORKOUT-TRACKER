@@ -9,6 +9,7 @@ const router = express.Router();
 
 /**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
+ * (now safe even if req.user is undefined)
  */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -16,7 +17,16 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
-    cb(null, `${req.user._id}-${Date.now()}${ext}`);
+
+    // Safely derive some kind of user id for the filename
+    let userId = 'anon';
+    if (req && req.user && req.user._id) {
+      userId = req.user._id.toString();
+    } else if (req && req.session && req.session.user && req.session.user._id) {
+      userId = req.session.user._id.toString();
+    }
+
+    cb(null, `${userId}-${Date.now()}${ext}`);
   }
 });
 
@@ -51,11 +61,10 @@ router.get('/settings', requireLogin, (req, res) => {
 function parseHeight(raw, unit) {
   if (!raw) return null;
   const cleaned = String(raw).trim();
-
   if (!cleaned) return null;
 
   if (unit === 'ft') {
-    // Try 5'11 style
+    // Try formats like 5'11 or 5 11
     const match = cleaned.match(/(\d+)\s*'?[\s-]*(\d+)?/);
     if (match) {
       const feet = parseInt(match[1], 10);
@@ -64,7 +73,7 @@ function parseHeight(raw, unit) {
       return Number(totalFeet.toFixed(2));
     }
 
-    // Fallback: feet as decimal
+    // Fallback: feet as decimal (e.g., 5.9)
     const asNum = parseFloat(cleaned);
     if (!isNaN(asNum)) return asNum;
     return null;
@@ -90,7 +99,7 @@ router.post(
         return res.redirect('/auth/login');
       }
 
-      // Basic fields
+      // ----- BASIC FIELDS -----
       if (req.body.displayName && req.body.displayName.trim()) {
         user.displayName = req.body.displayName.trim();
       }
@@ -102,7 +111,7 @@ router.post(
         }
       }
 
-      // Gender / age
+      // ----- GENDER / AGE -----
       if (req.body.gender) {
         user.gender = req.body.gender;
       } else {
@@ -116,7 +125,7 @@ router.post(
         }
       }
 
-      // Height (with unit; allow 5'11, 5.11, 180, etc.)
+      // ----- HEIGHT (supports 5'11, 5.11, 180, etc.) -----
       const heightUnit = req.body.heightUnit === 'ft' ? 'ft' : 'cm';
       user.heightUnit = heightUnit;
 
@@ -125,7 +134,7 @@ router.post(
         user.heightValue = heightValueParsed;
       }
 
-      // Weight + unit (allow decimals)
+      // ----- WEIGHT (allow decimals) -----
       const weightUnit = req.body.weightUnit === 'lb' ? 'lb' : 'kg';
       user.weightUnit = weightUnit;
 
@@ -136,7 +145,7 @@ router.post(
         }
       }
 
-      // Goal / experience (align with enum values)
+      // ----- GOAL / EXPERIENCE (matches enum values in User model) -----
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
@@ -145,7 +154,7 @@ router.post(
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // If a file was uploaded, update profilePhotoUrl
+      // ----- PROFILE PHOTO -----
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -153,7 +162,7 @@ router.post(
 
       await user.save();
 
-      // refresh user in session so header avatar + theme use latest info
+      // Refresh user in session so header + settings reflect latest info
       req.session.user = user;
       req.user = user;
 
@@ -175,6 +184,7 @@ router.post('/theme', requireLogin, async (req, res) => {
 
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
     await user.save();
+
     req.session.user = user;
     req.user = user;
 
@@ -197,6 +207,7 @@ router.post('/reminder', requireLogin, async (req, res) => {
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
+
     req.session.user = user;
     req.user = user;
 
