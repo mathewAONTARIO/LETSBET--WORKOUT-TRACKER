@@ -1,98 +1,72 @@
-<%- include('../partials/header', { currentPath: '/workouts/new' }) %>
+<%- include('../partials/header', { currentPath: '/workouts' }) %>
 
-<h2 class="mb-1">Add Workout</h2>
-<p class="text-secondary mb-4">
-  Log a new training session. You can tweak the date to log for any day.
-</p>
+<div class="main-shell">
+  <h2 class="mb-1">Add Workout</h2>
+  <p class="text-secondary mb-4">
+    Log a new workout session.
+  </p>
 
-<div class="glass-card mb-4">
-  <div class="card-body">
-    <form action="/workouts" method="POST" class="row g-3">
-
+  <form action="<%= formAction %>" method="POST" class="glass-card p-4">
+    <div class="row g-3">
       <div class="col-md-6">
-        <label class="form-label" for="exercise">Exercise</label>
+        <label class="form-label">Exercise</label>
         <input
           type="text"
-          id="exercise"
           name="exercise"
           class="form-control"
-          placeholder="Bench press, squat, pull-ups..."
+          placeholder="bench press, pull ups, run, etc."
           required
-        >
+        />
       </div>
 
       <div class="col-md-6">
-        <label class="form-label" for="category">Category</label>
-        <select id="category" name="category" class="form-select" required>
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
           <option value="Upper Body">Upper Body</option>
           <option value="Lower Body">Lower Body</option>
           <option value="Push">Push</option>
           <option value="Pull">Pull</option>
+          <option value="Legs">Legs</option>
           <option value="Full Body">Full Body</option>
           <option value="Cardio">Cardio</option>
           <option value="Core">Core</option>
-          <option value="Other" selected>Other</option>
+          <option value="Other">Other</option>
         </select>
       </div>
 
       <div class="col-md-3">
-        <label class="form-label" for="sets">Sets</label>
-        <input
-          type="number"
-          id="sets"
-          name="sets"
-          class="form-control"
-          value="3"
-          min="1"
-          required
-        >
+        <label class="form-label">Sets</label>
+        <input type="number" name="sets" class="form-control" value="3" min="1" />
       </div>
 
       <div class="col-md-3">
-        <label class="form-label" for="reps">Reps</label>
-        <input
-          type="number"
-          id="reps"
-          name="reps"
-          class="form-control"
-          value="10"
-          min="1"
-          required
-        >
+        <label class="form-label">Reps</label>
+        <input type="number" name="reps" class="form-control" value="8" min="1" />
       </div>
 
       <div class="col-md-3">
-        <label class="form-label" for="weight">Weight (kg)</label>
-        <input
-          type="number"
-          step="0.5"
-          id="weight"
-          name="weight"
-          class="form-control"
-          placeholder="e.g. 60"
-        >
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" name="weight" class="form-control" value="0" min="0" />
       </div>
 
       <div class="col-md-3">
-        <label class="form-label" for="date">Date</label>
+        <label class="form-label">Date</label>
         <input
           type="date"
-          id="date"
           name="date"
           class="form-control"
           value="<%= today %>"
           required
-        >
+        />
       </div>
 
       <div class="col-12">
-        <label class="form-label" for="notes">Notes</label>
+        <label class="form-label">Notes</label>
         <textarea
-          id="notes"
           name="notes"
           class="form-control"
           rows="3"
-          placeholder="How it felt, RPE, anything you want to remember..."
+          placeholder="How did it feel? PRs, tempo, etc."
         ></textarea>
       </div>
 
@@ -101,22 +75,21 @@
           <input
             class="form-check-input"
             type="checkbox"
-            value="on"
             id="isPR"
             name="isPR"
-          >
+          />
           <label class="form-check-label" for="isPR">
             Mark as PR (personal record)
           </label>
         </div>
       </div>
+    </div>
 
-      <div class="col-12 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Save workout</button>
-        <a href="/workouts" class="btn btn-outline-light">Cancel</a>
-      </div>
-    </form>
-  </div>
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Save Workout</button>
+      <a href="/workouts" class="btn btn-outline-light">Cancel</a>
+    </div>
+  </form>
 </div>
 
 <%- include('../partials/footer') %>
