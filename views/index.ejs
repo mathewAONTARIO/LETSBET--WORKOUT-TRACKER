@@ -1,88 +1,118 @@
-<%- include('./partials/header', { currentPath: '/' }) %>
+<%- include('partials/header', { currentPath: '/' }) %>
 
-<section class="hero text-center mb-5">
-  <h1 class="display-4 fw-bold mb-3">
-    <% if (currentUser) { %>
-      Welcome back, <%= currentUser.displayName || 'coach' %>.
+<section class="hero">
+  <h1>Lets Bet – Keep Going</h1>
+  <p class="mt-2 mb-4">
+    Log your workouts, stack your streaks, and keep betting on yourself. 
+    Simple, clean, and built for consistency.
+  </p>
+
+  <div class="d-flex justify-content-center gap-3 mb-4">
+    <% if (!currentUser) { %>
+      <a href="/auth/register" class="btn btn-primary px-4">Get Started</a>
+      <a href="/auth/login" class="btn btn-outline-light px-4">Log In</a>
     <% } else { %>
-      Lets Bet – Keep Going
-    <% } %>
-  </h1>
-
-  <% if (currentUser) { %>
-    <p class="lead mb-4">Track your workouts, stay consistent, and keep betting on yourself.</p>
-  <% } else { %>
-    <p class="lead mb-4">Create an account to track your workouts, stay consistent, and keep betting on yourself.</p>
-  <% } %>
-
-  <div class="d-flex justify-content-center gap-3">
-    <% if (currentUser) { %>
-      <a href="/workouts" class="btn btn-primary btn-lg">See Workouts</a>
-      <a href="/workouts/new" class="btn btn-outline-light btn-lg">Add a Workout</a>
-    <% } else { %>
-      <a href="/auth/register" class="btn btn-primary btn-lg">Get Started</a>
-      <a href="/auth/login" class="btn btn-outline-light btn-lg">Log In</a>
+      <a href="/workouts/new" class="btn btn-primary px-4">Log a Workout</a>
+      <a href="/workouts" class="btn btn-outline-light px-4">View All Workouts</a>
     <% } %>
   </div>
 </section>
 
-<section class="home-stats mb-5">
-  <div class="row g-4">
-    <div class="col-md-3">
-      <div class="glass-card p-4">
-        <p class="text-secondary text-uppercase small mb-2">This Week</p>
-        <p class="stat-value h4 mb-0"><%= weeklyWorkouts %> Workouts</p>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="glass-card p-4">
-        <p class="text-secondary text-uppercase small mb-2">Weekly Volume</p>
-        <p class="stat-value h4 mb-0"><%= weeklyVolume %></p>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="glass-card p-4">
-        <p class="text-secondary text-uppercase small mb-2">Best Day</p>
-        <p class="stat-value h4 mb-0"><%= bestDay || '—' %></p>
-      </div>
-    </div>
-
-    <div class="col-md-3">
-      <div class="glass-card p-4">
-        <p class="text-secondary text-uppercase small mb-2">Weekly Goal</p>
-        <div class="progress" style="height: 8px;">
-          <div
-            class="progress-bar bg-primary"
-            role="progressbar"
-            style="width: <%= weeklyProgressPercent || 0 %>%">
-          </div>
-        </div>
-        <p class="stat-value h6 mt-2 mb-0">
-          <%= weeklyWorkouts %> / <%= weeklyGoal %> this week
-        </p>
-        <p class="text-secondary mb-0 mt-1" style="font-size:0.85rem;">
-          <%= weeklyProgressPercent.toFixed ? weeklyProgressPercent.toFixed(0) : weeklyProgressPercent %>% of your weekly goal
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="mb-5">
-  <div class="glass-card p-4">
-    <p class="text-secondary text-uppercase small mb-2">Workout of the Day</p>
-    <% if (workoutOfDay) { %>
-      <h5 class="mb-1"><%= workoutOfDay.exercise %></h5>
-      <p class="mb-0">
-        <%= workoutOfDay.sets %> × <%= workoutOfDay.reps %>
-        <% if (workoutOfDay.weight) { %> · <%= workoutOfDay.weight %> kg <% } %>
+<section class="mt-4">
+  <div class="home-stats-grid">
+    <div class="home-stat-card">
+      <div class="home-stat-label">This Week</div>
+      <div class="home-stat-value"><%= weeklyWorkouts || 0 %> Workouts</div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        Keep the streak alive.
       </p>
+    </div>
+
+    <div class="home-stat-card">
+      <div class="home-stat-label">Weekly Volume</div>
+      <div class="home-stat-value"><%= weeklyVolume || 0 %></div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        Sets × reps × weight.
+      </p>
+    </div>
+
+    <div class="home-stat-card">
+      <div class="home-stat-label">Best Day</div>
+      <div class="home-stat-value"><%= bestDay || '—' %></div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        The day you moved the most.
+      </p>
+    </div>
+
+    <div class="home-stat-card">
+      <div class="home-stat-label">Weekly Goal</div>
+      <div class="home-stat-value">
+        <%= weeklyWorkouts || 0 %> / <%= weeklyGoal || 4 %> this week
+      </div>
+      <div class="mt-2 streak-bar">
+        <div
+          class="streak-bar-fill"
+          style="width: <%= weeklyProgressPercent || 0 %>%"
+        ></div>
+      </div>
+      <p class="text-secondary mb-0 mt-1" style="font-size: 0.8rem;">
+        <%= Math.round(weeklyProgressPercent || 0) %>% of your goal.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="mt-4">
+  <div class="glass-card p-4">
+    <h5 class="mb-2">Workout of the Day</h5>
+
+    <% if (workoutOfDay) { %>
+      <p class="text-secondary mb-3" style="font-size: 0.9rem;">
+        Your most recent session.
+      </p>
+
+      <div class="workout-card mb-0">
+        <div class="workout-main">
+          <div class="workout-title">
+            <%= workoutOfDay.exercise %>
+            <% if (workoutOfDay.category) { %>
+              <span class="badge-category badge-<%= workoutOfDay.category.toLowerCase() %> ms-2">
+                <%= workoutOfDay.category %>
+              </span>
+            <% } %>
+          </div>
+          <div class="workout-meta">
+            <%= workoutOfDay.sets %>×<%= workoutOfDay.reps %>
+            <% if (workoutOfDay.weight) { %>
+              @ <%= workoutOfDay.weight %> kg
+            <% } %>
+            ·
+            <%= new Date(workoutOfDay.date).toLocaleDateString() %>
+          </div>
+          <% if (workoutOfDay.notes) { %>
+            <div class="text-secondary" style="font-size: 0.85rem;">
+              "<%= workoutOfDay.notes %>"
+            </div>
+          <% } %>
+        </div>
+
+        <div class="workout-actions">
+          <a href="/workouts" class="btn btn-outline-light btn-sm">
+            View All
+          </a>
+          <form action="/workouts/duplicate/<%= workoutOfDay._id %>" method="POST">
+            <button type="submit" class="btn btn-primary btn-sm">
+              Repeat This
+            </button>
+          </form>
+        </div>
+      </div>
     <% } else { %>
-      <p class="mb-0 text-secondary">Log a workout to see it here.</p>
+      <p class="text-secondary mb-0" style="font-size: 0.9rem;">
+        Log a workout to see your latest session featured here.
+      </p>
     <% } %>
   </div>
 </section>
 
-<%- include('./partials/footer') %>
+<%- include('partials/footer') %>
