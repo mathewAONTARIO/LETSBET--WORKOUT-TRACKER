@@ -1,6 +1,7 @@
 // routes/profileRoutes.js
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const User = require('../models/User');
 const { requireLogin } = require('../middleware/auth');
@@ -9,24 +10,20 @@ const router = express.Router();
 
 /**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
- * (now safe even if req.user is undefined)
+ * - Ensures the avatars folder exists (fixes 502 on Render)
  */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
+    const uploadPath = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+
+    // Make sure the folder exists even on a fresh Render deploy
+    fs.mkdirSync(uploadPath, { recursive: true });
+
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
-
-    // Safely derive some kind of user id for the filename
-    let userId = 'anon';
-    if (req && req.user && req.user._id) {
-      userId = req.user._id.toString();
-    } else if (req && req.session && req.session.user && req.session.user._id) {
-      userId = req.session.user._id.toString();
-    }
-
-    cb(null, `${userId}-${Date.now()}${ext}`);
+    cb(null, `${req.user._id}-${Date.now()}${ext}`);
   }
 });
 
@@ -54,9 +51,9 @@ router.get('/settings', requireLogin, (req, res) => {
 /**
  * Helper: parse height string
  * Supports:
- *  - 180  (cm or ft depending on unit)
- *  - 5.11 (feet.decimal)
- *  - 5'11, 5'11", 5 ft 11 in
+ *  - 180          (cm)
+ *  - 5.11         (feet as decimal)
+ *  - 5'11, 5'11"  (feet + inches)
  */
 function parseHeight(raw, unit) {
   if (!raw) return null;
@@ -64,7 +61,7 @@ function parseHeight(raw, unit) {
   if (!cleaned) return null;
 
   if (unit === 'ft') {
-    // Try formats like 5'11 or 5 11
+    // 5'11 or 5 11
     const match = cleaned.match(/(\d+)\s*'?[\s-]*(\d+)?/);
     if (match) {
       const feet = parseInt(match[1], 10);
@@ -73,7 +70,7 @@ function parseHeight(raw, unit) {
       return Number(totalFeet.toFixed(2));
     }
 
-    // Fallback: feet as decimal (e.g., 5.9)
+    // Fallback: 5.9 style
     const asNum = parseFloat(cleaned);
     if (!isNaN(asNum)) return asNum;
     return null;
@@ -125,7 +122,7 @@ router.post(
         }
       }
 
-      // ----- HEIGHT (supports 5'11, 5.11, 180, etc.) -----
+      // ----- HEIGHT (supports 5'11, 5.11, 180) -----
       const heightUnit = req.body.heightUnit === 'ft' ? 'ft' : 'cm';
       user.heightUnit = heightUnit;
 
@@ -145,7 +142,7 @@ router.post(
         }
       }
 
-      // ----- GOAL / EXPERIENCE (matches enum values in User model) -----
+      // ----- GOAL / EXPERIENCE -----
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
@@ -162,7 +159,7 @@ router.post(
 
       await user.save();
 
-      // Refresh user in session so header + settings reflect latest info
+      // Refresh user in session so header + settings see latest data
       req.session.user = user;
       req.user = user;
 
@@ -185,7 +182,9 @@ router.post('/theme', requireLogin, async (req, res) => {
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
     await user.save();
 
+    // Sync with session so setTheme picks it up
     req.session.user = user;
+    req.session.theme = user.theme;
     req.user = user;
 
     res.redirect('/workouts/settings');
@@ -207,7 +206,6 @@ router.post('/reminder', requireLogin, async (req, res) => {
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
-
     req.session.user = user;
     req.user = user;
 

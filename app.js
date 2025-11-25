@@ -23,13 +23,15 @@ app.set('views', path.join(__dirname, 'views'));
 // Body + static
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve uploaded avatars (and other uploads) as static files
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Sessions
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'devsecret',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: false
   })
 );
 
