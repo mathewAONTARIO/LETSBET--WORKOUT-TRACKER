@@ -6,12 +6,29 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-// Format a Date as local YYYY-MM-DD (no UTC shift)
+/* Helpers: local (America/Toronto) date -------------------------- */
+
+// Format a Date as YYYY-MM-DD using its *local* fields
 function formatLocalDate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+// Get "today" as a Date object in America/Toronto local time
+function getTodayLocalDate() {
+  const now = new Date();
+  // Convert to America/Toronto string, then back into a Date
+  const estString = now.toLocaleString('en-US', {
+    timeZone: 'America/Toronto',
+  });
+  return new Date(estString);
+}
+
+// Convenience: get today as YYYY-MM-DD in America/Toronto
+function getTodayLocalKey() {
+  return formatLocalDate(getTodayLocalDate());
 }
 
 /* ---------- LIST ---------- */
@@ -25,13 +42,13 @@ exports.getWorkouts = async (req, res) => {
 
     res.render('workouts/list', {
       workouts,
-      currentPath: '/workouts'
+      currentPath: '/workouts',
     });
   } catch (err) {
     console.error('getWorkouts error:', err);
     res.render('workouts/list', {
       workouts: [],
-      currentPath: '/workouts'
+      currentPath: '/workouts',
     });
   }
 };
@@ -39,10 +56,10 @@ exports.getWorkouts = async (req, res) => {
 /* ---------- CREATE (NORMAL) ---------- */
 
 exports.showNewForm = (req, res) => {
-  const todayStr = formatLocalDate(new Date());
+  const todayStr = getTodayLocalKey();
   res.render('workouts/new', {
     currentPath: '/workouts/new',
-    today: todayStr
+    today: todayStr,
   });
 };
 
@@ -62,7 +79,7 @@ exports.createWorkout = async (req, res) => {
       date,
       notes,
       isPR: isPR === 'on',
-      user: userId
+      user: userId,
     });
 
     res.redirect('/workouts');
@@ -81,7 +98,7 @@ exports.showNewFormForDate = (req, res) => {
   const dateStr = req.params.date; // YYYY-MM-DD from URL
   res.render('workouts/new', {
     currentPath: '/workouts/new',
-    today: dateStr // pre-fill date field with that day
+    today: dateStr, // pre-fill date field with that day
   });
 };
 
@@ -102,7 +119,7 @@ exports.createWorkoutForDate = async (req, res) => {
       date: forcedDate, // lock to the day page you’re on
       notes,
       isPR: isPR === 'on',
-      user: userId
+      user: userId,
     });
 
     // After adding, go back to that day’s summary
@@ -122,7 +139,7 @@ exports.duplicateWorkout = async (req, res) => {
 
     const original = await Workout.findOne({
       _id: req.params.id,
-      user: userId
+      user: userId,
     });
 
     if (!original) return res.redirect('/workouts');
@@ -133,10 +150,10 @@ exports.duplicateWorkout = async (req, res) => {
       sets: original.sets,
       reps: original.reps,
       weight: original.weight,
-      date: new Date(),
+      date: new Date(), // today
       notes: original.notes,
       isPR: false,
-      user: userId
+      user: userId,
     });
 
     res.redirect('/workouts');
@@ -154,14 +171,14 @@ exports.showEditForm = async (req, res) => {
 
     const workout = await Workout.findOne({
       _id: req.params.id,
-      user: userId
+      user: userId,
     });
 
     if (!workout) return res.redirect('/workouts');
 
     res.render('workouts/edit', {
       workout,
-      currentPath: '/workouts'
+      currentPath: '/workouts',
     });
   } catch (err) {
     console.error('showEditForm error:', err);
@@ -184,7 +201,7 @@ exports.updateWorkout = async (req, res) => {
         weight,
         date,
         notes,
-        isPR: isPR === 'on'
+        isPR: isPR === 'on',
       }
     );
 
@@ -203,14 +220,14 @@ exports.showDeleteConfirm = async (req, res) => {
 
     const workout = await Workout.findOne({
       _id: req.params.id,
-      user: userId
+      user: userId,
     });
 
     if (!workout) return res.redirect('/workouts');
 
     res.render('workouts/delete', {
       workout,
-      currentPath: '/workouts'
+      currentPath: '/workouts',
     });
   } catch (err) {
     console.error('showDeleteConfirm error:', err);
@@ -236,7 +253,7 @@ exports.deleteWorkout = async (req, res) => {
 
     const deleted = await Workout.findOneAndDelete({
       _id: id,
-      user: userId
+      user: userId,
     });
 
     if (!deleted) {
@@ -258,7 +275,7 @@ exports.getStreak = async (req, res) => {
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const daySet = new Set();
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       const d = new Date(w.date);
       const key = formatLocalDate(d);
       daySet.add(key);
@@ -270,10 +287,12 @@ exports.getStreak = async (req, res) => {
     let longestStreak = 0;
 
     if (days.length > 0) {
-      const today = new Date();
+      const today = getTodayLocalDate();
       const todayKey = formatLocalDate(today);
 
-      let cursor = new Date(todayKey);
+      // Start cursor at local "today"
+      let cursor = new Date(today);
+
       while (true) {
         const key = formatLocalDate(cursor);
         if (daySet.has(key)) {
@@ -309,7 +328,7 @@ exports.getStreak = async (req, res) => {
       longestStreak,
       totalDays,
       lastWorkoutDate,
-      currentPath: '/workouts/streak'
+      currentPath: '/workouts/streak',
     });
   } catch (err) {
     console.error('getStreak error:', err);
@@ -318,7 +337,7 @@ exports.getStreak = async (req, res) => {
       longestStreak: 0,
       totalDays: 0,
       lastWorkoutDate: null,
-      currentPath: '/workouts/streak'
+      currentPath: '/workouts/streak',
     });
   }
 };
@@ -335,7 +354,7 @@ exports.getStats = async (req, res) => {
     }, 0);
 
     const volumeByDay = {};
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       const d = new Date(w.date);
       const key = formatLocalDate(d);
       const weight = w.weight || 1;
@@ -345,19 +364,19 @@ exports.getStats = async (req, res) => {
 
     const dayKeys = Object.keys(volumeByDay).sort();
     const labelsArr = dayKeys;
-    const dataArr = dayKeys.map(k => volumeByDay[k]);
+    const dataArr = dayKeys.map((k) => volumeByDay[k]);
 
     const prMap = {};
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       if (!w.isPR || !w.weight) return;
       if (!prMap[w.exercise] || w.weight > prMap[w.exercise]) {
         prMap[w.exercise] = w.weight;
       }
     });
 
-    const prs = Object.keys(prMap).map(ex => ({
+    const prs = Object.keys(prMap).map((ex) => ({
       exercise: ex,
-      weight: prMap[ex]
+      weight: prMap[ex],
     }));
 
     res.render('workouts/stats', {
@@ -366,7 +385,7 @@ exports.getStats = async (req, res) => {
       prs,
       labels: JSON.stringify(labelsArr),
       data: JSON.stringify(dataArr),
-      currentPath: '/workouts/stats'
+      currentPath: '/workouts/stats',
     });
   } catch (err) {
     console.error('getStats error:', err);
@@ -376,7 +395,7 @@ exports.getStats = async (req, res) => {
       prs: [],
       labels: JSON.stringify([]),
       data: JSON.stringify([]),
-      currentPath: '/workouts/stats'
+      currentPath: '/workouts/stats',
     });
   }
 };
@@ -387,31 +406,31 @@ exports.getPRs = async (req, res) => {
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const prMap = {};
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       if (!w.isPR || !w.weight) return;
       if (!prMap[w.exercise] || w.weight > prMap[w.exercise].weight) {
         prMap[w.exercise] = {
           weight: w.weight,
-          date: w.date
+          date: w.date,
         };
       }
     });
 
-    const prs = Object.keys(prMap).map(ex => ({
+    const prs = Object.keys(prMap).map((ex) => ({
       exercise: ex,
       weight: prMap[ex].weight,
-      date: prMap[ex].date.toLocaleDateString()
+      date: prMap[ex].date.toLocaleDateString(),
     }));
 
     res.render('workouts/prs', {
       prs,
-      currentPath: '/workouts/stats'
+      currentPath: '/workouts/stats',
     });
   } catch (err) {
     console.error('getPRs error:', err);
     res.render('workouts/prs', {
       prs: [],
-      currentPath: '/workouts/stats'
+      currentPath: '/workouts/stats',
     });
   }
 };
@@ -434,7 +453,7 @@ exports.getCalendar = async (req, res) => {
       const monthIndex = parseInt(monthStr, 10) - 1;
       baseDate = new Date(year, monthIndex, 1);
     } else {
-      baseDate = new Date();
+      baseDate = getTodayLocalDate();
     }
 
     const year = baseDate.getFullYear();
@@ -451,19 +470,18 @@ exports.getCalendar = async (req, res) => {
 
     const workouts = await Workout.find({
       user: userId,
-      date: { $gte: start, $lte: end }
+      date: { $gte: start, $lte: end },
     }).sort({ date: 1 });
 
     const counts = {};
-    workouts.forEach(w => {
+    workouts.forEach((w) => {
       const d = new Date(w.date);
       const key = formatLocalDate(d);
       counts[key] = (counts[key] || 0) + 1;
     });
 
     const days = [];
-    const today = new Date();
-    const todayKey = formatLocalDate(today);
+    const todayKey = getTodayLocalKey();
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = formatLocalDate(d);
@@ -480,13 +498,13 @@ exports.getCalendar = async (req, res) => {
         inMonth: d.getMonth() === monthIndex,
         intensity,
         hasWorkout: count > 0,
-        isToday: key === todayKey
+        isToday: key === todayKey,
       });
     }
 
     const monthLabel = firstOfMonth.toLocaleDateString('en-US', {
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
     });
 
     const prevMonth = new Date(year, monthIndex - 1, 1);
@@ -504,7 +522,7 @@ exports.getCalendar = async (req, res) => {
       monthLabel,
       prevMonthParam,
       nextMonthParam,
-      currentPath: '/workouts/calendar'
+      currentPath: '/workouts/calendar',
     });
   } catch (err) {
     console.error('getCalendar error:', err);
@@ -513,7 +531,7 @@ exports.getCalendar = async (req, res) => {
       monthLabel: '',
       prevMonthParam: '',
       nextMonthParam: '',
-      currentPath: '/workouts/calendar'
+      currentPath: '/workouts/calendar',
     });
   }
 };
@@ -528,13 +546,13 @@ exports.getDaySummary = async (req, res) => {
 
     const workouts = await Workout.find({
       user: userId,
-      date: { $gte: day, $lt: nextDay }
+      date: { $gte: day, $lt: nextDay },
     }).sort({ date: 1 });
 
     res.render('workouts/day', {
       workouts,
       selectedDate: req.params.date,
-      currentPath: '/workouts/calendar'
+      currentPath: '/workouts/calendar',
     });
   } catch (err) {
     console.error('getDaySummary error:', err);
