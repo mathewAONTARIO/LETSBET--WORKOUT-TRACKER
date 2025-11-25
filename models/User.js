@@ -1,4 +1,4 @@
-// models/User.js
+ // models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 4
     },
+
     profilePhotoUrl: {
       type: String
     },
@@ -40,13 +41,14 @@ const userSchema = new mongoose.Schema(
       enum: ['male', 'female', 'non-binary', 'prefer-not-to-say', 'other'],
       default: 'prefer-not-to-say'
     },
+
     age: {
       type: Number,
       min: 0,
       max: 130
     },
 
-    // Height with unit
+    // Height with unit (e.g. 180 + 'cm' OR 5.92 + 'ft')
     heightValue: {
       type: Number,
       min: 0
@@ -84,11 +86,7 @@ const userSchema = new mongoose.Schema(
 
     trainingExperience: {
       type: String,
-      enum: [
-        'beginner-0-6',
-        'intermediate-6-24',
-        'advanced-24-plus'
-      ],
+      enum: ['beginner-0-6', 'intermediate-6-24', 'advanced-24-plus'],
       default: 'beginner-0-6'
     },
 
