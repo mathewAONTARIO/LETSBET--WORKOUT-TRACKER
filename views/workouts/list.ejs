@@ -1,55 +1,46 @@
 <%- include('../partials/header', { currentPath: '/workouts' }) %>
 
-<h2 class="mb-3">Workouts</h2>
+<h2 class="mb-1">Workouts</h2>
 <p class="text-secondary mb-4">All workouts logged for your account.</p>
 
-<div class="mb-3">
-  <a href="/workouts/new" class="btn btn-primary">Add Workout</a>
-</div>
+<a href="/workouts/new" class="btn btn-primary mb-3">Add Workout</a>
 
-<% if (!workouts || workouts.length === 0) { %>
-  <p class="text-secondary">You haven’t logged any workouts yet. Hit “Add Workout” to start.</p>
-<% } else { %>
-  <% workouts.forEach(workout => { %>
-    <div class="workout-card">
-      <div class="workout-main">
-        <div class="workout-title">
-          <%= workout.name %>
-          <% if (workout.isPR) { %>
-            <span class="badge-pr">PR</span>
-          <% } %>
-        </div>
-        <div class="workout-meta">
-          <%= workout.type || 'Other' %> ·
-          <%= workout.sets %> x <%= workout.reps %>
-          <% if (workout.weight && workout.weight > 0) { %>
-            · <%= workout.weight %> <%= workout.weightUnit || 'kg' %>
-          <% } %>
-          · <%= workout.displayDate %>
-        </div>
+<% if (workouts.length === 0) { %>
+  <p class="text-secondary">No workouts logged yet. Start today.</p>
+<% } %>
+
+<% workouts.forEach(workout => { %>
+  <div class="workout-card">
+
+    <div class="workout-main">
+
+      <!-- Title = Exercise name (FIXED) -->
+      <div class="workout-title">
+        <%= workout.exercise || 'Workout' %>
+
+        <% if (workout.isPR) { %>
+          <span class="badge-pr">PR</span>
+        <% } %>
       </div>
 
-      <div class="d-flex gap-2">
-        <!-- Duplicate uses POST -->
-        <form action="/workouts/<%= workout._id %>/duplicate" method="POST">
-          <button type="submit" class="btn btn-outline-light btn-sm">Duplicate</button>
-        </form>
-
-        <!-- Edit goes to edit page -->
-        <a href="/workouts/<%= workout._id %>/edit" class="btn btn-outline-light btn-sm">
-          Edit
-        </a>
-
-        <!-- New: Delete button → confirm page -->
-        <a
-          href="/workouts/<%= workout._id %>/delete"
-          class="btn btn-outline-danger btn-sm"
-        >
-          Delete
-        </a>
+      <!-- Meta info -->
+      <div class="workout-meta">
+        <%= workout.category || 'Other' %> ·
+        <%= workout.sets %> x <%= workout.reps %> ·
+        <%= workout.weight %> kg ·
+        <span class="badge-date">
+          <%= workout.date.toLocaleDateString() %>
+        </span>
       </div>
     </div>
-  <% }) %>
-<% } %>
+
+    <div class="workout-actions">
+      <a href="/workouts/<%= workout._id %>/duplicate" class="btn btn-outline-light btn-sm">Duplicate</a>
+      <a href="/workouts/<%= workout._id %>/edit" class="btn btn-outline-light btn-sm">Edit</a>
+      <a href="/workouts/<%= workout._id %>/delete" class="btn btn-outline-danger btn-sm">Delete</a>
+    </div>
+
+  </div>
+<% }) %>
 
 <%- include('../partials/footer') %>
