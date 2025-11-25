@@ -346,6 +346,7 @@ exports.getCalendar = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
+    // Decide which month we're showing
     let baseDate;
     if (req.query.month) {
       const [yearStr, monthStr] = req.query.month.split('-');
@@ -362,17 +363,21 @@ exports.getCalendar = async (req, res) => {
     const firstOfMonth = new Date(year, monthIndex, 1);
     const lastOfMonth = new Date(year, monthIndex + 1, 0);
 
+    // Start from the Sunday before (or equal to) the 1st of the month
     const start = new Date(firstOfMonth);
     start.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
 
+    // End on the Saturday after (or equal to) the last day of the month
     const end = new Date(lastOfMonth);
     end.setDate(lastOfMonth.getDate() + (6 - lastOfMonth.getDay()));
 
+    // Pull workouts only for the visible range
     const workouts = await Workout.find({
       user: userId,
       date: { $gte: start, $lte: end }
     }).sort({ date: 1 });
 
+    // Count workouts per day
     const counts = {};
     workouts.forEach(w => {
       const d = new Date(w.date);
@@ -380,10 +385,15 @@ exports.getCalendar = async (req, res) => {
       counts[key] = (counts[key] || 0) + 1;
     });
 
-    const days = [];
-    const today = new Date();
-    const todayKey = today.toISOString().slice(0, 10);
+    // Local "today" string (fixes the 24 vs 25 glow issue)
+    const now = new Date();
+    const todayKey = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0')
+    ].join('-');
 
+    const days = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = d.toISOString().slice(0, 10);
       const count = counts[key] || 0;

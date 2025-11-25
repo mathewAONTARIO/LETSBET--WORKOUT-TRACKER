@@ -1,11 +1,6 @@
-/* --------------------- BASE / DARK MODE --------------------- */
-
 body {
   background: radial-gradient(circle at top, #1f2937, #020617);
   min-height: 100vh;
-  color: #e5e7eb; /* make text light in dark mode */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
 }
 
 .navbar-brand {
@@ -17,32 +12,16 @@ body {
 }
 
 @keyframes heartbeat {
-  0% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  25% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 0.95;
-  }
-  60% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
+  0% { transform: scale(1); opacity: 0.9; }
+  25% { transform: scale(1.12); opacity: 1; }
+  40% { transform: scale(1); opacity: 0.95; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.9; }
 }
 
 .nav-link {
   position: relative;
   font-weight: 500;
-  color: #e5e7eb !important;
 }
 
 .nav-link::after {
@@ -78,7 +57,6 @@ body {
 
 a {
   text-decoration: none;
-  color: inherit;
 }
 
 a:hover {
@@ -100,7 +78,7 @@ a:hover {
   width: 480px;
   height: 480px;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.35), transparent 60%);
+  background: radial-gradient(circle, rgba(59,130,246,0.35), transparent 60%);
   filter: blur(4px);
   z-index: -1;
 }
@@ -112,7 +90,6 @@ a:hover {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(12px);
   animation: fadeUp 0.35s ease-out;
-  color: #e5e7eb;
 }
 
 @keyframes fadeUp {
@@ -137,7 +114,6 @@ a:hover {
   gap: 12px;
   margin-bottom: 12px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-  color: #e5e7eb;
 }
 
 .workout-card:hover {
@@ -155,7 +131,6 @@ a:hover {
 .workout-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #f9fafb;
 }
 
 .workout-meta {
@@ -172,57 +147,21 @@ a:hover {
   border: 1px solid rgba(148, 163, 184, 0.5);
 }
 
-.badge-push {
-  background: rgba(37, 99, 235, 0.2);
-  border-color: #60a5fa;
-  color: #bfdbfe;
-}
-.badge-pull {
-  background: rgba(129, 140, 248, 0.2);
-  border-color: #a5b4fc;
-  color: #e0e7ff;
-}
-.badge-legs {
-  background: rgba(34, 197, 94, 0.22);
-  border-color: #6ee7b7;
-  color: #bbf7d0;
-}
-.badge-upper {
-  background: rgba(59, 130, 246, 0.18);
-  border-color: #93c5fd;
-  color: #dbeafe;
-}
-.badge-lower {
-  background: rgba(251, 146, 60, 0.18);
-  border-color: #fed7aa;
-  color: #ffedd5;
-}
-.badge-cardio {
-  background: rgba(248, 113, 113, 0.18);
-  border-color: #fecaca;
-  color: #fee2e2;
-}
-.badge-core {
-  background: rgba(244, 114, 182, 0.18);
-  border-color: #f9a8d4;
-  color: #fce7f3;
-}
-.badge-full {
-  background: rgba(34, 197, 235, 0.18);
-  border-color: #67e8f9;
-  color: #cffafe;
-}
-.badge-other {
-  background: rgba(31, 41, 55, 0.9);
-  border-color: #6b7280;
-  color: #e5e7eb;
-}
+.badge-push { background: rgba(37,99,235,0.2); border-color:#60a5fa; color:#bfdbfe; }
+.badge-pull { background: rgba(129,140,248,0.2); border-color:#a5b4fc; color:#e0e7ff; }
+.badge-legs { background: rgba(34,197,94,0.22); border-color:#6ee7b7; color:#bbf7d0; }
+.badge-upper { background: rgba(59,130,246,0.18); border-color:#93c5fd; color:#dbeafe; }
+.badge-lower { background: rgba(251,146,60,0.18); border-color:#fed7aa; color:#ffedd5; }
+.badge-cardio { background: rgba(248,113,113,0.18); border-color:#fecaca; color:#fee2e2; }
+.badge-core { background: rgba(244,114,182,0.18); border-color:#f9a8d4; color:#fce7f3; }
+.badge-full { background: rgba(34,197,235,0.18); border-color:#67e8f9; color:#cffafe; }
+.badge-other { background: rgba(31,41,55,0.9); border-color:#6b7280; color:#e5e7eb; }
 
 .badge-pr {
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 0.7rem;
-  background: rgba(249, 115, 22, 0.18);
+  background: rgba(249,115,22,0.18);
   border: 1px solid #fdba74;
   color: #fed7aa;
   margin-left: 6px;
@@ -247,7 +186,7 @@ a:hover {
   width: 100%;
   height: 8px;
   border-radius: 999px;
-  background: rgba(31, 41, 55, 0.9);
+  background: rgba(31,41,55,0.9);
   overflow: hidden;
 }
 
@@ -279,7 +218,21 @@ a:hover {
   text-decoration: none;
 }
 
-/* Calendar */
+/* CALENDAR LAYOUT ------------------------ */
+
+.calendar-shell {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  text-align: center;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  color: #9ca3af;
+}
 
 .calendar-grid {
   display: grid;
@@ -295,7 +248,7 @@ a:hover {
   color: #9ca3af;
   border: 1px solid rgba(55, 65, 81, 0.9);
   padding: 8px 0;
-  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+  transition: background 0.18s ease, transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .calendar-day.has-workout {
@@ -303,9 +256,8 @@ a:hover {
 }
 
 .calendar-day.today {
-  outline: 2px solid #f97316;
-  outline-offset: 2px;
-  box-shadow: 0 0 18px rgba(249, 115, 22, 0.6);
+  box-shadow: 0 0 0 2px #f97316;
+  border-color: #f97316;
 }
 
 .calendar-day:hover {
@@ -330,6 +282,74 @@ a:hover {
   color: #f9fafb;
 }
 
+.calendar-day-outside {
+  opacity: 0.35;
+}
+
+/* Mini streak row above calendar */
+.calendar-streak-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.calendar-streak-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.5);
+  background: rgba(15,23,42,0.85);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.calendar-streak-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.calendar-streak-value {
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.calendar-streak-secondary {
+  font-size: 0.8rem;
+}
+
+/* LIBRARY ------------------------ */
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.library-card {
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid rgba(148,163,184,0.3);
+  background: rgba(15,23,42,0.9);
+}
+
+.library-card-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.library-card-sub {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+/* FOOTER / PROFILE PILL ------------------------ */
+
 .footer-text {
   font-size: 0.8rem;
   color: #6b7280;
@@ -345,9 +365,8 @@ a:hover {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(75, 85, 99, 0.9);
-  color: #e5e7eb;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(75,85,99,0.9);
 }
 
 .avatar-circle {
@@ -363,25 +382,11 @@ a:hover {
   font-weight: 600;
 }
 
-/* Mini streak in calendar header */
-
-.calendar-streak-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(59, 130, 246, 0.7);
-  font-size: 0.8rem;
-  color: #e5e7eb;
-}
-
-/* --------------------- READABLE LIGHT THEME --------------------- */
+/* LIGHT THEME ------------------------ */
 
 body.theme-light {
-  background: #e5edf7;
-  color: #020617;
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 body.theme-light .navbar {
@@ -390,39 +395,35 @@ body.theme-light .navbar {
 }
 
 body.theme-light .navbar-brand span {
-  color: #020617;
+  color: #0f172a;
 }
 
 body.theme-light .nav-link {
-  color: #1e293b !important;
+  color: #334155 !important;
   font-weight: 600;
 }
 
 body.theme-light .nav-link.active {
-  color: #020617 !important;
+  color: #0f172a !important;
   border-bottom: 2px solid #2563eb;
-}
-
-body.theme-light .hero {
-  color: #020617;
 }
 
 body.theme-light .glass-card {
   background: #ffffff;
   border-color: #cbd5e1;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
-  color: #020617;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+  color: #0f172a;
 }
 
 body.theme-light .workout-card {
   background: #ffffff;
   border-color: #cbd5e1;
-  color: #020617;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
 body.theme-light .workout-title {
-  color: #020617;
+  color: #0f172a;
 }
 
 body.theme-light .workout-meta {
@@ -430,7 +431,7 @@ body.theme-light .workout-meta {
 }
 
 body.theme-light .text-secondary {
-  color: #475569 !important;
+  color: #64748b !important;
 }
 
 body.theme-light .calendar-day {
@@ -446,23 +447,22 @@ body.theme-light .calendar-day.has-workout {
 }
 
 body.theme-light .calendar-day.today {
-  outline: 3px solid #f97316;
-  outline-offset: 2px;
-  box-shadow: 0 0 22px rgba(249, 115, 22, 0.5);
+  box-shadow: 0 0 0 3px #f97316;
+  border-color: #f97316;
 }
 
 body.theme-light .calendar-day.intensity-1 {
-  background: rgba(37, 99, 235, 0.16);
+  background: rgba(37,99,235,0.16);
   color: #1e3a8a;
 }
 
 body.theme-light .calendar-day.intensity-2 {
-  background: rgba(37, 99, 235, 0.32);
+  background: rgba(37,99,235,0.32);
   color: #1e3a8a;
 }
 
 body.theme-light .calendar-day.intensity-3 {
-  background: rgba(37, 99, 235, 0.55);
+  background: rgba(37,99,235,0.55);
   color: white;
 }
 
@@ -473,7 +473,7 @@ body.theme-light .footer-text {
 body.theme-light .profile-pill {
   background: #ffffff;
   border-color: #cbd5e1;
-  color: #020617;
+  color: #0f172a;
 }
 
 body.theme-light .avatar-circle {
@@ -500,5 +500,14 @@ body.theme-light a:hover {
 @media (max-width: 767px) {
   .hero {
     padding-top: 3rem;
+  }
+
+  .calendar-streak-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .calendar-shell {
+    padding: 0 8px;
   }
 }
