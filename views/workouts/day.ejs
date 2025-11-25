@@ -1,47 +1,35 @@
 <%- include('../partials/header', { currentPath: '/workouts/calendar' }) %>
 
 <h2 class="mb-1">Workouts for <%= selectedDate %></h2>
-<p class="text-secondary mb-3">
-  Here are the sessions you logged on this day.
-</p>
+<p class="text-secondary mb-3">Here are the sessions you logged on this day.</p>
 
-<a href="/workouts/new?date=<%= selectedDate %>" class="btn btn-primary mb-3">
-  Add workout for this day
+<a href="/workouts/day/<%= selectedDate %>/new" class="btn btn-primary mb-3">
+  Add Workout for <%= selectedDate %>
 </a>
 
 <% if (workouts.length === 0) { %>
-  <div class="glass-card mb-3">
-    <div class="card-body">
-      <p class="mb-0 text-secondary">No workouts logged for this date.</p>
-    </div>
+  <div class="glass-card p-3 mb-3">
+    <p class="text-secondary">No workouts logged for this date.</p>
   </div>
 <% } else { %>
-  <div class="glass-card mb-3">
-    <div class="card-body">
-      <% workouts.forEach(w => { %>
-        <div class="workout-card mb-2">
-          <div class="workout-main">
-            <div class="workout-title">
-              <%= w.exercise || 'Workout' %>
-              <% if (w.isPR) { %>
-                <span class="badge-pr">PR</span>
-              <% } %>
-            </div>
-            <div class="workout-meta">
-              <%= w.category || 'Other' %> ·
-              <%= w.sets %> x <%= w.reps %>
-              <% if (w.weight) { %>
-                · <%= w.weight %> kg
-              <% } %>
-            </div>
-          </div>
+  <% workouts.forEach(w => { %>
+    <div class="workout-card mb-3">
+      <div>
+        <div class="workout-title"><%= w.exercise %></div>
+        <div class="workout-meta">
+          <%= w.sets %> x <%= w.reps %> · <%= w.weight %> kg · <%= w.category %>
         </div>
-      <% }) %>
+      </div>
+
+      <div class="workout-actions">
+        <a href="/workouts/<%= w._id %>/edit" class="btn btn-outline-light btn-sm">Edit</a>
+        <a href="/workouts/<%= w._id %>/delete" class="btn btn-outline-danger btn-sm">Delete</a>
+      </div>
     </div>
-  </div>
+  <% }) %>
 <% } %>
 
-<a href="/workouts/calendar" class="btn btn-outline-light">
+<a href="/workouts/calendar" class="btn btn-outline-light mt-3">
   Back to Calendar
 </a>
 
