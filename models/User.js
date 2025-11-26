@@ -31,7 +31,6 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 4
     },
-
     profilePhotoUrl: {
       type: String
     },
@@ -41,14 +40,14 @@ const userSchema = new mongoose.Schema(
       enum: ['male', 'female', 'non-binary', 'prefer-not-to-say', 'other'],
       default: 'prefer-not-to-say'
     },
-
     age: {
       type: Number,
       min: 0,
       max: 130
     },
 
-    // Height with unit (e.g. 180 + 'cm' OR 5.92 + 'ft')
+    // Height with unit
+    // heightValue is numeric; unit decides if it's cm or feet.
     heightValue: {
       type: Number,
       min: 0

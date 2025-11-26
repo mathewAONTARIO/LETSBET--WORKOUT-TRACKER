@@ -1,6 +1,7 @@
 // routes/profileRoutes.js
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const multer = require('multer');
 const User = require('../models/User');
 const { requireLogin } = require('../middleware/auth');
@@ -8,17 +9,23 @@ const { requireLogin } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * Ensure upload directory exists
+ */
+const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+/**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
  */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
-    // Safety: never crash if req.user is missing
-    const userId = req.user && req.user._id ? String(req.user._id) : 'anon';
-    cb(null, `${userId}-${Date.now()}${ext}`);
+    cb(null, `${req.user._id}-${Date.now()}${ext}`);
   }
 });
 
@@ -34,48 +41,58 @@ const upload = multer({
 });
 
 /**
+ * HELPER PARSERS
+ */
+
+// Parse height allowing: "180", "180.5" (cm) OR "5'11", "5 11", "5.11" (ft)
+function parseHeight(raw, unit) {
+  if (!raw) return null;
+  let value = String(raw).trim();
+  if (!value) return null;
+
+  if (unit === 'ft') {
+    // Look for 5'11 or 5’11
+    const match = value.match(/^(\d+)\s*['’]\s*(\d+)?/);
+    if (match) {
+      const feet = parseInt(match[1], 10) || 0;
+      const inches = match[2] ? parseInt(match[2], 10) || 0 : 0;
+      return feet + inches / 12;
+    }
+
+    // Fall back to float feet (e.g., 5.9)
+    value = value.replace(/[^0-9.]/g, '');
+    const ftFloat = parseFloat(value);
+    return Number.isNaN(ftFloat) ? null : ftFloat;
+  }
+
+  // cm
+  value = value.replace(/[^0-9.]/g, '');
+  const cm = parseFloat(value);
+  return Number.isNaN(cm) ? null : cm;
+}
+
+// Parse numeric weight with "."
+function parseWeight(raw) {
+  if (!raw) return null;
+  let value = String(raw).trim();
+  if (!value) return null;
+
+  value = value.replace(/[^0-9.]/g, '');
+  const num = parseFloat(value);
+  return Number.isNaN(num) ? null : num;
+}
+
+/**
  * SETTINGS PAGE
  */
 router.get('/settings', requireLogin, (req, res) => {
   res.render('workouts/settings', {
     currentPath: '/workouts/settings',
-    currentUser: req.user
+    currentUser: req.user,
+    profileSaved: req.query.profile === '1',
+    reminderSaved: req.query.reminder === '1'
   });
 });
-
-/**
- * Helper: parse height string
- * Supports:
- *  - 180  (cm or ft depending on unit)
- *  - 5.11 (feet.decimal)
- *  - 5'11, 5'11", 5 ft 11 in
- */
-function parseHeight(raw, unit) {
-  if (!raw) return null;
-  const cleaned = String(raw).trim();
-  if (!cleaned) return null;
-
-  if (unit === 'ft') {
-    // Try 5'11 style
-    const match = cleaned.match(/(\d+)\s*'?[\s-]*(\d+)?/);
-    if (match) {
-      const feet = parseInt(match[1], 10);
-      const inches = match[2] ? parseInt(match[2], 10) : 0;
-      const totalFeet = feet + inches / 12;
-      return Number(totalFeet.toFixed(2));
-    }
-
-    // Fallback: feet as decimal
-    const asNum = parseFloat(cleaned);
-    if (!isNaN(asNum)) return asNum;
-    return null;
-  }
-
-  // cm
-  const cm = parseFloat(cleaned);
-  if (isNaN(cm)) return null;
-  return cm;
-}
 
 /**
  * UPDATE PROFILE (INCLUDING PROFILE PHOTO)
@@ -98,46 +115,45 @@ router.post(
 
       if (req.body.weeklyGoal) {
         const wg = Number(req.body.weeklyGoal);
-        if (!isNaN(wg) && wg > 0 && wg <= 14) {
+        if (!Number.isNaN(wg) && wg > 0 && wg <= 14) {
           user.weeklyGoal = wg;
         }
       }
 
-      // Gender / age
+      // Gender
       if (req.body.gender) {
         user.gender = req.body.gender;
       } else {
         user.gender = 'prefer-not-to-say';
       }
 
+      // Age
       if (req.body.age) {
         const age = Number(req.body.age);
-        if (!isNaN(age) && age >= 0 && age <= 130) {
+        if (!Number.isNaN(age) && age >= 0 && age <= 130) {
           user.age = age;
         }
       }
 
-      // Height (with unit; allow 5'11, 5.11, 180, etc.)
-      const heightUnit = req.body.heightUnit === 'ft' ? 'ft' : 'cm';
+      // Height
+      const heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
       user.heightUnit = heightUnit;
 
-      const heightValueParsed = parseHeight(req.body.heightRaw, heightUnit);
-      if (heightValueParsed !== null) {
-        user.heightValue = heightValueParsed;
+      const heightParsed = parseHeight(req.body.heightValue, heightUnit);
+      if (heightParsed !== null) {
+        user.heightValue = heightParsed;
       }
 
-      // Weight + unit (allow decimals)
-      const weightUnit = req.body.weightUnit === 'lb' ? 'lb' : 'kg';
+      // Weight
+      const weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
       user.weightUnit = weightUnit;
 
-      if (req.body.weightValue) {
-        const wv = parseFloat(req.body.weightValue);
-        if (!isNaN(wv) && wv >= 0) {
-          user.weightValue = wv;
-        }
+      const weightParsed = parseWeight(req.body.weightValue);
+      if (weightParsed !== null) {
+        user.weightValue = weightParsed;
       }
 
-      // Goal / experience (align with enum values in User.js)
+      // Goal / experience
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
@@ -154,11 +170,10 @@ router.post(
 
       await user.save();
 
-      // Keep session + req.user in sync so everything updates instantly
+      // refresh user in session so header avatar & settings show latest
       req.session.user = user;
-      req.user = user;
 
-      res.redirect('/workouts/settings');
+      res.redirect('/workouts/settings?profile=1');
     } catch (err) {
       console.error('Error updating profile:', err);
       res.redirect('/workouts/settings');
@@ -176,11 +191,7 @@ router.post('/theme', requireLogin, async (req, res) => {
 
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
     await user.save();
-
-    // sync session + req.user
     req.session.user = user;
-    req.session.theme = user.theme;
-    req.user = user;
 
     res.redirect('/workouts/settings');
   } catch (err) {
@@ -197,14 +208,13 @@ router.post('/reminder', requireLogin, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled = req.body.dailyReminderEnabled === 'on';
+    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
     req.session.user = user;
-    req.user = user;
 
-    res.redirect('/workouts/settings');
+    res.redirect('/workouts/settings?reminder=1');
   } catch (err) {
     console.error('Error updating reminders:', err);
     res.redirect('/workouts/settings');
