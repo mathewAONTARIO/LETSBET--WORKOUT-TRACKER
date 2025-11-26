@@ -1,28 +1,7 @@
 <%- include('../partials/header', { currentPath: '/workouts/settings' }) %>
 
-<%
-// Avoid ReferenceError even if these flags are not passed
-var _profileSaved  = (typeof profileSaved  !== 'undefined') ? profileSaved  : false;
-var _reminderSaved = (typeof reminderSaved !== 'undefined') ? reminderSaved : false;
-var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : false;
-%>
-
 <h2 class="mb-1">Settings</h2>
-<p class="text-secondary mb-3">Customize your Lets Bet profile and preferences.</p>
-
-<% if (_profileSaved || _reminderSaved || _themeSaved) { %>
-  <div class="alert alert-success py-2 mb-3" style="font-size: 0.9rem;">
-    <% if (_profileSaved) { %>
-      Profile updated.
-    <% } %>
-    <% if (_reminderSaved) { %>
-      Workout reminder settings saved.
-    <% } %>
-    <% if (_themeSaved) { %>
-      Theme preference updated.
-    <% } %>
-  </div>
-<% } %>
+<p class="text-secondary mb-4">Customize your Lets Bet profile and preferences.</p>
 
 <div class="row g-4">
   <!-- Profile -->
@@ -96,11 +75,21 @@ var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : fa
         <div class="mb-3">
           <label class="form-label">Weekly workout goal</label>
           <select name="weeklyGoal" class="form-select">
-            <% [3,4,5,6,7].forEach(function(n){ %>
-              <option value="<%= n %>" <%= currentUser.weeklyGoal === n ? 'selected' : '' %>>
-                <%= n %> per week
-              </option>
-            <% }) %>
+            <option value="3" <%= currentUser.weeklyGoal === 3 ? 'selected' : '' %>>
+              3 per week
+            </option>
+            <option value="4" <%= currentUser.weeklyGoal === 4 ? 'selected' : '' %>>
+              4 per week
+            </option>
+            <option value="5" <%= currentUser.weeklyGoal === 5 ? 'selected' : '' %>>
+              5 per week
+            </option>
+            <option value="6" <%= currentUser.weeklyGoal === 6 ? 'selected' : '' %>>
+              6 per week
+            </option>
+            <option value="7" <%= currentUser.weeklyGoal === 7 ? 'selected' : '' %>>
+              7 per week
+            </option>
           </select>
         </div>
 
@@ -145,10 +134,10 @@ var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : fa
             <div class="input-group">
               <input
                 type="text"
-                name="heightValue"
+                name="heightRaw"
                 class="form-control"
                 placeholder="e.g. 180 or 5'10"
-                value="<%= typeof currentUser.heightValue === 'number' ? currentUser.heightValue : '' %>"
+                value="<%= currentUser.heightValue ? currentUser.heightValue : '' %>"
               />
               <select name="heightUnit" class="form-select" style="max-width: 90px;">
                 <option value="cm" <%= currentUser.heightUnit === 'cm' ? 'selected' : '' %>>
@@ -160,7 +149,7 @@ var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : fa
               </select>
             </div>
             <small class="text-secondary" style="font-size: 0.8rem;">
-              You can type decimals or 5'10 style — we’ll store the number.
+              You can type decimals or 5'10 style — we'll store the number.
             </small>
           </div>
 
@@ -169,10 +158,10 @@ var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : fa
             <div class="input-group">
               <input
                 type="text"
-                name="weightValue"
+                name="weightRaw"
                 class="form-control"
                 placeholder="e.g. 82.5"
-                value="<%= typeof currentUser.weightValue === 'number' ? currentUser.weightValue : '' %>"
+                value="<%= currentUser.weightValue ? currentUser.weightValue : '' %>"
               />
               <select name="weightUnit" class="form-select" style="max-width: 90px;">
                 <option value="kg" <%= currentUser.weightUnit === 'kg' ? 'selected' : '' %>>
@@ -202,11 +191,11 @@ var _themeSaved    = (typeof themeSaved    !== 'undefined') ? themeSaved    : fa
               <option value="strength" <%= currentUser.primaryGoal === 'strength' ? 'selected' : '' %>>
                 Strength
               </option>
-              <option value="endurance" <%= currentUser.primaryGoal === 'endurance' ? 'selected' : '' %>>
-                Endurance
-              </option>
               <option value="performance" <%= currentUser.primaryGoal === 'performance' ? 'selected' : '' %>>
                 Performance
+              </option>
+              <option value="endurance" <%= currentUser.primaryGoal === 'endurance' ? 'selected' : '' %>>
+                Endurance
               </option>
               <option value="other" <%= currentUser.primaryGoal === 'other' ? 'selected' : '' %>>
                 Other

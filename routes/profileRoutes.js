@@ -1,7 +1,6 @@
 // routes/profileRoutes.js
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 const User = require('../models/User');
 const { requireLogin } = require('../middleware/auth');
@@ -9,19 +8,11 @@ const { requireLogin } = require('../middleware/auth');
 const router = express.Router();
 
 /**
- * Ensure upload directory exists
- */
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-/**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
  */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
@@ -41,61 +32,32 @@ const upload = multer({
 });
 
 /**
- * HELPER PARSERS
+ * PROFILE SUMMARY PAGE (Strava-style "You" screen)
+ * GET /account
  */
-
-// Parse height allowing: "180", "180.5" (cm) OR "5'11", "5 11", "5.11" (ft)
-function parseHeight(raw, unit) {
-  if (!raw) return null;
-  let value = String(raw).trim();
-  if (!value) return null;
-
-  if (unit === 'ft') {
-    // Look for 5'11 or 5’11
-    const match = value.match(/^(\d+)\s*['’]\s*(\d+)?/);
-    if (match) {
-      const feet = parseInt(match[1], 10) || 0;
-      const inches = match[2] ? parseInt(match[2], 10) || 0 : 0;
-      return feet + inches / 12;
-    }
-
-    // Fall back to float feet (e.g., 5.9)
-    value = value.replace(/[^0-9.]/g, '');
-    const ftFloat = parseFloat(value);
-    return Number.isNaN(ftFloat) ? null : ftFloat;
-  }
-
-  // cm
-  value = value.replace(/[^0-9.]/g, '');
-  const cm = parseFloat(value);
-  return Number.isNaN(cm) ? null : cm;
-}
-
-// Parse numeric weight with "."
-function parseWeight(raw) {
-  if (!raw) return null;
-  let value = String(raw).trim();
-  if (!value) return null;
-
-  value = value.replace(/[^0-9.]/g, '');
-  const num = parseFloat(value);
-  return Number.isNaN(num) ? null : num;
-}
-
-/**
- * SETTINGS PAGE
- */
-router.get('/settings', requireLogin, (req, res) => {
-  res.render('workouts/settings', {
-    currentPath: '/workouts/settings',
+router.get('/', requireLogin, (req, res) => {
+  res.render('account/profile', {
+    currentPath: '/account',
     currentUser: req.user,
-    profileSaved: req.query.profile === '1',
-    reminderSaved: req.query.reminder === '1'
+    profileSaved: req.query.saved === 'true',
+    reminderSaved: req.query.reminder === 'true'
   });
 });
 
 /**
- * UPDATE PROFILE (INCLUDING PROFILE PHOTO)
+ * SETTINGS PAGE (edit form)
+ * GET /account/settings
+ */
+router.get('/settings', requireLogin, (req, res) => {
+  res.render('workouts/settings', {
+    currentPath: '/workouts/settings',
+    currentUser: req.user
+  });
+});
+
+/**
+ * UPDATE PROFILE (INCLUDING PROFILE PHOTO + HEIGHT/WEIGHT)
+ * POST /account/profile
  */
 router.post(
   '/profile',
@@ -108,61 +70,80 @@ router.post(
         return res.redirect('/auth/login');
       }
 
-      // Basic fields
-      if (req.body.displayName && req.body.displayName.trim()) {
-        user.displayName = req.body.displayName.trim();
+      // --- BASIC FIELDS ---
+      user.displayName = req.body.displayName || user.displayName;
+
+      const weeklyGoalNum = Number(req.body.weeklyGoal);
+      if (!Number.isNaN(weeklyGoalNum) && weeklyGoalNum > 0) {
+        user.weeklyGoal = weeklyGoalNum;
       }
 
-      if (req.body.weeklyGoal) {
-        const wg = Number(req.body.weeklyGoal);
-        if (!Number.isNaN(wg) && wg > 0 && wg <= 14) {
-          user.weeklyGoal = wg;
-        }
-      }
-
-      // Gender
       if (req.body.gender) {
         user.gender = req.body.gender;
-      } else {
-        user.gender = 'prefer-not-to-say';
       }
 
-      // Age
       if (req.body.age) {
-        const age = Number(req.body.age);
-        if (!Number.isNaN(age) && age >= 0 && age <= 130) {
-          user.age = age;
+        const ageNum = Number(req.body.age);
+        if (!Number.isNaN(ageNum)) {
+          user.age = ageNum;
         }
       }
 
-      // Height
-      const heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
+      // --- HEIGHT (accepts decimals and 5'10 style) ---
+      let heightValue = user.heightValue;
+      let heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
+      const rawHeight = (req.body.heightRaw || '').trim();
+
+      if (rawHeight) {
+        // Replace curly quotes with normal '
+        const clean = rawHeight.replace(/[’‘]/g, "'");
+
+        // 5'10 or 6' style
+        const feetInchesMatch = clean.match(/(\d+)\s*'\s*(\d+)?/);
+        if (feetInchesMatch) {
+          const feet = parseInt(feetInchesMatch[1], 10) || 0;
+          const inches = parseInt(feetInchesMatch[2] || '0', 10) || 0;
+          heightUnit = 'ft';
+          heightValue = feet + inches / 12;
+        } else {
+          const parsed = parseFloat(clean);
+          if (!Number.isNaN(parsed)) {
+            heightValue = parsed;
+          }
+        }
+      }
+
       user.heightUnit = heightUnit;
-
-      const heightParsed = parseHeight(req.body.heightValue, heightUnit);
-      if (heightParsed !== null) {
-        user.heightValue = heightParsed;
+      if (heightValue != null) {
+        user.heightValue = heightValue;
       }
 
-      // Weight
-      const weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
+      // --- WEIGHT (decimals allowed) ---
+      let weightValue = user.weightValue;
+      let weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
+      const rawWeight = (req.body.weightRaw || '').trim();
+
+      if (rawWeight) {
+        const parsed = parseFloat(rawWeight);
+        if (!Number.isNaN(parsed)) {
+          weightValue = parsed;
+        }
+      }
+
       user.weightUnit = weightUnit;
-
-      const weightParsed = parseWeight(req.body.weightValue);
-      if (weightParsed !== null) {
-        user.weightValue = weightParsed;
+      if (weightValue != null) {
+        user.weightValue = weightValue;
       }
 
-      // Goal / experience
+      // --- GOAL / EXPERIENCE (match User.js enums) ---
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
-
       if (req.body.trainingExperience) {
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // If a file was uploaded, update profilePhotoUrl
+      // --- PROFILE PHOTO ---
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -170,19 +151,21 @@ router.post(
 
       await user.save();
 
-      // refresh user in session so header avatar & settings show latest
+      // refresh user in session so header avatar + name update immediately
       req.session.user = user;
 
-      res.redirect('/workouts/settings?profile=1');
+      // After saving, go to the Strava-style profile page
+      res.redirect('/account?saved=true');
     } catch (err) {
       console.error('Error updating profile:', err);
-      res.redirect('/workouts/settings');
+      res.redirect('/account/settings');
     }
   }
 );
 
 /**
  * UPDATE THEME
+ * POST /account/theme
  */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
@@ -193,36 +176,39 @@ router.post('/theme', requireLogin, async (req, res) => {
     await user.save();
     req.session.user = user;
 
-    res.redirect('/workouts/settings');
+    res.redirect('back');
   } catch (err) {
     console.error('Error updating theme:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('back');
   }
 });
 
 /**
  * UPDATE REMINDER SETTINGS
+ * POST /account/reminder
  */
 router.post('/reminder', requireLogin, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
+    user.dailyReminderEnabled =
+      req.body.reminderEnabled === 'on' || req.body.reminderEnabled === 'true';
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
     req.session.user = user;
 
-    res.redirect('/workouts/settings?reminder=1');
+    res.redirect('/account?reminder=true');
   } catch (err) {
     console.error('Error updating reminders:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings');
   }
 });
 
 /**
  * DELETE ACCOUNT
+ * POST /account/delete
  */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
@@ -232,7 +218,7 @@ router.post('/delete', requireLogin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error deleting account:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings');
   }
 });
 

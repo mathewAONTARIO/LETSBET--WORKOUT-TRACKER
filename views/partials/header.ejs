@@ -65,7 +65,7 @@
                 <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/workouts/settings">Settings</a>
+                <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/account/settings">Settings</a>
               </li>
             <% } %>
           </ul>
@@ -91,8 +91,8 @@
             </form>
 
             <% if (currentUser) { %>
-              <!-- Profile pill + logout -->
-              <div class="profile-pill">
+              <!-- Profile pill now clickable: /account -->
+              <a href="/account" class="profile-pill text-decoration-none">
                 <% if (currentUser.profilePhotoUrl) { %>
                   <img
                     src="<%= currentUser.profilePhotoUrl %>"
@@ -109,7 +109,7 @@
                 <span style="font-size: 0.85rem;">
                   <%= currentUser.displayName || currentUser.email %>
                 </span>
-              </div>
+              </a>
 
               <form action="/auth/logout" method="POST" class="ms-2">
                 <button class="btn btn-outline-light btn-sm" type="submit">
