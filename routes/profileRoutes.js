@@ -32,21 +32,62 @@ const upload = multer({
 });
 
 /**
- * PROFILE SUMMARY PAGE (Strava-style "You" screen)
- * GET /account
+ * Small helper to parse height strings like:
+ *  - "5'10"
+ *  - "5 10"
+ *  - "180" or "178.5"
+ * into a numeric value + unit (cm or ft).
  */
-router.get('/', requireLogin, (req, res) => {
-  res.render('account/profile', {
-    currentPath: '/account',
-    currentUser: req.user,
-    profileSaved: req.query.saved === 'true',
-    reminderSaved: req.query.reminder === 'true'
-  });
-});
+function parseHeightToValue(raw, selectedUnit, currentValue) {
+  if (!raw || !raw.trim()) {
+    return {
+      value: currentValue,
+      unit: selectedUnit || 'cm'
+    };
+  }
+
+  const unit = selectedUnit || 'cm';
+  const txt = raw.trim();
+
+  // Formats with feet/inches (e.g. 5'10 or 5 10")
+  if (txt.includes("'")) {
+    const parts = txt.split("'");
+    const feet = parseFloat(parts[0]) || 0;
+    const inchesPart = parts[1] ? parts[1].replace(/[^0-9.]/g, '') : '0';
+    const inches = parseFloat(inchesPart) || 0;
+
+    if (unit === 'ft') {
+      const totalFeet = feet + inches / 12;
+      return {
+        value: parseFloat(totalFeet.toFixed(2)),
+        unit: 'ft'
+      };
+    } else {
+      const totalCm = feet * 30.48 + inches * 2.54;
+      return {
+        value: parseFloat(totalCm.toFixed(1)),
+        unit: 'cm'
+      };
+    }
+  }
+
+  // Plain number: "180", "178.5"
+  const cleaned = parseFloat(txt.replace(/[^0-9.]/g, ''));
+  if (Number.isNaN(cleaned)) {
+    return {
+      value: currentValue,
+      unit
+    };
+  }
+
+  return {
+    value: cleaned,
+    unit
+  };
+}
 
 /**
  * SETTINGS PAGE (edit form)
- * GET /account/settings
  */
 router.get('/settings', requireLogin, (req, res) => {
   res.render('workouts/settings', {
@@ -56,8 +97,8 @@ router.get('/settings', requireLogin, (req, res) => {
 });
 
 /**
- * UPDATE PROFILE (INCLUDING PROFILE PHOTO + HEIGHT/WEIGHT)
- * POST /account/profile
+ * UPDATE PROFILE (INCLUDING PROFILE PHOTO + STATS)
+ * This is the form from Settings.
  */
 router.post(
   '/profile',
@@ -70,80 +111,61 @@ router.post(
         return res.redirect('/auth/login');
       }
 
-      // --- BASIC FIELDS ---
-      user.displayName = req.body.displayName || user.displayName;
-
-      const weeklyGoalNum = Number(req.body.weeklyGoal);
-      if (!Number.isNaN(weeklyGoalNum) && weeklyGoalNum > 0) {
-        user.weeklyGoal = weeklyGoalNum;
+      // Basic fields
+      if (req.body.displayName && req.body.displayName.trim()) {
+        user.displayName = req.body.displayName.trim();
       }
 
+      if (req.body.weeklyGoal) {
+        const wg = parseInt(req.body.weeklyGoal, 10);
+        if (!Number.isNaN(wg) && wg > 0 && wg <= 14) {
+          user.weeklyGoal = wg;
+        }
+      }
+
+      // Gender + age
       if (req.body.gender) {
         user.gender = req.body.gender;
       }
 
       if (req.body.age) {
-        const ageNum = Number(req.body.age);
+        const ageNum = parseInt(req.body.age, 10);
         if (!Number.isNaN(ageNum)) {
           user.age = ageNum;
         }
       }
 
-      // --- HEIGHT (accepts decimals and 5'10 style) ---
-      let heightValue = user.heightValue;
-      let heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
-      const rawHeight = (req.body.heightRaw || '').trim();
+      // Height (text) + unit dropdown
+      const heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
+      const parsedHeight = parseHeightToValue(
+        req.body.height,
+        heightUnit,
+        user.heightValue
+      );
+      user.heightValue = parsedHeight.value;
+      user.heightUnit = parsedHeight.unit;
 
-      if (rawHeight) {
-        // Replace curly quotes with normal '
-        const clean = rawHeight.replace(/[’‘]/g, "'");
-
-        // 5'10 or 6' style
-        const feetInchesMatch = clean.match(/(\d+)\s*'\s*(\d+)?/);
-        if (feetInchesMatch) {
-          const feet = parseInt(feetInchesMatch[1], 10) || 0;
-          const inches = parseInt(feetInchesMatch[2] || '0', 10) || 0;
-          heightUnit = 'ft';
-          heightValue = feet + inches / 12;
-        } else {
-          const parsed = parseFloat(clean);
-          if (!Number.isNaN(parsed)) {
-            heightValue = parsed;
-          }
+      // Weight (text) + unit dropdown
+      if (req.body.weight && req.body.weight.trim()) {
+        const weightNum = parseFloat(
+          req.body.weight.trim().replace(/[^0-9.]/g, '')
+        );
+        if (!Number.isNaN(weightNum)) {
+          user.weightValue = weightNum;
         }
       }
+      user.weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
 
-      user.heightUnit = heightUnit;
-      if (heightValue != null) {
-        user.heightValue = heightValue;
-      }
-
-      // --- WEIGHT (decimals allowed) ---
-      let weightValue = user.weightValue;
-      let weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
-      const rawWeight = (req.body.weightRaw || '').trim();
-
-      if (rawWeight) {
-        const parsed = parseFloat(rawWeight);
-        if (!Number.isNaN(parsed)) {
-          weightValue = parsed;
-        }
-      }
-
-      user.weightUnit = weightUnit;
-      if (weightValue != null) {
-        user.weightValue = weightValue;
-      }
-
-      // --- GOAL / EXPERIENCE (match User.js enums) ---
+      // Goal / experience
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
+
       if (req.body.trainingExperience) {
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // --- PROFILE PHOTO ---
+      // If a file was uploaded, update profilePhotoUrl
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -151,21 +173,20 @@ router.post(
 
       await user.save();
 
-      // refresh user in session so header avatar + name update immediately
+      // refresh user in session so header avatar updates immediately
       req.session.user = user;
 
-      // After saving, go to the Strava-style profile page
-      res.redirect('/account?saved=true');
+      // After saving settings, go to profile summary page
+      res.redirect('/account/profile?saved=true');
     } catch (err) {
       console.error('Error updating profile:', err);
-      res.redirect('/account/settings');
+      res.redirect('/account/profile?error=true');
     }
   }
 );
 
 /**
  * UPDATE THEME
- * POST /account/theme
  */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
@@ -185,30 +206,31 @@ router.post('/theme', requireLogin, async (req, res) => {
 
 /**
  * UPDATE REMINDER SETTINGS
- * POST /account/reminder
  */
 router.post('/reminder', requireLogin, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled =
-      req.body.reminderEnabled === 'on' || req.body.reminderEnabled === 'true';
-    user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
+    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' ||
+      req.body.reminderEnabled === 'on';
+
+    if (req.body.reminderTime) {
+      user.reminderTime = req.body.reminderTime;
+    }
 
     await user.save();
     req.session.user = user;
 
-    res.redirect('/account?reminder=true');
+    res.redirect('/account/profile?saved=true');
   } catch (err) {
     console.error('Error updating reminders:', err);
-    res.redirect('/account/settings');
+    res.redirect('/account/profile?error=true');
   }
 });
 
 /**
  * DELETE ACCOUNT
- * POST /account/delete
  */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
@@ -218,7 +240,7 @@ router.post('/delete', requireLogin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error deleting account:', err);
-    res.redirect('/account/settings');
+    res.redirect('/workouts/settings');
   }
 });
 
