@@ -32,73 +32,23 @@ const upload = multer({
 });
 
 /**
- * Small helper to parse height strings like:
- *  - "5'10"
- *  - "5 10"
- *  - "180" or "178.5"
- * into a numeric value + unit (cm or ft).
- */
-function parseHeightToValue(raw, selectedUnit, currentValue) {
-  if (!raw || !raw.trim()) {
-    return {
-      value: currentValue,
-      unit: selectedUnit || 'cm'
-    };
-  }
-
-  const unit = selectedUnit || 'cm';
-  const txt = raw.trim();
-
-  // Formats with feet/inches (e.g. 5'10 or 5 10")
-  if (txt.includes("'")) {
-    const parts = txt.split("'");
-    const feet = parseFloat(parts[0]) || 0;
-    const inchesPart = parts[1] ? parts[1].replace(/[^0-9.]/g, '') : '0';
-    const inches = parseFloat(inchesPart) || 0;
-
-    if (unit === 'ft') {
-      const totalFeet = feet + inches / 12;
-      return {
-        value: parseFloat(totalFeet.toFixed(2)),
-        unit: 'ft'
-      };
-    } else {
-      const totalCm = feet * 30.48 + inches * 2.54;
-      return {
-        value: parseFloat(totalCm.toFixed(1)),
-        unit: 'cm'
-      };
-    }
-  }
-
-  // Plain number: "180", "178.5"
-  const cleaned = parseFloat(txt.replace(/[^0-9.]/g, ''));
-  if (Number.isNaN(cleaned)) {
-    return {
-      value: currentValue,
-      unit
-    };
-  }
-
-  return {
-    value: cleaned,
-    unit
-  };
-}
-
-/**
- * SETTINGS PAGE (edit form)
+ * SETTINGS PAGE
+ * (We render the old workouts/settings.ejs so your navbar link still works.)
  */
 router.get('/settings', requireLogin, (req, res) => {
+  const profileSaved = req.query.saved === '1';
+  const reminderSaved = req.query.reminder === '1';
+
   res.render('workouts/settings', {
     currentPath: '/workouts/settings',
-    currentUser: req.user
+    currentUser: req.user,
+    profileSaved,
+    reminderSaved
   });
 });
 
 /**
- * UPDATE PROFILE (INCLUDING PROFILE PHOTO + STATS)
- * This is the form from Settings.
+ * UPDATE PROFILE (INCLUDING PROFILE PHOTO)
  */
 router.post(
   '/profile',
@@ -112,21 +62,18 @@ router.post(
       }
 
       // Basic fields
-      if (req.body.displayName && req.body.displayName.trim()) {
-        user.displayName = req.body.displayName.trim();
+      if (req.body.displayName) {
+        user.displayName = req.body.displayName;
       }
 
       if (req.body.weeklyGoal) {
         const wg = parseInt(req.body.weeklyGoal, 10);
-        if (!Number.isNaN(wg) && wg > 0 && wg <= 14) {
+        if (!Number.isNaN(wg)) {
           user.weeklyGoal = wg;
         }
       }
 
-      // Gender + age
-      if (req.body.gender) {
-        user.gender = req.body.gender;
-      }
+      user.gender = req.body.gender || user.gender || 'prefer-not-to-say';
 
       if (req.body.age) {
         const ageNum = parseInt(req.body.age, 10);
@@ -135,37 +82,31 @@ router.post(
         }
       }
 
-      // Height (text) + unit dropdown
-      const heightUnit = req.body.heightUnit || user.heightUnit || 'cm';
-      const parsedHeight = parseHeightToValue(
-        req.body.height,
-        heightUnit,
-        user.heightValue
-      );
-      user.heightValue = parsedHeight.value;
-      user.heightUnit = parsedHeight.unit;
-
-      // Weight (text) + unit dropdown
-      if (req.body.weight && req.body.weight.trim()) {
-        const weightNum = parseFloat(
-          req.body.weight.trim().replace(/[^0-9.]/g, '')
-        );
-        if (!Number.isNaN(weightNum)) {
-          user.weightValue = weightNum;
-        }
+      // Height (text, can be 5'10 or 180)
+      if (req.body.height) {
+        user.heightValue = req.body.height.trim();
       }
-      user.weightUnit = req.body.weightUnit || user.weightUnit || 'kg';
+      if (req.body.heightUnit) {
+        user.heightUnit = req.body.heightUnit;
+      }
+
+      // Weight (text, can be decimal)
+      if (req.body.weight) {
+        user.weightValue = req.body.weight.trim();
+      }
+      if (req.body.weightUnit) {
+        user.weightUnit = req.body.weightUnit;
+      }
 
       // Goal / experience
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
-
       if (req.body.trainingExperience) {
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // If a file was uploaded, update profilePhotoUrl
+      // Profile picture
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -173,14 +114,14 @@ router.post(
 
       await user.save();
 
-      // refresh user in session so header avatar updates immediately
+      // Refresh user in session so navbar pill updates
       req.session.user = user;
 
-      // After saving settings, go to profile summary page
-      res.redirect('/account/profile?saved=true');
+      // Redirect with success flag
+      res.redirect('/workouts/settings?saved=1');
     } catch (err) {
       console.error('Error updating profile:', err);
-      res.redirect('/account/profile?error=true');
+      res.redirect('/workouts/settings');
     }
   }
 );
@@ -197,10 +138,10 @@ router.post('/theme', requireLogin, async (req, res) => {
     await user.save();
     req.session.user = user;
 
-    res.redirect('back');
+    res.redirect('/workouts/settings');
   } catch (err) {
     console.error('Error updating theme:', err);
-    res.redirect('back');
+    res.redirect('/workouts/settings');
   }
 });
 
@@ -212,20 +153,16 @@ router.post('/reminder', requireLogin, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' ||
-      req.body.reminderEnabled === 'on';
-
-    if (req.body.reminderTime) {
-      user.reminderTime = req.body.reminderTime;
-    }
+    user.dailyReminderEnabled = req.body.reminderEnabled === 'on';
+    user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
     req.session.user = user;
 
-    res.redirect('/account/profile?saved=true');
+    res.redirect('/workouts/settings?reminder=1');
   } catch (err) {
     console.error('Error updating reminders:', err);
-    res.redirect('/account/profile?error=true');
+    res.redirect('/workouts/settings');
   }
 });
 
