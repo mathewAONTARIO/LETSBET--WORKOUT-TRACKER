@@ -46,8 +46,7 @@ const userSchema = new mongoose.Schema(
       max: 130
     },
 
-    // Height with unit
-    // heightValue is numeric; unit decides if it's cm or feet.
+    // Height with unit (we store numeric value, but allow user to type 5'10 etc.)
     heightValue: {
       type: Number,
       min: 0
