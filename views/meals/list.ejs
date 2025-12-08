@@ -12,7 +12,7 @@
     <a href="/meals/new" class="btn btn-primary btn-pill">Add Meal</a>
   </div>
 
-  <div class="meal-card-shell glass-card mt-3">
+  <div class="meal-card-shell glass-card mt-3 p-3">
     <% if (meals.length === 0) { %>
       <p class="text-secondary mb-0">
         No meals logged yet. Start by adding your first meal.
@@ -38,7 +38,7 @@
                 <td class="meal-macros">
                   P: <%= meal.protein || 0 %>g ·
                   C: <%= meal.carbs || 0 %>g ·
-                  F: <%= meal.fat || 0 %>g
+                  F: <%= (meal.fats || meal.fat || 0) %>g
                 </td>
                 <td><%= meal.timeOfDay || '' %></td>
                 <td>
@@ -47,13 +47,23 @@
                     : '' %>
                 </td>
                 <td class="text-end">
+                  <a
+                    href="/meals/<%= meal._id %>/edit"
+                    class="btn btn-outline-light btn-sm btn-pill me-1"
+                  >
+                    Edit
+                  </a>
+
                   <form
                     action="/meals/<%= meal._id %>/delete"
                     method="POST"
                     class="d-inline"
                     onsubmit="return confirm('Delete this meal?');"
                   >
-                    <button type="submit" class="btn btn-outline-danger btn-sm btn-pill">
+                    <button
+                      type="submit"
+                      class="btn btn-outline-danger btn-sm btn-pill"
+                    >
                       Delete
                     </button>
                   </form>
