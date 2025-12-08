@@ -1,9 +1,9 @@
 <%- include('../partials/header', { currentPath: '/workouts' }) %>
 
 <div class="main-shell">
-  <h2 class="mb-1">Add Workout</h2>
+  <h2 class="mb-1"><%= duplicateOf ? 'Duplicate Workout' : 'Add Workout' %></h2>
   <p class="text-secondary mb-4">
-    Log a new workout session.
+    <%= duplicateOf ? 'Start from an existing workout and tweak anything you need.' : 'Log a new workout session.' %>
   </p>
 
   <form action="<%= formAction %>" method="POST" class="glass-card p-4">
@@ -15,6 +15,7 @@
           name="exercise"
           class="form-control"
           placeholder="bench press, pull ups, run, etc."
+          value="<%= duplicateOf ? duplicateOf.exercise : '' %>"
           required
         />
       </div>
@@ -22,15 +23,34 @@
       <div class="col-md-6">
         <label class="form-label">Category</label>
         <select name="category" class="form-select">
-          <option value="Upper Body">Upper Body</option>
-          <option value="Lower Body">Lower Body</option>
-          <option value="Push">Push</option>
-          <option value="Pull">Pull</option>
-          <option value="Legs">Legs</option>
-          <option value="Full Body">Full Body</option>
-          <option value="Cardio">Cardio</option>
-          <option value="Core">Core</option>
-          <option value="Other">Other</option>
+          <% const dupCat = duplicateOf ? (duplicateOf.category || '') : ''; %>
+          <option value="Upper Body" <%= dupCat === 'Upper Body' ? 'selected' : '' %>>
+            Upper Body
+          </option>
+          <option value="Lower Body" <%= dupCat === 'Lower Body' ? 'selected' : '' %>>
+            Lower Body
+          </option>
+          <option value="Push" <%= dupCat === 'Push' ? 'selected' : '' %>>
+            Push
+          </option>
+          <option value="Pull" <%= dupCat === 'Pull' ? 'selected' : '' %>>
+            Pull
+          </option>
+          <option value="Legs" <%= dupCat === 'Legs' ? 'selected' : '' %>>
+            Legs
+          </option>
+          <option value="Full Body" <%= dupCat === 'Full Body' ? 'selected' : '' %>>
+            Full Body
+          </option>
+          <option value="Cardio" <%= dupCat === 'Cardio' ? 'selected' : '' %>>
+            Cardio
+          </option>
+          <option value="Core" <%= dupCat === 'Core' ? 'selected' : '' %>>
+            Core
+          </option>
+          <option value="Other" <%= dupCat === 'Other' ? 'selected' : '' %>>
+            Other
+          </option>
         </select>
       </div>
 
@@ -41,7 +61,7 @@
           name="sets"
           id="setsInput"
           class="form-control"
-          value="3"
+          value="<%= duplicateOf && duplicateOf.sets != null ? duplicateOf.sets : 3 %>"
           min="1"
         />
       </div>
@@ -53,7 +73,7 @@
           name="reps"
           id="repsInput"
           class="form-control"
-          value="8"
+          value="<%= duplicateOf && duplicateOf.reps != null ? duplicateOf.reps : 8 %>"
           min="1"
         />
       </div>
@@ -65,7 +85,7 @@
           name="weight"
           id="weightInput"
           class="form-control"
-          value="0"
+          value="<%= duplicateOf && duplicateOf.weight != null ? duplicateOf.weight : 0 %>"
           min="0"
         />
       </div>
@@ -88,7 +108,7 @@
           class="form-control"
           rows="3"
           placeholder="How did it feel? PRs, tempo, etc."
-        ></textarea>
+        ><%= duplicateOf && duplicateOf.notes ? duplicateOf.notes : '' %></textarea>
       </div>
 
       <div class="col-12">
@@ -98,6 +118,7 @@
             type="checkbox"
             id="isPR"
             name="isPR"
+            <%= duplicateOf && duplicateOf.isPR ? 'checked' : '' %>
           />
           <label class="form-check-label" for="isPR">
             Mark as PR (personal record)
@@ -116,7 +137,9 @@
     </div>
 
     <div class="mt-4 d-flex gap-2">
-      <button type="submit" class="btn btn-primary">Save Workout</button>
+      <button type="submit" class="btn btn-primary">
+        <%= duplicateOf ? 'Save Duplicate' : 'Save Workout' %>
+      </button>
       <a href="/workouts" class="btn btn-outline-light">Cancel</a>
     </div>
   </form>

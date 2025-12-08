@@ -93,10 +93,13 @@
     </div>
 
     <div class="workout-actions">
-      <!-- Duplicate (POST for safety) -->
-      <form method="POST" action="/workouts/<%= workout._id %>/duplicate" class="d-inline">
-        <button class="btn btn-outline-light btn-sm" type="submit">Duplicate</button>
-      </form>
+      <!-- Duplicate: open prefilled Add Workout form -->
+      <a
+        href="/workouts/<%= workout._id %>/duplicate"
+        class="btn btn-outline-light btn-sm"
+      >
+        Duplicate
+      </a>
 
       <!-- Edit -->
       <a href="/workouts/<%= workout._id %>/edit" class="btn btn-outline-light btn-sm">

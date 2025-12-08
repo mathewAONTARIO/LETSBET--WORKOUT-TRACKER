@@ -53,7 +53,7 @@
             />
           </svg>
 
-          <!-- Wordmark -->
+          <!-- Wordmark: LETSBETFit -->
           <span class="brand-wordmark">
             <span class="brand-text-main">LETSBET</span
             ><span class="brand-text-sub">Fit</span>
@@ -106,7 +106,10 @@
             <!-- Theme toggle -->
             <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
               <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
-              <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
+              <button
+                type="submit"
+                class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn"
+              >
                 <% if (currentTheme === 'light') { %>🌙<% } else { %>☀️<% } %>
               </button>
             </form>
@@ -132,7 +135,6 @@
               <form action="/auth/logout" method="POST" class="ms-2">
                 <button class="btn btn-outline-light btn-sm" type="submit">Log Out</button>
               </form>
-
             <% } else { %>
               <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
               <a href="/auth/register" class="btn btn-primary btn-sm ms-1">Sign Up</a>
@@ -142,4 +144,5 @@
       </div>
     </nav>
 
-    <main class="container mb-5 main-shell">
+    <!-- Single app shell wrapper (no extra Bootstrap container on pages) -->
+    <main class="main-shell mb-5">

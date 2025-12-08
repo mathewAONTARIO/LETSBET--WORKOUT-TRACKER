@@ -1,26 +1,229 @@
-</main>
+    </main>
 
-<footer class="app-footer border-top">
-  <div class="container d-flex justify-content-between align-items-center px-3">
-    <span class="app-footer-brand">LETSBETFit</span>
-    <span class="app-footer-meta">KEEP GOING!</span>
-  </div>
-</footer>
+    <!-- iOS-style toast + loader + swipe helpers -->
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="app-loader" class="app-loader d-none">
+      <div class="app-loader-spinner"></div>
+    </div>
 
-<script>
-  // Register service worker for PWA / offline support
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .catch(function (err) {
-          console.error('Service worker registration failed:', err);
+    <div id="app-toast" class="app-toast d-none">
+      <span id="app-toast-text"></span>
+    </div>
+
+    <footer class="app-footer border-top">
+      <div class="main-shell d-flex justify-content-between align-items-center px-3">
+        <span class="app-footer-brand">LETSBETFit</span>
+        <span class="app-footer-meta">KEEP GOING!</span>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // ---------- SERVICE WORKER ----------
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .catch(function (err) {
+              console.error('Service worker registration failed:', err);
+            });
         });
-    });
-  }
-</script>
+      }
 
-</body>
+      // ---------- TOAST + LOADER UTILITIES ----------
+
+      const loaderEl = document.getElementById('app-loader');
+      const toastEl = document.getElementById('app-toast');
+      const toastTextEl = document.getElementById('app-toast-text');
+
+      function showLoader() {
+        if (!loaderEl) return;
+        loaderEl.classList.remove('d-none');
+      }
+
+      function hideLoader() {
+        if (!loaderEl) return;
+        loaderEl.classList.add('d-none');
+      }
+
+      function showToast(message, type) {
+        if (!toastEl || !toastTextEl) return;
+        toastTextEl.textContent = message || '';
+        toastEl.classList.remove('d-none', 'toast-success', 'toast-error');
+        if (type === 'error') {
+          toastEl.classList.add('toast-error');
+        } else {
+          toastEl.classList.add('toast-success');
+        }
+        toastEl.classList.add('toast-visible');
+
+        setTimeout(() => {
+          toastEl.classList.remove('toast-visible');
+          setTimeout(() => toastEl.classList.add('d-none'), 250);
+        }, 2600);
+      }
+
+      // Read query params like ?toast=workout-duplicated&type=success
+      function handleToastFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('toast');
+        const type = params.get('type') || 'success';
+        if (!code) return;
+
+        let msg = 'Saved';
+        switch (code) {
+          case 'workout-saved':
+            msg = 'Workout saved.';
+            break;
+          case 'workout-duplicated':
+            msg = 'Workout duplicated.';
+            break;
+          case 'workout-deleted':
+            msg = 'Workout deleted.';
+            break;
+          case 'meal-saved':
+            msg = 'Meal saved.';
+            break;
+          case 'meal-deleted':
+            msg = 'Meal deleted.';
+            break;
+          case 'profile-saved':
+            msg = 'Profile updated.';
+            break;
+          case 'reminder-saved':
+            msg = 'Reminder updated.';
+            break;
+          case 'error':
+            msg = 'Something went wrong. Try again.';
+            break;
+          default:
+            msg = code.replace(/-/g, ' ');
+        }
+
+        showToast(msg, type);
+
+        // clean URL
+        params.delete('toast');
+        params.delete('type');
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? '?' + params.toString() : '') +
+          window.location.hash;
+        window.history.replaceState({}, '', newUrl);
+      }
+
+      // ---------- LOADING STATES ON NAV + FORMS ----------
+
+      function attachLoadingHandlers() {
+        // links inside navbar & main that look like app navigation
+        document
+          .querySelectorAll(
+            'a.nav-link, a.btn, a[href^="/workouts"], a[href^="/meals"]'
+          )
+          .forEach(function (link) {
+            link.addEventListener('click', function (e) {
+              const href = link.getAttribute('href') || '';
+              if (
+                href.startsWith('#') ||
+                href.startsWith('mailto:') ||
+                href.startsWith('tel:')
+              )
+                return;
+              if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+              showLoader();
+            });
+          });
+
+        // forms (save buttons)
+        document.querySelectorAll('form').forEach(function (form) {
+          form.addEventListener('submit', function () {
+            showLoader();
+          });
+        });
+
+        window.addEventListener('pageshow', function () {
+          hideLoader();
+        });
+      }
+
+      // ---------- SIMPLE SWIPE ACTIONS (mobile) ----------
+      function attachSwipeHandlers() {
+        let startX = 0;
+        let activeRow = null;
+
+        document.querySelectorAll('.workout-card.swipeable').forEach(function (row) {
+          row.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
+            activeRow = row;
+          });
+
+          row.addEventListener('touchmove', function (e) {
+            if (!activeRow) return;
+            const deltaX = e.touches[0].clientX - startX;
+            if (deltaX < -25) {
+              activeRow.classList.add('swiped-left');
+            }
+            if (deltaX > 25) {
+              activeRow.classList.remove('swiped-left');
+            }
+          });
+
+          row.addEventListener('touchend', function () {
+            activeRow = null;
+          });
+        });
+      }
+
+      // Add class "swipeable" to workout cards in list.ejs for this to work
+      // e.g. <div class="workout-card swipeable">...</div>
+
+      // ---------- PULL TO REFRESH (mobile-ish) ----------
+
+      function attachPullToRefresh() {
+        if (!('ontouchstart' in window)) return;
+
+        let startY = 0;
+        let pulling = false;
+        let pulledEnough = false;
+
+        const threshold = 60;
+
+        window.addEventListener('touchstart', function (e) {
+          if (window.scrollY === 0) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+            pulledEnough = false;
+          }
+        });
+
+        window.addEventListener('touchmove', function (e) {
+          if (!pulling) return;
+          const currentY = e.touches[0].clientY;
+          const delta = currentY - startY;
+          if (delta > threshold) {
+            pulledEnough = true;
+          }
+        });
+
+        window.addEventListener('touchend', function () {
+          if (pulling && pulledEnough) {
+            showLoader();
+            setTimeout(function () {
+              window.location.reload();
+            }, 150);
+          }
+          pulling = false;
+          pulledEnough = false;
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        handleToastFromQuery();
+        attachLoadingHandlers();
+        attachSwipeHandlers();
+        attachPullToRefresh();
+      });
+    </script>
+  </body>
 </html>

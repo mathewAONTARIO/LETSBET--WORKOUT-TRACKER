@@ -37,7 +37,8 @@ exports.showNewForm = (req, res) => {
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: todayStr,
-    formAction: '/workouts/new' // POST here
+    formAction: '/workouts/new', // POST here
+    duplicateOf: null
   });
 };
 
@@ -60,10 +61,10 @@ exports.createWorkout = async (req, res) => {
       user: userId
     });
 
-    res.redirect('/workouts?toast=workout-saved&type=success');
+    res.redirect('/workouts');
   } catch (err) {
     console.error('createWorkout error:', err);
-    res.redirect('/workouts?toast=error&type=error');
+    res.redirect('/workouts');
   }
 };
 
@@ -79,7 +80,8 @@ exports.showNewFormForDate = (req, res) => {
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: dateStr,
-    formAction: `/workouts/day/${dateStr}/new` // POST back to that day
+    formAction: `/workouts/day/${dateStr}/new`, // POST back to that day
+    duplicateOf: null
   });
 };
 
@@ -103,55 +105,43 @@ exports.createWorkoutForDate = async (req, res) => {
       user: userId
     });
 
-    // After adding, go back to that day’s summary with toast
-    res.redirect(`/workouts/day/${forcedDate}?toast=workout-saved&type=success`);
+    // After adding, go back to that day’s summary
+    res.redirect(`/workouts/day/${forcedDate}`);
   } catch (err) {
     console.error('createWorkoutForDate error:', err);
-    const forcedDate = req.params.date;
-    res.redirect(`/workouts/day/${forcedDate}?toast=error&type=error`);
+    res.redirect('/workouts');
   }
 };
 
-/* ---------- DUPLICATE ---------- */
+/* ---------- DUPLICATE (OPEN PREFILLED FORM) ---------- */
 
-exports.duplicateWorkout = async (req, res) => {
+exports.showDuplicateForm = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.warn('duplicateWorkout: invalid id', id);
-      return res.redirect('/workouts?toast=error&type=error');
-    }
-
     const original = await Workout.findOne({
-      _id: id,
+      _id: req.params.id,
       user: userId
     });
 
     if (!original) {
-      console.warn('duplicateWorkout: not found', id);
-      return res.redirect('/workouts?toast=error&type=error');
+      console.warn('showDuplicateForm: original not found for id', req.params.id);
+      return res.redirect('/workouts');
     }
 
-    await Workout.create({
-      exercise: original.exercise,
-      category: original.category,
-      sets: original.sets,
-      reps: original.reps,
-      weight: original.weight,
-      date: new Date(),
-      notes: original.notes,
-      isPR: false,
-      user: userId
-    });
+    const todayStr = new Date().toISOString().slice(0, 10);
 
-    res.redirect('/workouts?toast=workout-duplicated&type=success');
+    // Reuse the "new" form but prefill with this workout's data.
+    res.render('workouts/new', {
+      currentPath: '/workouts',
+      today: todayStr, // keep date default to today
+      formAction: '/workouts/new',
+      duplicateOf: original
+    });
   } catch (err) {
-    console.error('duplicateWorkout error:', err);
-    res.redirect('/workouts?toast=error&type=error');
+    console.error('showDuplicateForm error:', err);
+    res.redirect('/workouts');
   }
 };
 
@@ -197,10 +187,10 @@ exports.updateWorkout = async (req, res) => {
       }
     );
 
-    res.redirect('/workouts?toast=workout-saved&type=success');
+    res.redirect('/workouts');
   } catch (err) {
     console.error('updateWorkout error:', err);
-    res.redirect('/workouts?toast=error&type=error');
+    res.redirect('/workouts');
   }
 };
 
@@ -240,7 +230,7 @@ exports.deleteWorkout = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       console.warn('deleteWorkout: invalid workout id', id);
-      return res.redirect('/workouts?toast=error&type=error');
+      return res.redirect('/workouts');
     }
 
     const deleted = await Workout.findOneAndDelete({
@@ -252,10 +242,10 @@ exports.deleteWorkout = async (req, res) => {
       console.warn('deleteWorkout: nothing deleted for id', id);
     }
 
-    return res.redirect('/workouts?toast=workout-deleted&type=success');
+    return res.redirect('/workouts');
   } catch (err) {
     console.error('deleteWorkout error:', err);
-    return res.redirect('/workouts?toast=error&type=error');
+    return res.redirect('/workouts');
   }
 };
 
@@ -367,10 +357,10 @@ exports.getStreak = async (req, res) => {
 };
 
 /**
- * Stats:
+ * Nicer stats:
  * - Total workouts + volume
- * - Line chart for LAST 30 DAYS only
- * - PR list
+ * - Line chart for LAST 30 DAYS only (shorter, cleaner)
+ * - PR list stays the same
  */
 exports.getStats = async (req, res) => {
   try {
