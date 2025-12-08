@@ -1,0 +1,56 @@
+<%- include('partials/header', { currentPath: '/' }) %>
+
+<div class="hero">
+  <h1>Keep going.</h1>
+  <p class="text-secondary">
+    Stack your workouts, log your meals, and let LetsBet Fit track the streak for you.
+  </p>
+</div>
+
+<div class="home-stats-grid mb-4">
+  <!-- Today: workouts -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Today</div>
+    <div class="home-stat-value"><%= todayWorkoutCount %> workout<%= todayWorkoutCount === 1 ? '' : 's' %></div>
+    <p class="streak-subtext mb-0">
+      Training sessions logged so far today.
+    </p>
+  </div>
+
+  <!-- Today: volume -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Training volume</div>
+    <div class="home-stat-value"><%= todayVolume %></div>
+    <p class="streak-subtext mb-0">
+      Total sets × reps × weight for today.
+    </p>
+  </div>
+
+  <!-- Today: calories -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Calories eaten</div>
+    <div class="home-stat-value"><%= todayCalories %> kcal</div>
+    <p class="streak-subtext mb-0">
+      Logged via your Meals tab.
+    </p>
+  </div>
+
+  <!-- Weekly goal -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">This week</div>
+    <div class="home-stat-value">
+      <%= weeklyWorkouts %>/<%= weeklyGoal %> workouts
+    </div>
+    <p class="streak-subtext mb-0">
+      Weekly goal progress.
+    </p>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="/workouts/new" class="btn btn-primary btn-sm">Log workout</a>
+  <a href="/meals/new" class="btn btn-outline-light btn-sm">Log meal</a>
+  <a href="/workouts/streak" class="btn btn-outline-light btn-sm">View streak</a>
+</div>
+
+<%- include('partials/footer') %>
