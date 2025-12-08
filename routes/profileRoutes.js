@@ -8,6 +8,13 @@ const { requireLogin } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * Helper to get the logged-in user from the session
+ */
+function getSessionUser(req) {
+  return (req.session && req.session.user) || null;
+}
+
+/**
  * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
  */
 const storage = multer.diskStorage({
@@ -16,7 +23,9 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
-    cb(null, `${req.user._id}-${Date.now()}${ext}`);
+    const sessionUser = getSessionUser(req);
+    const userId = sessionUser && sessionUser._id ? sessionUser._id : 'user';
+    cb(null, `${userId}-${Date.now()}${ext}`);
   }
 });
 
@@ -33,7 +42,8 @@ const upload = multer({
 
 /**
  * SETTINGS PAGE
- * (We render the old workouts/settings.ejs so your navbar link still works.)
+ * Uses res.locals.currentUser (set by your setCurrentUser middleware),
+ * so we DO NOT override it here.
  */
 router.get('/settings', requireLogin, (req, res) => {
   const profileSaved = req.query.saved === '1';
@@ -41,7 +51,6 @@ router.get('/settings', requireLogin, (req, res) => {
 
   res.render('workouts/settings', {
     currentPath: '/workouts/settings',
-    currentUser: req.user,
     profileSaved,
     reminderSaved
   });
@@ -56,7 +65,12 @@ router.post(
   upload.single('profilePhoto'),
   async (req, res) => {
     try {
-      const user = await User.findById(req.user._id);
+      const sessionUser = getSessionUser(req);
+      if (!sessionUser || !sessionUser._id) {
+        return res.redirect('/auth/login');
+      }
+
+      const user = await User.findById(sessionUser._id);
       if (!user) {
         return res.redirect('/auth/login');
       }
@@ -131,7 +145,12 @@ router.post(
  */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser || !sessionUser._id) {
+      return res.redirect('/auth/login');
+    }
+
+    const user = await User.findById(sessionUser._id);
     if (!user) return res.redirect('/auth/login');
 
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
@@ -150,7 +169,12 @@ router.post('/theme', requireLogin, async (req, res) => {
  */
 router.post('/reminder', requireLogin, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser || !sessionUser._id) {
+      return res.redirect('/auth/login');
+    }
+
+    const user = await User.findById(sessionUser._id);
     if (!user) return res.redirect('/auth/login');
 
     user.dailyReminderEnabled = req.body.reminderEnabled === 'on';
@@ -171,7 +195,12 @@ router.post('/reminder', requireLogin, async (req, res) => {
  */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
-    await User.deleteOne({ _id: req.user._id });
+    const sessionUser = getSessionUser(req);
+    if (!sessionUser || !sessionUser._id) {
+      return res.redirect('/auth/login');
+    }
+
+    await User.deleteOne({ _id: sessionUser._id });
     req.session.destroy(() => {
       res.redirect('/');
     });
