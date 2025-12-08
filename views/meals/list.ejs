@@ -1,80 +1,170 @@
-<%- include('../partials/header', { currentPath: '/meals' }) %>
+<%- include('../partials/header', { currentPath: '/workouts' }) %>
 
-<div class="main-shell">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <div>
-      <h2 class="mb-0">Meals</h2>
-      <p class="text-secondary mb-0">
-        Today's total:
-        <strong><%= todayTotalCalories || 0 %> kcal</strong>
-      </p>
-    </div>
-    <a href="/meals/new" class="btn btn-primary btn-pill">Add Meal</a>
+<%
+  // Helper to map category -> color class (uses your existing .badge-* CSS)
+  function categoryClass(cat) {
+    if (!cat) return 'badge-other';
+    const c = cat.toLowerCase();
+
+    if (c.includes('push')) return 'badge-push';
+    if (c.includes('pull')) return 'badge-pull';
+    if (c.includes('leg'))  return 'badge-legs';
+    if (c.includes('upper')) return 'badge-upper';
+    if (c.includes('lower')) return 'badge-lower';
+    if (c.includes('cardio')) return 'badge-cardio';
+    if (c.includes('core') || c.includes('abs')) return 'badge-core';
+    if (c.includes('full')) return 'badge-full';
+
+    return 'badge-other';
+  }
+
+  // Collect distinct categories for the filter dropdown
+  const categorySet = new Set();
+  workouts.forEach(w => {
+    if (w.category) categorySet.add(w.category);
+  });
+  const categoryList = Array.from(categorySet).sort();
+%>
+
+<h2 class="mb-1">Workouts</h2>
+<p class="text-secondary mb-4">All workouts logged for your account.</p>
+
+<!-- Filters row -->
+<div class="workout-filters mb-3">
+  <div class="flex-grow-1">
+    <input
+      id="workout-search"
+      type="text"
+      class="form-control"
+      placeholder="Search by exercise or notes..."
+      autocomplete="off"
+    />
   </div>
 
-  <div class="meal-card-shell glass-card mt-3 p-3">
-    <% if (meals.length === 0) { %>
-      <p class="text-secondary mb-0">
-        No meals logged yet. Start by adding your first meal.
-      </p>
-    <% } else { %>
-      <div class="table-responsive">
-        <table class="table table-borderless align-middle meal-table mb-0">
-          <thead>
-            <tr>
-              <th>Meal</th>
-              <th>Calories</th>
-              <th>Macros</th>
-              <th>Time</th>
-              <th>Date</th>
-              <th class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% meals.forEach(function(meal) { %>
-              <tr>
-                <td class="fw-semibold"><%= meal.name %></td>
-                <td><%= meal.calories %></td>
-                <td class="meal-macros">
-                  P: <%= meal.protein || 0 %>g ·
-                  C: <%= meal.carbs || 0 %>g ·
-                  F: <%= (meal.fats || meal.fat || 0) %>g
-                </td>
-                <td><%= meal.timeOfDay || '' %></td>
-                <td>
-                  <%= meal.date
-                    ? meal.date.toLocaleDateString()
-                    : '' %>
-                </td>
-                <td class="text-end">
-                  <a
-                    href="/meals/<%= meal._id %>/edit"
-                    class="btn btn-outline-light btn-sm btn-pill me-1"
-                  >
-                    Edit
-                  </a>
+  <div>
+    <select id="workout-category-filter" class="form-select">
+      <option value="">All categories</option>
+      <% categoryList.forEach(cat => { %>
+        <option value="<%= cat %>"><%= cat %></option>
+      <% }) %>
+    </select>
+  </div>
 
-                  <form
-                    action="/meals/<%= meal._id %>/delete"
-                    method="POST"
-                    class="d-inline"
-                    onsubmit="return confirm('Delete this meal?');"
-                  >
-                    <button
-                      type="submit"
-                      class="btn btn-outline-danger btn-sm btn-pill"
-                    >
-                      Delete
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
-    <% } %>
+  <div>
+    <a href="/workouts/new" class="btn btn-primary">Add Workout</a>
   </div>
 </div>
+
+<% if (workouts.length === 0) { %>
+  <p class="text-secondary">No workouts logged yet. Start today.</p>
+<% } %>
+
+<% workouts.forEach(workout => { %>
+  <div
+    class="workout-card swipeable"
+    data-exercise="<%= workout.exercise || '' %>"
+    data-notes="<%= workout.notes || '' %>"
+    data-category="<%= workout.category || '' %>"
+  >
+    <!-- Mobile swipe actions (sit behind the sliding row) -->
+    <div class="workout-actions-swipe d-md-none">
+      <!-- Duplicate -->
+      <form method="POST" action="/workouts/<%= workout._id %>/duplicate">
+        <button type="submit" class="btn-swipe btn-swipe-duplicate">
+          Dup
+        </button>
+      </form>
+
+      <!-- Delete -->
+      <form method="POST" action="/workouts/<%= workout._id %>/delete">
+        <button type="submit" class="btn-swipe btn-swipe-delete">
+          Delete
+        </button>
+      </form>
+    </div>
+
+    <!-- Main row (slides left on swipe for mobile) -->
+    <div class="workout-main-row">
+      <div class="workout-main">
+        <!-- Workout Title (exercise name) -->
+        <div class="workout-title">
+          <%= workout.exercise || 'Workout' %>
+
+          <% if (workout.isPR) { %>
+            <span class="badge-pr">PR</span>
+          <% } %>
+        </div>
+
+        <!-- Meta info with colored category pill -->
+        <div class="workout-meta">
+          <span class="badge-category <%= categoryClass(workout.category) %>">
+            <%= workout.category || 'Other' %>
+          </span>
+
+          <span>· <%= workout.sets %> x <%= workout.reps %></span>
+          <span>· <%= workout.weight %> kg</span>
+
+          <span class="badge-date">
+            · <%= workout.date.toLocaleDateString() %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Desktop / tablet inline actions -->
+      <div class="workout-actions d-none d-md-flex">
+        <!-- Duplicate (POST for safety) -->
+        <form method="POST" action="/workouts/<%= workout._id %>/duplicate" class="d-inline">
+          <button class="btn btn-outline-light btn-sm" type="submit">Duplicate</button>
+        </form>
+
+        <!-- Edit -->
+        <a href="/workouts/<%= workout._id %>/edit" class="btn btn-outline-light btn-sm">
+          Edit
+        </a>
+
+        <!-- Delete (POST) -->
+        <form method="POST" action="/workouts/<%= workout._id %>/delete" class="d-inline">
+          <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+<% }) %>
+
+<script>
+  (function () {
+    const searchInput = document.getElementById('workout-search');
+    const categorySelect = document.getElementById('workout-category-filter');
+    const cards = Array.from(document.querySelectorAll('.workout-card'));
+
+    function applyFilters() {
+      const term = (searchInput.value || '').toLowerCase();
+      const cat = (categorySelect.value || '').toLowerCase();
+
+      cards.forEach(card => {
+        const exercise = (card.dataset.exercise || '').toLowerCase();
+        const notes = (card.dataset.notes || '').toLowerCase();
+        const category = (card.dataset.category || '').toLowerCase();
+
+        const matchesText =
+          !term ||
+          exercise.includes(term) ||
+          notes.includes(term);
+
+        const matchesCat =
+          !cat || category === cat.toLowerCase();
+
+        card.style.display = (matchesText && matchesCat) ? '' : 'none';
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', applyFilters);
+    }
+    if (categorySelect) {
+      categorySelect.addEventListener('change', applyFilters);
+    }
+  })();
+</script>
 
 <%- include('../partials/footer') %>
