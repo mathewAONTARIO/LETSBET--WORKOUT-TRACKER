@@ -110,6 +110,14 @@ router.post(
         user.weightUnit = req.body.weightUnit;
       }
 
+      // Weight goal
+      if (req.body.targetWeight) {
+        user.targetWeightValue = req.body.targetWeight.trim();
+      }
+      if (req.body.targetWeightUnit) {
+        user.targetWeightUnit = req.body.targetWeightUnit;
+      }
+
       // Goal / experience
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
@@ -126,7 +134,7 @@ router.post(
 
       await user.save();
 
-      // Keep session alive + update cached user info if you use it anywhere
+      // Keep session alive + update cached user info
       req.session.userId = user._id;
       req.session.user = {
         _id: user._id,
@@ -134,13 +142,15 @@ router.post(
         displayName: user.displayName,
         profilePhotoUrl: user.profilePhotoUrl,
         theme: user.theme,
-        weeklyGoal: user.weeklyGoal
+        weeklyGoal: user.weeklyGoal,
+        dailyReminderEnabled: user.dailyReminderEnabled,
+        reminderTime: user.reminderTime
       };
 
-      res.redirect('/workouts/settings?saved=1');
+      res.redirect('/account/settings?saved=1&toast=profile-saved&type=success');
     } catch (err) {
       console.error('Error updating profile:', err);
-      res.redirect('/workouts/settings');
+      res.redirect('/account/settings?toast=error&type=error');
     }
   }
 );
@@ -167,10 +177,10 @@ router.post('/theme', requireLogin, async (req, res) => {
       theme: user.theme
     };
 
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings');
   } catch (err) {
     console.error('Error updating theme:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 
@@ -185,7 +195,8 @@ router.post('/reminder', requireLogin, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
+    user.dailyReminderEnabled =
+      req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
@@ -198,10 +209,12 @@ router.post('/reminder', requireLogin, async (req, res) => {
       reminderTime: user.reminderTime
     };
 
-    res.redirect('/workouts/settings?reminder=1');
+    res.redirect(
+      '/account/settings?reminder=1&toast=reminder-saved&type=success'
+    );
   } catch (err) {
     console.error('Error updating reminders:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 
@@ -219,7 +232,7 @@ router.post('/delete', requireLogin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error deleting account:', err);
-    res.redirect('/workouts/settings');
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 

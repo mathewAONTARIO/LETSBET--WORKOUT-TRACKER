@@ -60,10 +60,10 @@ exports.createWorkout = async (req, res) => {
       user: userId
     });
 
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=workout-saved&type=success');
   } catch (err) {
     console.error('createWorkout error:', err);
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
 
@@ -89,7 +89,6 @@ exports.createWorkoutForDate = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const forcedDate = req.params.date; // YYYY-MM-DD from URL
-
     const { exercise, category, sets, reps, weight, notes, isPR } = req.body;
 
     await Workout.create({
@@ -104,11 +103,12 @@ exports.createWorkoutForDate = async (req, res) => {
       user: userId
     });
 
-    // After adding, go back to that day’s summary
-    res.redirect(`/workouts/day/${forcedDate}`);
+    // After adding, go back to that day’s summary with toast
+    res.redirect(`/workouts/day/${forcedDate}?toast=workout-saved&type=success`);
   } catch (err) {
     console.error('createWorkoutForDate error:', err);
-    res.redirect('/workouts');
+    const forcedDate = req.params.date;
+    res.redirect(`/workouts/day/${forcedDate}?toast=error&type=error`);
   }
 };
 
@@ -119,12 +119,22 @@ exports.duplicateWorkout = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.warn('duplicateWorkout: invalid id', id);
+      return res.redirect('/workouts?toast=error&type=error');
+    }
+
     const original = await Workout.findOne({
-      _id: req.params.id,
+      _id: id,
       user: userId
     });
 
-    if (!original) return res.redirect('/workouts');
+    if (!original) {
+      console.warn('duplicateWorkout: not found', id);
+      return res.redirect('/workouts?toast=error&type=error');
+    }
 
     await Workout.create({
       exercise: original.exercise,
@@ -138,10 +148,10 @@ exports.duplicateWorkout = async (req, res) => {
       user: userId
     });
 
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=workout-duplicated&type=success');
   } catch (err) {
     console.error('duplicateWorkout error:', err);
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
 
@@ -187,10 +197,10 @@ exports.updateWorkout = async (req, res) => {
       }
     );
 
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=workout-saved&type=success');
   } catch (err) {
     console.error('updateWorkout error:', err);
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
 
@@ -230,7 +240,7 @@ exports.deleteWorkout = async (req, res) => {
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       console.warn('deleteWorkout: invalid workout id', id);
-      return res.redirect('/workouts');
+      return res.redirect('/workouts?toast=error&type=error');
     }
 
     const deleted = await Workout.findOneAndDelete({
@@ -242,10 +252,10 @@ exports.deleteWorkout = async (req, res) => {
       console.warn('deleteWorkout: nothing deleted for id', id);
     }
 
-    return res.redirect('/workouts');
+    return res.redirect('/workouts?toast=workout-deleted&type=success');
   } catch (err) {
     console.error('deleteWorkout error:', err);
-    return res.redirect('/workouts');
+    return res.redirect('/workouts?toast=error&type=error');
   }
 };
 
@@ -357,10 +367,10 @@ exports.getStreak = async (req, res) => {
 };
 
 /**
- * Nicer stats:
+ * Stats:
  * - Total workouts + volume
- * - Line chart for LAST 30 DAYS only (shorter, cleaner)
- * - PR list stays the same
+ * - Line chart for LAST 30 DAYS only
+ * - PR list
  */
 exports.getStats = async (req, res) => {
   try {
@@ -414,7 +424,7 @@ exports.getStats = async (req, res) => {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // ----- Personal records (same idea as before) -----
+    // ----- Personal records -----
     const prMap = {};
     workouts.forEach(w => {
       if (!w.isPR || !w.weight) return;
