@@ -1,22 +1,25 @@
 <%- include('../partials/header', { currentPath: '/meals' }) %>
 
 <div class="main-shell">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
-      <h2 class="mb-1">Meals</h2>
+      <h2 class="mb-0">Meals</h2>
       <p class="text-secondary mb-0">
-        Today’s total: <strong><%= todaysCalories %></strong> kcal
+        Today's total:
+        <strong><%= todayTotalCalories || 0 %> kcal</strong>
       </p>
     </div>
-    <a href="/meals/new" class="btn btn-primary">Add Meal</a>
+    <a href="/meals/new" class="btn btn-primary btn-pill">Add Meal</a>
   </div>
 
-  <div class="glass-card p-3">
+  <div class="meal-card-shell glass-card mt-3">
     <% if (meals.length === 0) { %>
-      <p class="text-secondary mb-0">No meals logged yet.</p>
+      <p class="text-secondary mb-0">
+        No meals logged yet. Start by adding your first meal.
+      </p>
     <% } else { %>
       <div class="table-responsive">
-        <table class="table table-dark table-sm align-middle mb-0">
+        <table class="table table-borderless align-middle meal-table mb-0">
           <thead>
             <tr>
               <th>Meal</th>
@@ -24,32 +27,33 @@
               <th>Macros</th>
               <th>Time</th>
               <th>Date</th>
-              <th></th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
-            <% meals.forEach(meal => { %>
+            <% meals.forEach(function(meal) { %>
               <tr>
-                <td>
-                  <strong><%= meal.name %></strong>
-                  <% if (meal.notes) { %>
-                    <br />
-                    <small class="text-secondary"><%= meal.notes %></small>
-                  <% } %>
-                </td>
+                <td class="fw-semibold"><%= meal.name %></td>
                 <td><%= meal.calories %></td>
-                <td>
-                  <small>
-                    P: <%= meal.protein || 0 %>g ·
-                    C: <%= meal.carbs || 0 %>g ·
-                    F: <%= meal.fats || 0 %>g
-                  </small>
+                <td class="meal-macros">
+                  P: <%= meal.protein || 0 %>g ·
+                  C: <%= meal.carbs || 0 %>g ·
+                  F: <%= meal.fat || 0 %>g
                 </td>
-                <td><%= meal.timeOfDay || '-' %></td>
-                <td><%= meal.date.toLocaleDateString() %></td>
+                <td><%= meal.timeOfDay || '' %></td>
+                <td>
+                  <%= meal.date
+                    ? meal.date.toLocaleDateString()
+                    : '' %>
+                </td>
                 <td class="text-end">
-                  <form action="/meals/<%= meal._id %>/delete" method="POST">
-                    <button class="btn btn-sm btn-outline-danger">
+                  <form
+                    action="/meals/<%= meal._id %>/delete"
+                    method="POST"
+                    class="d-inline"
+                    onsubmit="return confirm('Delete this meal?');"
+                  >
+                    <button type="submit" class="btn btn-outline-danger btn-sm btn-pill">
                       Delete
                     </button>
                   </form>
