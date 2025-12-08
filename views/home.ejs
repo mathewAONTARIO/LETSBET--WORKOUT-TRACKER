@@ -3,7 +3,7 @@
 <div class="hero text-start">
   <p class="text-secondary mb-1" style="font-size: 0.85rem;">
     Keep going,
-    <%= (res.locals.currentUser && (res.locals.currentUser.displayName || res.locals.currentUser.email)) || 'athlete' %>.
+    <%= (currentUser && (currentUser.displayName || currentUser.email)) || 'athlete' %>.
   </p>
 
   <h1 class="mb-3">Today</h1>
