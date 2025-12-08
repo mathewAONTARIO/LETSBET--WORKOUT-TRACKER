@@ -1,6 +1,6 @@
 {
-  "name": "Lets Bet – Workout Tracker",
-  "short_name": "Lets Bet",
+  "name": "LETSBETFit",
+  "short_name": "LBFit",
   "description": "Track workouts, streaks, and training volume across devices.",
   "start_url": "/",
   "scope": "/",
