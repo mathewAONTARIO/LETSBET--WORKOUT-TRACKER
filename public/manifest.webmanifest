@@ -1,9 +1,10 @@
 {
-  "name": "Lets Bet – Workout Tracker",
-  "short_name": "Lets Bet",
-  "description": "Track your workouts, keep your streak alive, and keep betting on yourself with Lets Bet.",
-  "start_url": "/",
+  "name": "Letsbet Fit – Workout Tracker",
+  "short_name": "Letsbet Fit",
+  "description": "Track your workouts, streaks, and PRs with Letsbet Fit.",
   "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
   "background_color": "#020617",
   "theme_color": "#020617",
   "icons": [
@@ -16,12 +17,6 @@
       "src": "/img/letsbet-logo.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-      "src": "/img/letsbet-logo.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any maskable"
     }
   ]
 }

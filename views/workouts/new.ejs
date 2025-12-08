@@ -36,17 +36,38 @@
 
       <div class="col-md-3">
         <label class="form-label">Sets</label>
-        <input type="number" name="sets" class="form-control" value="3" min="1" />
+        <input
+          type="number"
+          name="sets"
+          id="setsInput"
+          class="form-control"
+          value="3"
+          min="1"
+        />
       </div>
 
       <div class="col-md-3">
         <label class="form-label">Reps</label>
-        <input type="number" name="reps" class="form-control" value="8" min="1" />
+        <input
+          type="number"
+          name="reps"
+          id="repsInput"
+          class="form-control"
+          value="8"
+          min="1"
+        />
       </div>
 
       <div class="col-md-3">
         <label class="form-label">Weight (kg)</label>
-        <input type="number" name="weight" class="form-control" value="0" min="0" />
+        <input
+          type="number"
+          name="weight"
+          id="weightInput"
+          class="form-control"
+          value="0"
+          min="0"
+        />
       </div>
 
       <div class="col-md-3">
@@ -83,6 +104,15 @@
           </label>
         </div>
       </div>
+
+      <!-- Live volume display (MVP stat) -->
+      <div class="col-12 mt-2">
+        <small class="text-secondary">
+          Estimated volume:
+          <span id="volumeDisplay">0</span>
+          (<span id="volumeFormula">sets × reps × weight</span>)
+        </small>
+      </div>
     </div>
 
     <div class="mt-4 d-flex gap-2">
@@ -91,5 +121,34 @@
     </div>
   </form>
 </div>
+
+<script>
+  // Simple front-end helper for MVP:
+  // live volume = sets * reps * weight
+  document.addEventListener('DOMContentLoaded', () => {
+    const setsInput = document.getElementById('setsInput');
+    const repsInput = document.getElementById('repsInput');
+    const weightInput = document.getElementById('weightInput');
+    const volumeDisplay = document.getElementById('volumeDisplay');
+
+    function updateVolume() {
+      const sets = parseInt(setsInput.value, 10) || 0;
+      const reps = parseInt(repsInput.value, 10) || 0;
+      const weight = parseFloat(weightInput.value) || 0;
+
+      const volume = sets * reps * weight;
+      volumeDisplay.textContent = volume.toLocaleString();
+    }
+
+    ['input', 'change'].forEach(evt => {
+      setsInput.addEventListener(evt, updateVolume);
+      repsInput.addEventListener(evt, updateVolume);
+      weightInput.addEventListener(evt, updateVolume);
+    });
+
+    // initialize on load
+    updateVolume();
+  });
+</script>
 
 <%- include('../partials/footer') %>

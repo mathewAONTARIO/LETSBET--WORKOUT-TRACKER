@@ -1,0 +1,66 @@
+<%- include('../partials/header', { currentPath: '/meals' }) %>
+
+<div class="main-shell">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="mb-1">Meals</h2>
+      <p class="text-secondary mb-0">
+        Today’s total: <strong><%= todaysCalories %></strong> kcal
+      </p>
+    </div>
+    <a href="/meals/new" class="btn btn-primary">Add Meal</a>
+  </div>
+
+  <div class="glass-card p-3">
+    <% if (meals.length === 0) { %>
+      <p class="text-secondary mb-0">No meals logged yet.</p>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-dark table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Meal</th>
+              <th>Calories</th>
+              <th>Macros</th>
+              <th>Time</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% meals.forEach(meal => { %>
+              <tr>
+                <td>
+                  <strong><%= meal.name %></strong>
+                  <% if (meal.notes) { %>
+                    <br />
+                    <small class="text-secondary"><%= meal.notes %></small>
+                  <% } %>
+                </td>
+                <td><%= meal.calories %></td>
+                <td>
+                  <small>
+                    P: <%= meal.protein || 0 %>g ·
+                    C: <%= meal.carbs || 0 %>g ·
+                    F: <%= meal.fats || 0 %>g
+                  </small>
+                </td>
+                <td><%= meal.timeOfDay || '-' %></td>
+                <td><%= meal.date.toLocaleDateString() %></td>
+                <td class="text-end">
+                  <form action="/meals/<%= meal._id %>/delete" method="POST">
+                    <button class="btn btn-sm btn-outline-danger">
+                      Delete
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

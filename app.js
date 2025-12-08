@@ -8,6 +8,7 @@ const indexRoutes = require('./routes/index');
 const workoutRoutes = require('./routes/workoutRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const mealRoutes = require('./routes/mealRoutes'); // ⬅️ NEW
 const { attachUser } = require('./middleware/auth');
 const setTheme = require('./middleware/setTheme');
 
@@ -42,6 +43,7 @@ app.use(attachUser);
 // Routes
 app.use('/', indexRoutes);
 app.use('/workouts', workoutRoutes);
+app.use('/meals', mealRoutes);     // ⬅️ NEW
 app.use('/auth', authRoutes);
 app.use('/account', profileRoutes);
 

@@ -7,6 +7,11 @@
     : 0;
 
   const hasWorkouts = totalDays > 0;
+
+  const hasWeeklyGoal = weeklyGoal && weeklyGoal > 0;
+  const weeklyPercent = hasWeeklyGoal
+    ? Math.min(100, Math.round((workoutsThisWeek / weeklyGoal) * 100))
+    : 0;
 %>
 
 <div class="streak-shell">
@@ -32,7 +37,9 @@
           </div>
         </div>
         <div class="streak-bar-caption">
-          <%= longestStreak ? `Best streak: ${longestStreak} day${longestStreak === 1 ? '' : 's'}` : 'No streak set yet' %>
+          <%= longestStreak
+            ? `Best streak: ${longestStreak} day${longestStreak === 1 ? '' : 's'}`
+            : 'No streak set yet' %>
         </div>
       </div>
     </div>
@@ -55,6 +62,41 @@
       <p class="streak-subtext">
         Unique days you’ve tracked at least one workout.
       </p>
+    </div>
+
+    <!-- Weekly goal progress -->
+    <div class="streak-card">
+      <div class="streak-label">This week</div>
+      <div class="streak-value">
+        <% if (hasWeeklyGoal) { %>
+          <%= workoutsThisWeek %>/<%= weeklyGoal %>
+        <% } else { %>
+          <%= workoutsThisWeek %> workout<%= workoutsThisWeek === 1 ? '' : 's' %>
+        <% } %>
+      </div>
+      <p class="streak-subtext">
+        Workouts logged this week.
+        <% if (!hasWeeklyGoal) { %>
+          <br />
+          <a href="/workouts/settings" class="link-light-underline">
+            Set a weekly goal in Settings
+          </a>
+        <% } %>
+      </p>
+
+      <% if (hasWeeklyGoal) { %>
+        <div class="streak-bar-wrapper mt-2">
+          <div class="streak-bar">
+            <div
+              class="streak-bar-fill"
+              style="width: <%= weeklyPercent %>%;">
+            </div>
+          </div>
+          <div class="streak-bar-caption">
+            <%= weeklyPercent %>% of your <%= weeklyGoal %>/week goal
+          </div>
+        </div>
+      <% } %>
     </div>
   </div>
 

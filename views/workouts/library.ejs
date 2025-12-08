@@ -1,9 +1,28 @@
 <%- include('../partials/header', { currentPath: '/workouts/library' }) %>
 
 <h2 class="mb-1">Exercise Library</h2>
-<p class="text-secondary mb-4">
-  Quick ideas for what to hit each day. Use these to build or tweak your workouts.
+<p class="text-secondary mb-3">
+  Quick ideas for what to hit each day. Tap an exercise to jump to
+  <strong>Add Workout</strong> (we also copy the name so you can paste it).
 </p>
+
+<!-- Simple filters -->
+<div class="workout-filters mb-3">
+  <div>
+    <label class="form-label mb-1" style="font-size:0.8rem;">Muscle group</label>
+    <select id="libraryMuscleFilter" class="form-select form-select-sm" style="min-width: 180px;">
+      <option value="all">All groups</option>
+      <option value="push">Push (chest/shoulders/triceps)</option>
+      <option value="pull">Pull (back/biceps)</option>
+      <option value="legs">Legs</option>
+      <option value="chest">Chest</option>
+      <option value="back">Back</option>
+      <option value="shoulders">Shoulders</option>
+      <option value="arms">Arms</option>
+      <option value="core">Core / conditioning</option>
+    </select>
+  </div>
+</div>
 
 <div class="glass-card mb-4">
   <div class="card-body">
@@ -12,34 +31,34 @@
       Use 3–4 moves per day, 3–4 sets each, 6–12 reps depending on your goal.
     </p>
     <div class="library-grid mt-3">
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="push">
         <div class="library-card-title">Push (chest, shoulders, triceps)</div>
         <div class="library-card-sub">Example day:</div>
         <ul class="mb-0">
-          <li>Bench Press – 4×6–8</li>
-          <li>Incline Dumbbell Press – 3×8–10</li>
-          <li>Seated Shoulder Press – 3×8–10</li>
-          <li>Triceps Pushdowns – 3×10–12</li>
+          <li class="exercise-item" data-name="Bench Press">Bench Press – 4×6–8</li>
+          <li class="exercise-item" data-name="Incline Dumbbell Press">Incline Dumbbell Press – 3×8–10</li>
+          <li class="exercise-item" data-name="Seated Shoulder Press">Seated Shoulder Press – 3×8–10</li>
+          <li class="exercise-item" data-name="Triceps Pushdowns">Triceps Pushdowns – 3×10–12</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="pull">
         <div class="library-card-title">Pull (back, biceps)</div>
         <div class="library-card-sub">Example day:</div>
         <ul class="mb-0">
-          <li>Deadlift or RDL – 3×5–6</li>
-          <li>Lat Pulldown / Pull-Ups – 4×6–10</li>
-          <li>Barbell or Dumbbell Row – 3×8–10</li>
-          <li>Biceps Curls – 3×10–12</li>
+          <li class="exercise-item" data-name="Deadlift or RDL">Deadlift or RDL – 3×5–6</li>
+          <li class="exercise-item" data-name="Lat Pulldown / Pull-Ups">Lat Pulldown / Pull-Ups – 4×6–10</li>
+          <li class="exercise-item" data-name="Barbell or Dumbbell Row">Barbell or Dumbbell Row – 3×8–10</li>
+          <li class="exercise-item" data-name="Biceps Curls">Biceps Curls – 3×10–12</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="legs">
         <div class="library-card-title">Legs (quads, glutes, hamstrings)</div>
         <div class="library-card-sub">Example day:</div>
         <ul class="mb-0">
-          <li>Back Squat or Hack Squat – 4×6–8</li>
-          <li>Romanian Deadlift – 3×8–10</li>
-          <li>Leg Press or Lunges – 3×10–12</li>
-          <li>Calf Raises – 3×12–15</li>
+          <li class="exercise-item" data-name="Back Squat or Hack Squat">Back Squat or Hack Squat – 4×6–8</li>
+          <li class="exercise-item" data-name="Romanian Deadlift">Romanian Deadlift – 3×8–10</li>
+          <li class="exercise-item" data-name="Leg Press or Lunges">Leg Press or Lunges – 3×10–12</li>
+          <li class="exercise-item" data-name="Calf Raises">Calf Raises – 3×12–15</li>
         </ul>
       </div>
     </div>
@@ -50,68 +69,115 @@
   <div class="card-body">
     <h5 class="mb-3">Exercise ideas by muscle group</h5>
     <div class="library-grid">
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="chest">
         <div class="library-card-title">Chest</div>
         <div class="library-card-sub">Pick 2–3:</div>
         <ul class="mb-0">
-          <li>Bench Press</li>
-          <li>Incline Dumbbell Press</li>
-          <li>Push-Ups / Weighted Push-Ups</li>
-          <li>Cable Flyes or Pec Deck</li>
+          <li class="exercise-item" data-name="Bench Press">Bench Press</li>
+          <li class="exercise-item" data-name="Incline Dumbbell Press">Incline Dumbbell Press</li>
+          <li class="exercise-item" data-name="Push-Ups / Weighted Push-Ups">Push-Ups / Weighted Push-Ups</li>
+          <li class="exercise-item" data-name="Cable Flyes or Pec Deck">Cable Flyes or Pec Deck</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="back">
         <div class="library-card-title">Back</div>
         <div class="library-card-sub">Vertical + horizontal pull:</div>
         <ul class="mb-0">
-          <li>Lat Pulldown / Pull-Ups</li>
-          <li>Barbell or Dumbbell Row</li>
-          <li>Chest-Supported Row</li>
-          <li>Face Pulls</li>
+          <li class="exercise-item" data-name="Lat Pulldown / Pull-Ups">Lat Pulldown / Pull-Ups</li>
+          <li class="exercise-item" data-name="Barbell or Dumbbell Row">Barbell or Dumbbell Row</li>
+          <li class="exercise-item" data-name="Chest-Supported Row">Chest-Supported Row</li>
+          <li class="exercise-item" data-name="Face Pulls">Face Pulls</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="legs">
         <div class="library-card-title">Legs</div>
         <div class="library-card-sub">Hit quads + glutes + hamstrings:</div>
         <ul class="mb-0">
-          <li>Back or Front Squat</li>
-          <li>Leg Press</li>
-          <li>Romanian Deadlift</li>
-          <li>Walking Lunges</li>
+          <li class="exercise-item" data-name="Back or Front Squat">Back or Front Squat</li>
+          <li class="exercise-item" data-name="Leg Press">Leg Press</li>
+          <li class="exercise-item" data-name="Romanian Deadlift">Romanian Deadlift</li>
+          <li class="exercise-item" data-name="Walking Lunges">Walking Lunges</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="shoulders">
         <div class="library-card-title">Shoulders</div>
         <div class="library-card-sub">Front / side / rear delts:</div>
         <ul class="mb-0">
-          <li>Overhead Press</li>
-          <li>Lateral Raises</li>
-          <li>Rear Delt Flyes</li>
-          <li>Arnold Press</li>
+          <li class="exercise-item" data-name="Overhead Press">Overhead Press</li>
+          <li class="exercise-item" data-name="Lateral Raises">Lateral Raises</li>
+          <li class="exercise-item" data-name="Rear Delt Flyes">Rear Delt Flyes</li>
+          <li class="exercise-item" data-name="Arnold Press">Arnold Press</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="arms">
         <div class="library-card-title">Arms</div>
         <div class="library-card-sub">After push / pull work:</div>
         <ul class="mb-0">
-          <li>Barbell or DB Curls</li>
-          <li>Hammer Curls</li>
-          <li>Triceps Pushdowns</li>
-          <li>Dips or Bench Dips</li>
+          <li class="exercise-item" data-name="Barbell or DB Curls">Barbell or DB Curls</li>
+          <li class="exercise-item" data-name="Hammer Curls">Hammer Curls</li>
+          <li class="exercise-item" data-name="Triceps Pushdowns">Triceps Pushdowns</li>
+          <li class="exercise-item" data-name="Dips or Bench Dips">Dips or Bench Dips</li>
         </ul>
       </div>
-      <div class="library-card">
+      <div class="library-card" data-muscle-group="core">
         <div class="library-card-title">Core / conditioning</div>
         <div class="library-card-sub">Finishers:</div>
         <ul class="mb-0">
-          <li>Planks (front / side)</li>
-          <li>Hanging Leg Raises</li>
-          <li>Cable Crunches</li>
-          <li>Bike, rower, or incline walk 10–20 min</li>
+          <li class="exercise-item" data-name="Planks">Planks (front / side)</li>
+          <li class="exercise-item" data-name="Hanging Leg Raises">Hanging Leg Raises</li>
+          <li class="exercise-item" data-name="Cable Crunches">Cable Crunches</li>
+          <li class="exercise-item" data-name="Bike / Rower / Incline Walk 10–20 min">
+            Bike, rower, or incline walk 10–20 min
+          </li>
         </ul>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    // Filter library cards by muscle group
+    var muscleFilter = document.getElementById('libraryMuscleFilter');
+    var cards = document.querySelectorAll('.library-card[data-muscle-group]');
+
+    function applyFilter() {
+      if (!muscleFilter) return;
+      var value = muscleFilter.value || 'all';
+      cards.forEach(function (card) {
+        var group = card.dataset.muscleGroup || '';
+        if (value === 'all' || group === value) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    if (muscleFilter) {
+      muscleFilter.addEventListener('change', applyFilter);
+      applyFilter();
+    }
+
+    // Clicking an exercise -> copy name + go to Add Workout
+    var items = document.querySelectorAll('.exercise-item');
+    items.forEach(function (li) {
+      li.style.cursor = 'pointer';
+
+      li.addEventListener('click', function () {
+        var name = li.dataset.name || li.textContent.trim();
+        if (!name) return;
+
+        // Try to copy to clipboard (non-fatal if it fails)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(name).catch(function () {});
+        }
+
+        // Jump to Add Workout – exercise is passed in querystring (future: prefill form)
+        window.location.href = '/workouts/new?exercise=' + encodeURIComponent(name);
+      });
+    });
+  })();
+</script>
 
 <%- include('../partials/footer') %>

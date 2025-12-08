@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Lets Bet</title>
+    <title>LetsBet Fit</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Bootstrap -->
@@ -15,6 +15,7 @@
 
     <!-- Custom styles -->
     <link rel="stylesheet" href="/css/style.css" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
 
   <body class="<%= currentTheme === 'light' ? 'theme-light' : '' %>">
@@ -23,11 +24,11 @@
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
           <img
             src="/img/letsbet-logo.png"
-            alt="Lets Bet"
+            alt="LetsBet Fit"
             style="width: 26px; height: 26px; border-radius: 6px; object-fit: cover;"
           />
           <span class="fw-semibold text-uppercase" style="font-size: 0.9rem;">
-            LETS BET
+            LETSBET FIT
           </span>
         </a>
 
@@ -65,34 +66,26 @@
                 <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/account/settings">Settings</a>
+                <a class="nav-link <%= currentPath.startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/workouts/settings">Settings</a>
               </li>
             <% } %>
           </ul>
 
           <div class="d-flex align-items-center gap-3">
+
             <!-- Theme toggle -->
             <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
-              <input
-                type="hidden"
-                name="theme"
-                value="<%= currentTheme === 'light' ? 'dark' : 'light' %>"
-              />
-              <button
-                type="submit"
-                class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn"
-              >
-                <% if (currentTheme === 'light') { %>
-                  🌙
-                <% } else { %>
-                  ☀️
-                <% } %>
+              <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
+              <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
+                <% if (currentTheme === 'light') { %>🌙<% } else { %>☀️<% } %>
               </button>
             </form>
 
             <% if (currentUser) { %>
-              <!-- Profile pill now clickable: /account -->
-              <a href="/account" class="profile-pill text-decoration-none">
+              <div class="profile-pill">
                 <% if (currentUser.profilePhotoUrl) { %>
                   <img
                     src="<%= currentUser.profilePhotoUrl %>"
@@ -106,25 +99,21 @@
                       : (currentUser.email || '?').charAt(0).toUpperCase() %>
                   </span>
                 <% } %>
-                <span style="font-size: 0.85rem;">
-                  <%= currentUser.displayName || currentUser.email %>
-                </span>
-              </a>
+                <span style="font-size: 0.85rem;"><%= currentUser.displayName || currentUser.email %></span>
+              </div>
 
               <form action="/auth/logout" method="POST" class="ms-2">
-                <button class="btn btn-outline-light btn-sm" type="submit">
-                  Log Out
-                </button>
+                <button class="btn btn-outline-light btn-sm" type="submit">Log Out</button>
               </form>
+
             <% } else { %>
-              <!-- Logged-out buttons -->
               <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
               <a href="/auth/register" class="btn btn-primary btn-sm ms-1">Sign Up</a>
             <% } %>
+
           </div>
         </div>
       </div>
     </nav>
 
-    <!-- main content wrapper -->
     <main class="container mb-5 main-shell">

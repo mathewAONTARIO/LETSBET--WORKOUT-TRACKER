@@ -1,228 +1,182 @@
 <%- include('../partials/header', { currentPath: '/account/profile' }) %>
 
-<div class="main-shell">
-  <h2 class="mb-1">Settings</h2>
-  <p class="text-secondary mb-4">
-    Update your profile, training preferences, and workout reminders.
-  </p>
+<%
+  // Prefer explicit "user" from route, fall back to currentUser from session
+  const u = user || currentUser;
+%>
 
+<div class="main-shell">
   <% if (saved) { %>
-    <div class="alert alert-success py-2 mb-3" role="alert" style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;">
-      Profile saved successfully.
+    <div
+      class="alert alert-success py-2 mb-3"
+      role="alert"
+      style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;"
+    >
+      Profile updated.
     </div>
   <% } %>
 
   <% if (error) { %>
-    <div class="alert alert-danger py-2 mb-3" role="alert" style="background: rgba(248,113,113,0.18); border-color:#f97316; color:#fee2e2;">
+    <div
+      class="alert alert-danger py-2 mb-3"
+      role="alert"
+      style="background: rgba(248,113,113,0.18); border-color:#f97316; color:#fee2e2;"
+    >
       Something went wrong while saving. Please try again.
     </div>
   <% } %>
 
-  <form
-    action="/account/profile"
-    method="POST"
-    enctype="multipart/form-data"
+  <!-- Top card: avatar + name + weekly goal + Edit button -->
+  <div
+    class="glass-card p-4 mb-4 d-flex flex-column flex-md-row align-items-start gap-4"
   >
-    <div class="glass-card p-4 mb-4">
-      <h5 class="mb-3">Profile</h5>
-
-      <!-- Avatar row -->
-      <div class="mb-3">
-        <label class="form-label">Profile picture</label>
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-          <% if (user && user.profilePhotoUrl) { %>
-            <img
-              src="<%= user.profilePhotoUrl %>"
-              alt="Profile"
-              style="width: 56px; height: 56px; border-radius: 999px; object-fit: cover;"
-            />
-          <% } else { %>
-            <div
-              style="
-                width: 56px;
-                height: 56px;
-                border-radius: 999px;
-                background: rgba(15,23,42,0.9);
-                border: 1px solid rgba(148,163,184,0.6);
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                font-size: 1.1rem;
-              "
-            >
-              <%= (user && (user.displayName || user.email))
-                    ? (user.displayName || user.email).charAt(0).toUpperCase()
-                    : '?' %>
-            </div>
-          <% } %>
-
-          <div class="flex-grow-1" style="max-width: 260px;">
-            <input
-              type="file"
-              name="profilePhoto"
-              accept="image/png,image/jpeg"
-              class="form-control"
-            />
-            <small class="text-secondary">
-              PNG or JPG, up to 2MB.
-            </small>
-          </div>
+    <!-- Left: avatar + name -->
+    <div class="d-flex flex-column align-items-center text-center">
+      <% if (u && u.profilePhotoUrl) { %>
+        <img
+          src="<%= u.profilePhotoUrl %>"
+          alt="Profile"
+          style="width: 80px; height: 80px; border-radius: 999px; object-fit: cover; margin-bottom: 8px;"
+        />
+      <% } else { %>
+        <div
+          class="avatar-circle d-flex align-items-center justify-content-center"
+          style="width: 80px; height: 80px; font-size: 2rem; margin-bottom: 8px;"
+        >
+          <%= (u && (u.displayName || u.email))
+            ? (u.displayName || u.email).charAt(0).toUpperCase()
+            : '?' %>
         </div>
-      </div>
+      <% } %>
 
-      <!-- Display name + weekly goal -->
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Display name</label>
-          <input
-            type="text"
-            name="displayName"
-            class="form-control"
-            value="<%= user.displayName || '' %>"
-          />
-        </div>
+      <div>
+        <h3 class="mb-0"><%= (u && (u.displayName || u.email)) || 'Athlete' %></h3>
+        <p class="text-secondary mb-2" style="font-size: 0.9rem;">
+          Weekly goal:
+          <strong><%= (u && u.weeklyGoal) || 4 %> workouts</strong>
+        </p>
 
-        <div class="col-md-6">
-          <label class="form-label">Weekly workout goal</label>
-          <select name="weeklyGoal" class="form-select">
-            <% [3,4,5,6,7].forEach(function(goal) { %>
-              <option
-                value="<%= goal %>"
-                <%= (user.weeklyGoal || 4) === goal ? 'selected' : '' %>>
-                <%= goal %> per week
-              </option>
-            <% }) %>
-          </select>
-        </div>
-      </div>
-
-      <!-- Gender / Age -->
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Gender</label>
-          <select name="gender" class="form-select">
-            <option value="" <%= !user.gender ? 'selected' : '' %>>Prefer not to say</option>
-            <option value="male" <%= user.gender === 'male' ? 'selected' : '' %>>Male</option>
-            <option value="female" <%= user.gender === 'female' ? 'selected' : '' %>>Female</option>
-            <option value="other" <%= user.gender === 'other' ? 'selected' : '' %>>Other</option>
-          </select>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Age</label>
-          <input
-            type="number"
-            name="age"
-            min="0"
-            max="120"
-            class="form-control"
-            value="<%= typeof user.age === 'number' ? user.age : '' %>"
-          />
-        </div>
-      </div>
-
-      <!-- Height & Weight (text so you can use ' and .) -->
-      <div class="row g-3 mb-3">
-        <div class="col-md-6">
-          <label class="form-label">Height</label>
-          <div class="input-group">
-            <input
-              type="text"
-              name="height"
-              class="form-control"
-              placeholder="e.g. 5'11 or 180"
-              value="<%= user.height || '' %>"
-            />
-            <select name="heightUnit" class="form-select" style="max-width: 90px;">
-              <option value="cm" <%= (user.heightUnit || 'cm') === 'cm' ? 'selected' : '' %>>cm</option>
-              <option value="ft" <%= user.heightUnit === 'ft' ? 'selected' : '' %>>ft</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Weight</label>
-          <div class="input-group">
-            <input
-              type="text"
-              name="weight"
-              class="form-control"
-              placeholder="e.g. 72.5"
-              value="<%= user.weight || '' %>"
-            />
-            <select name="weightUnit" class="form-select" style="max-width: 90px;">
-              <option value="kg" <%= (user.weightUnit || 'kg') === 'kg' ? 'selected' : '' %>>kg</option>
-              <option value="lb" <%= user.weightUnit === 'lb' ? 'selected' : '' %>>lb</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Goals / Level -->
-      <div class="row g-3 mb-2">
-        <div class="col-md-6">
-          <label class="form-label">Primary goal</label>
-          <select name="primaryGoal" class="form-select">
-            <option value="" <%= !user.primaryGoal ? 'selected' : '' %>>Select goal</option>
-            <option value="fat-loss" <%= user.primaryGoal === 'fat-loss' ? 'selected' : '' %>>Lose fat</option>
-            <option value="muscle-gain" <%= user.primaryGoal === 'muscle-gain' ? 'selected' : '' %>>Build muscle</option>
-            <option value="performance" <%= user.primaryGoal === 'performance' ? 'selected' : '' %>>Performance / Sports</option>
-            <option value="general-health" <%= user.primaryGoal === 'general-health' ? 'selected' : '' %>>General health</option>
-          </select>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">Training experience</label>
-          <select name="trainingLevel" class="form-select">
-            <option value="" <%= !user.trainingLevel ? 'selected' : '' %>>Select level</option>
-            <option value="beginner" <%= user.trainingLevel === 'beginner' ? 'selected' : '' %>>Beginner</option>
-            <option value="intermediate" <%= user.trainingLevel === 'intermediate' ? 'selected' : '' %>>Intermediate</option>
-            <option value="advanced" <%= user.trainingLevel === 'advanced' ? 'selected' : '' %>>Advanced</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="mt-3">
-        <button type="submit" class="btn btn-primary w-100">
-          Save profile
-        </button>
+        <!-- Edit profile goes to the settings screen -->
+        <a href="/account/settings" class="btn btn-outline-light btn-sm mt-1">
+          Edit profile
+        </a>
       </div>
     </div>
 
-    <!-- Reminders card -->
-    <div class="glass-card p-4 mb-4">
-      <h5 class="mb-3">Workout reminders</h5>
-      <p class="text-secondary" style="font-size: 0.85rem;">
-        Set a daily time to remind yourself to log workouts. (Future versions could send real notifications.)
-      </p>
+    <!-- Right: athlete information -->
+    <div class="flex-grow-1">
+      <h5 class="mb-3">Athlete information</h5>
 
-      <div class="form-check form-switch mb-3">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          id="reminderEnabled"
-          name="reminderEnabled"
-          <%= user.reminderEnabled ? 'checked' : '' %>
-        />
-        <label class="form-check-label" for="reminderEnabled">
-          Enable daily reminder
-        </label>
-      </div>
+      <div class="row g-3">
+        <!-- Gender -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Gender</div>
+          <div>
+            <% if (!u || !u.gender || u.gender === 'prefer-not-to-say') { %>
+              Prefer not to say
+            <% } else if (u.gender === 'male') { %>
+              Male
+            <% } else if (u.gender === 'female') { %>
+              Female
+            <% } else if (u.gender === 'non-binary') { %>
+              Non-binary
+            <% } else { %>
+              Other
+            <% } %>
+          </div>
+        </div>
 
-      <div class="mb-2" style="max-width: 220px;">
-        <label class="form-label">Reminder time</label>
-        <input
-          type="time"
-          name="reminderTime"
-          class="form-control"
-          value="<%= user.reminderTime || '18:00' %>"
-        />
-        <small class="text-secondary">
-          This just stores your preferred time for now.
-        </small>
+        <!-- Age -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Age</div>
+          <div><%= (u && typeof u.age === 'number') ? u.age : '—' %></div>
+        </div>
+
+        <!-- Height -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Height</div>
+          <div>
+            <% if (u && u.heightValue) { %>
+              <%= u.heightValue %> <%= u.heightUnit || 'cm' %>
+            <% } else { %>
+              —
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Weight -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Weight</div>
+          <div>
+            <% if (u && u.weightValue) { %>
+              <%= u.weightValue %> <%= u.weightUnit || 'kg' %>
+            <% } else { %>
+              —
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Primary goal -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Primary goal</div>
+          <div>
+            <% if (!u || !u.primaryGoal || u.primaryGoal === 'general-fitness') { %>
+              General fitness
+            <% } else if (u.primaryGoal === 'fat-loss') { %>
+              Fat loss
+            <% } else if (u.primaryGoal === 'muscle-gain') { %>
+              Muscle gain
+            <% } else if (u.primaryGoal === 'strength') { %>
+              Strength
+            <% } else if (u.primaryGoal === 'performance') { %>
+              Performance
+            <% } else if (u.primaryGoal === 'endurance') { %>
+              Endurance
+            <% } else { %>
+              Other
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Training experience -->
+        <div class="col-sm-6">
+          <div class="text-secondary" style="font-size: 0.8rem;">Training experience</div>
+          <div>
+            <% if (!u || !u.trainingExperience || u.trainingExperience === 'beginner-0-6') { %>
+              Beginner (0–6 months)
+            <% } else if (u.trainingExperience === 'intermediate-6-24') { %>
+              Intermediate (6–24 months)
+            <% } else if (u.trainingExperience === 'advanced-24-plus') { %>
+              Advanced (2+ years)
+            <% } else { %>
+              —
+            <% } %>
+          </div>
+        </div>
       </div>
     </div>
-  </form>
+  </div>
+
+  <!-- Optional reminder summary, just read-only -->
+  <div class="glass-card p-4 mb-4">
+    <h5 class="mb-2">Workout reminders</h5>
+    <p class="text-secondary" style="font-size: 0.9rem;">
+      Daily reminder:
+      <% if (u && u.dailyReminderEnabled) { %>
+        <strong>On</strong> at <strong><%= u.reminderTime || '18:00' %></strong>
+      <% } else { %>
+        <strong>Off</strong>
+      <% } %>
+    </p>
+    <a href="/account/settings" class="btn btn-outline-light btn-sm">
+      Edit reminder settings
+    </a>
+  </div>
+
+  <p class="text-secondary" style="font-size: 0.85rem;">
+    Future versions can add your weekly distance, total time, and PR timeline here — just like
+    your Strava profile.
+  </p>
 </div>
 
 <%- include('../partials/footer') %>

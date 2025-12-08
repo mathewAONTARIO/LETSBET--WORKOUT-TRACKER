@@ -254,10 +254,13 @@ exports.deleteWorkout = async (req, res) => {
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
     const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
 
     const daySet = new Set();
     workouts.forEach(w => {
+      if (!w.date) return;
       const d = new Date(w.date);
       const key = d.toISOString().slice(0, 10);
       daySet.add(key);
@@ -268,10 +271,13 @@ exports.getStreak = async (req, res) => {
     let currentStreak = 0;
     let longestStreak = 0;
 
-    if (days.length > 0) {
-      const today = new Date();
-      const todayKey = today.toISOString().slice(0, 10);
+    // today (normalized to midnight)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = today.toISOString().slice(0, 10);
 
+    if (days.length > 0) {
+      // current streak: walk backwards from today
       let cursor = new Date(todayKey);
       while (true) {
         const key = cursor.toISOString().slice(0, 10);
@@ -283,6 +289,7 @@ exports.getStreak = async (req, res) => {
         }
       }
 
+      // longest streak over history
       let temp = 1;
       for (let i = 1; i < days.length; i++) {
         const prev = new Date(days[i - 1]);
@@ -303,11 +310,36 @@ exports.getStreak = async (req, res) => {
         ? new Date(workouts[workouts.length - 1].date).toLocaleDateString()
         : null;
 
+    // ---- Weekly progress toward goal ----
+    const startOfWeek = new Date(today);
+    // Sunday = 0, Monday = 1, ...
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const workoutDaysThisWeek = new Set();
+
+    workouts.forEach(w => {
+      if (!w.date) return;
+      const d = new Date(w.date);
+      d.setHours(0, 0, 0, 0);
+      if (d >= startOfWeek && d <= today) {
+        const key = d.toISOString().slice(0, 10);
+        workoutDaysThisWeek.add(key);
+      }
+    });
+
+    const workoutsThisWeek = workoutDaysThisWeek.size;
+
+    const currentUser = res.locals.currentUser || {};
+    const weeklyGoal = currentUser.weeklyGoal || 0;
+
     res.render('workouts/streak', {
       currentStreak,
       longestStreak,
       totalDays,
       lastWorkoutDate,
+      workoutsThisWeek,
+      weeklyGoal,
       currentPath: '/workouts/streak'
     });
   } catch (err) {
@@ -317,6 +349,8 @@ exports.getStreak = async (req, res) => {
       longestStreak: 0,
       totalDays: 0,
       lastWorkoutDate: null,
+      workoutsThisWeek: 0,
+      weeklyGoal: 0,
       currentPath: '/workouts/streak'
     });
   }
