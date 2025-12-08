@@ -26,21 +26,21 @@ exports.getMeals = async (req, res) => {
       return d >= today && d < tomorrow;
     });
 
-    const todaysCalories = todaysMeals.reduce(
+    const todayTotalCalories = todaysMeals.reduce(
       (sum, m) => sum + (m.calories || 0),
       0
     );
 
     res.render('meals/list', {
       meals,
-      todaysCalories,
+      todayTotalCalories,
       currentPath: '/meals'
     });
   } catch (err) {
     console.error('getMeals error:', err);
     res.render('meals/list', {
       meals: [],
-      todaysCalories: 0,
+      todayTotalCalories: 0,
       currentPath: '/meals'
     });
   }
