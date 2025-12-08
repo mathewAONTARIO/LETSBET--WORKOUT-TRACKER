@@ -21,23 +21,45 @@
   <body class="<%= currentTheme === 'light' ? 'theme-light' : '' %>">
     <nav class="navbar navbar-dark navbar-expand-lg border-bottom border-slate-800 mb-4">
       <div class="container px-3">
-
-        <!-- Brand -->
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-          <img
-            src="/img/letsbet-logo.png"
-            alt="LETSBETFit"
-            style="width: 26px; height: 26px; border-radius: 6px; object-fit: cover;"
-          />
-          <span
-            class="fw-semibold"
-            style="font-size: 0.9rem; letter-spacing: 0.05em;"
+          <!-- Inline SVG logo -->
+          <svg
+            class="brand-mark"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
           >
-            LETSBETFit
+            <defs>
+              <linearGradient id="lbfit-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#60a5fa" />
+                <stop offset="100%" stop-color="#22c55e" />
+              </linearGradient>
+            </defs>
+            <rect
+              x="2.5"
+              y="2.5"
+              width="27"
+              height="27"
+              rx="8"
+              ry="8"
+              fill="url(#lbfit-grad)"
+            />
+            <polyline
+              points="5 18 10 18 13 11 17 23 20 16 24 18 27 18"
+              fill="none"
+              stroke="#0b1120"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+
+          <!-- Wordmark -->
+          <span class="brand-wordmark">
+            <span class="brand-text-main">LETSBET</span
+            ><span class="brand-text-sub">Fit</span>
           </span>
         </a>
 
-        <!-- Mobile toggle -->
         <button
           class="navbar-toggler"
           type="button"
@@ -50,61 +72,45 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Nav links -->
         <div class="collapse navbar-collapse mt-2 mt-lg-0" id="mainNav">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <% if (currentUser) { %>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Home</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts' ? 'active' : '' %>" href="/workouts">Workouts</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts/streak' ? 'active' : '' %>" href="/workouts/streak">Streak</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts/stats' ? 'active' : '' %>" href="/workouts/stats">Stats</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>" href="/workouts/calendar">Calendar</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath.startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
               </li>
-
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/workouts/settings' ? 'active' : '' %>" href="/workouts/settings">Settings</a>
               </li>
-
             <% } %>
           </ul>
 
-          <!-- Right side: Theme + Profile + Log out -->
           <div class="d-flex align-items-center gap-3">
-
             <!-- Theme toggle -->
             <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
               <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
-              <button
-                type="submit"
-                class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn"
-              >
+              <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
                 <% if (currentTheme === 'light') { %>🌙<% } else { %>☀️<% } %>
               </button>
             </form>
 
-            <!-- Profile / Logout -->
             <% if (currentUser) { %>
               <div class="profile-pill">
                 <% if (currentUser.profilePhotoUrl) { %>
@@ -117,27 +123,20 @@
                   <span class="avatar-circle me-2">
                     <%= currentUser.displayName
                       ? currentUser.displayName.charAt(0).toUpperCase()
-                      : (currentUser.email || '?').charAt(0).toUpperCase()
-                    %>
+                      : (currentUser.email || '?').charAt(0).toUpperCase() %>
                   </span>
                 <% } %>
-
-                <span style="font-size: 0.85rem;">
-                  <%= currentUser.displayName || currentUser.email %>
-                </span>
+                <span style="font-size: 0.85rem;"><%= currentUser.displayName || currentUser.email %></span>
               </div>
 
               <form action="/auth/logout" method="POST" class="ms-2">
-                <button class="btn btn-outline-light btn-sm" type="submit">
-                  Log Out
-                </button>
+                <button class="btn btn-outline-light btn-sm" type="submit">Log Out</button>
               </form>
 
             <% } else { %>
               <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
               <a href="/auth/register" class="btn btn-primary btn-sm ms-1">Sign Up</a>
             <% } %>
-
           </div>
         </div>
       </div>

@@ -50,6 +50,8 @@ label {
   backdrop-filter: blur(18px);
   background: rgba(15, 23, 42, 0.92) !important;
   border-bottom: 1px solid rgba(148, 163, 184, 0.32);
+  padding-top: 0.35rem;   /* tighter, app-like */
+  padding-bottom: 0.35rem;
 }
 
 .navbar .container {
@@ -60,37 +62,34 @@ label {
   letter-spacing: 0.08em;
   font-weight: 700;
   color: #f9fafb;
+  font-size: 0.9rem;
 }
 
-.navbar-brand span {
-  color: #f9fafb;
+/* SVG logo + wordmark */
+
+.brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 9px;
+  flex-shrink: 0;
 }
 
-.navbar-brand svg {
-  animation: heartbeat 1.6s ease-in-out infinite;
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-@keyframes heartbeat {
-  0% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  25% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 0.95;
-  }
-  60% {
-    transform: scale(1.08);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
+.brand-text-main {
+  font-weight: 700;
+}
+
+.brand-text-sub {
+  font-weight: 600;
+  opacity: 0.9;
 }
 
 .nav-link {
@@ -765,24 +764,11 @@ a:hover {
   color: #e5e7eb;
 }
 
-/* ------------------ MEALS TABLE (MATCH WORKOUT STYLE) ------------------ */
+/* ------------------ MEALS TABLE POLISH ------------------ */
 
 .meal-card-shell {
   border-radius: 20px;
-  padding: 0;
-  overflow: hidden;
-}
-
-.meal-table {
-  width: 100%;
-  margin: 0;
-  background: rgba(15, 23, 42, 0.98);
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.meal-table thead {
-  background: rgba(15, 23, 42, 0.98);
+  padding: 14px 16px;
 }
 
 .meal-table thead tr th {
@@ -790,28 +776,17 @@ a:hover {
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #9ca3af;
-  font-weight: 600;
-  padding: 0.7rem 1rem;
+  color: #cbd5f5;
 }
 
 .meal-table tbody tr td {
-  padding: 0.75rem 1rem;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
   border-bottom: 1px solid rgba(31, 41, 55, 0.9);
-  font-size: 0.88rem;
-  color: #e5e7eb;
 }
 
 .meal-table tbody tr:last-child td {
   border-bottom: none;
-}
-
-.meal-table tbody tr:hover {
-  background: radial-gradient(
-    circle at top left,
-    rgba(37, 99, 235, 0.18),
-    #020617
-  );
 }
 
 .meal-macros {
@@ -964,29 +939,7 @@ body.theme-light .library-card {
   border-color: #cbd5e1;
 }
 
-/* light theme overrides for meals + app footer */
-body.theme-light .meal-card-shell {
-  background: #ffffff;
-}
-
-body.theme-light .meal-table {
-  background: #ffffff;
-}
-
-body.theme-light .meal-table thead tr th {
-  border-bottom-color: #e2e8f0;
-  color: #64748b;
-}
-
-body.theme-light .meal-table tbody tr td {
-  border-bottom-color: #e2e8f0;
-  color: #0f172a;
-}
-
-body.theme-light .meal-table tbody tr:hover {
-  background: #f8fafc;
-}
-
+/* light theme overrides for app footer */
 body.theme-light .app-footer {
   background: #ffffff;
   border-top-color: #cbd5e1;
