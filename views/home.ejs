@@ -1,56 +1,80 @@
-<%- include('partials/header', { currentPath: '/' }) %>
+<%- include('./partials/header', { currentPath: '/' }) %>
 
-<div class="hero">
-  <h1>Keep going.</h1>
-  <p class="text-secondary">
-    Stack your workouts, log your meals, and let LetsBet Fit track the streak for you.
-  </p>
-</div>
-
-<div class="home-stats-grid mb-4">
-  <!-- Today: workouts -->
-  <div class="home-stat-card">
-    <div class="home-stat-label">Today</div>
-    <div class="home-stat-value"><%= todayWorkoutCount %> workout<%= todayWorkoutCount === 1 ? '' : 's' %></div>
-    <p class="streak-subtext mb-0">
-      Training sessions logged so far today.
-    </p>
-  </div>
-
-  <!-- Today: volume -->
-  <div class="home-stat-card">
-    <div class="home-stat-label">Training volume</div>
-    <div class="home-stat-value"><%= todayVolume %></div>
-    <p class="streak-subtext mb-0">
-      Total sets × reps × weight for today.
-    </p>
-  </div>
-
-  <!-- Today: calories -->
-  <div class="home-stat-card">
-    <div class="home-stat-label">Calories eaten</div>
-    <div class="home-stat-value"><%= todayCalories %> kcal</div>
-    <p class="streak-subtext mb-0">
-      Logged via your Meals tab.
-    </p>
-  </div>
-
-  <!-- Weekly goal -->
-  <div class="home-stat-card">
-    <div class="home-stat-label">This week</div>
-    <div class="home-stat-value">
-      <%= weeklyWorkouts %>/<%= weeklyGoal %> workouts
+<div class="home-hero main-shell">
+  <!-- Top hero metric -->
+  <div class="home-hero-head">
+    <div>
+      <div class="home-hero-label">Today</div>
+      <div class="home-hero-metric">
+        <%= todayWorkoutCount || 0 %>
+        <span class="home-hero-metric-sub">workouts</span>
+      </div>
+      <p class="home-hero-subtext">
+        Keep going. Log your training and meals to stay on track.
+      </p>
     </div>
-    <p class="streak-subtext mb-0">
-      Weekly goal progress.
-    </p>
+
+    <!-- Quick actions -->
+    <div class="hero-cta-column">
+      <a href="/workouts/new" class="btn btn-primary btn-pill mb-2">
+        Log workout
+      </a>
+      <a href="/meals/new" class="btn btn-outline-light btn-pill">
+        Log meal
+      </a>
+    </div>
   </div>
+
+  <!-- Today summary chips -->
+  <div class="home-today-row">
+    <div class="home-chip">
+      <div class="home-chip-label">Volume</div>
+      <div class="home-chip-value">
+        <%= todayVolume || 0 %>
+        <span class="home-chip-unit">kg total</span>
+      </div>
+    </div>
+
+    <div class="home-chip">
+      <div class="home-chip-label">Calories logged</div>
+      <div class="home-chip-value">
+        <%= todayCalories || 0 %>
+        <span class="home-chip-unit">kcal</span>
+      </div>
+    </div>
+
+    <div class="home-chip">
+      <div class="home-chip-label">This week</div>
+      <div class="home-chip-value">
+        <%= weeklyWorkouts || 0 %> /
+        <%= weeklyGoal || 4 %>
+        <span class="home-chip-unit">sessions</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optional: highlight last workout -->
+  <% if (workoutOfDay) { %>
+    <div class="glass-card p-3 mt-4 home-last-workout">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="home-last-label">Last workout</div>
+          <div class="home-last-title">
+            <%= workoutOfDay.exercise %>
+          </div>
+          <div class="home-last-meta">
+            <%= workoutOfDay.sets %> × <%= workoutOfDay.reps %>
+            <% if (workoutOfDay.weight) { %>
+              · <%= workoutOfDay.weight %> kg
+            <% } %>
+          </div>
+        </div>
+        <a href="/workouts" class="btn btn-outline-light btn-sm btn-pill">
+          View all
+        </a>
+      </div>
+    </div>
+  <% } %>
 </div>
 
-<div class="d-flex flex-wrap gap-2 mb-4">
-  <a href="/workouts/new" class="btn btn-primary btn-sm">Log workout</a>
-  <a href="/meals/new" class="btn btn-outline-light btn-sm">Log meal</a>
-  <a href="/workouts/streak" class="btn btn-outline-light btn-sm">View streak</a>
-</div>
-
-<%- include('partials/footer') %>
+<%- include('./partials/footer') %>

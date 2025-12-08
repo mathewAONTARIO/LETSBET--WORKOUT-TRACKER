@@ -194,7 +194,13 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ------------------ HERO / HOME ------------------ */
+/* Utility to force pill buttons where needed */
+.btn-pill {
+  border-radius: 999px !important;
+  padding-inline: 1.2rem;
+}
+
+/* ------------------ HERO / HOME (legacy hero still used for logged-out) ------------------ */
 
 .hero {
   padding: 4rem 0 3rem;
@@ -253,6 +259,109 @@ a:hover {
   font-size: 1.1rem;
   font-weight: 700;
   color: #f9fafb;
+}
+
+/* ------------------ NEW HOME DASHBOARD (iOS-style) ------------------ */
+
+.home-hero {
+  padding-top: 2.5rem;
+}
+
+.home-hero-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.home-hero-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #cbd5f5;
+  opacity: 0.9;
+}
+
+.home-hero-metric {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #f9fafb;
+  margin-top: 0.2rem;
+}
+
+.home-hero-metric-sub {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-left: 0.4rem;
+  color: #cbd5f5;
+}
+
+.home-hero-subtext {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: #cbd5f5;
+}
+
+.hero-cta-column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Today summary chips */
+.home-today-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 1.75rem;
+}
+
+.home-chip {
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+}
+
+.home-chip-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #cbd5f5;
+}
+
+.home-chip-value {
+  margin-top: 4px;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.home-chip-unit {
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+  color: #cbd5f5;
+}
+
+/* Last workout card */
+.home-last-workout .home-last-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #cbd5f5;
+}
+
+.home-last-workout .home-last-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #f9fafb;
+  margin-top: 4px;
+}
+
+.home-last-workout .home-last-meta {
+  font-size: 0.86rem;
+  color: #cbd5f5;
+  margin-top: 2px;
 }
 
 /* ------------------ GLASS CARDS & WORKOUT LIST ------------------ */
@@ -656,6 +765,36 @@ a:hover {
   color: #e5e7eb;
 }
 
+/* ------------------ MEALS TABLE POLISH ------------------ */
+
+.meal-card-shell {
+  border-radius: 20px;
+  padding: 14px 16px;
+}
+
+.meal-table thead tr th {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #cbd5f5;
+}
+
+.meal-table tbody tr td {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+}
+
+.meal-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.meal-macros {
+  font-size: 0.86rem;
+  color: #cbd5f5;
+}
+
 /* ------------------ FOOTER (APP STYLE) ------------------ */
 
 .app-footer {
@@ -891,6 +1030,21 @@ body.theme-light .app-footer-meta {
   .workout-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  /* home dashboard responsiveness */
+  .home-hero-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-cta-column {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .home-today-row {
+    grid-template-columns: 1fr;
   }
 }
 
