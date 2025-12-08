@@ -1,80 +1,133 @@
-<%- include('./partials/header', { currentPath: '/' }) %>
+<%- include('partials/header', { currentPath: '/' }) %>
 
-<div class="home-hero main-shell">
-  <!-- Top hero metric -->
-  <div class="home-hero-head">
+<div class="hero text-start">
+  <p class="text-secondary mb-1" style="font-size: 0.85rem;">
+    Keep going,
+    <%= (res.locals.currentUser && (res.locals.currentUser.displayName || res.locals.currentUser.email)) || 'athlete' %>.
+  </p>
+
+  <h1 class="mb-3">Today</h1>
+
+  <div class="d-flex align-items-end gap-3 mb-3">
     <div>
-      <div class="home-hero-label">Today</div>
-      <div class="home-hero-metric">
-        <%= todayWorkoutCount || 0 %>
-        <span class="home-hero-metric-sub">workouts</span>
+      <div style="font-size: 2.8rem; font-weight: 800; line-height: 1;">
+        <%= todayWorkoutCount %>
       </div>
-      <p class="home-hero-subtext">
-        Keep going. Log your training and meals to stay on track.
-      </p>
-    </div>
-
-    <!-- Quick actions -->
-    <div class="hero-cta-column">
-      <a href="/workouts/new" class="btn btn-primary btn-pill mb-2">
-        Log workout
-      </a>
-      <a href="/meals/new" class="btn btn-outline-light btn-pill">
-        Log meal
-      </a>
-    </div>
-  </div>
-
-  <!-- Today summary chips -->
-  <div class="home-today-row">
-    <div class="home-chip">
-      <div class="home-chip-label">Volume</div>
-      <div class="home-chip-value">
-        <%= todayVolume || 0 %>
-        <span class="home-chip-unit">kg total</span>
+      <div class="text-secondary" style="font-size: 0.9rem;">
+        workouts logged
       </div>
     </div>
 
-    <div class="home-chip">
-      <div class="home-chip-label">Calories logged</div>
-      <div class="home-chip-value">
-        <%= todayCalories || 0 %>
-        <span class="home-chip-unit">kcal</span>
-      </div>
-    </div>
+    <div class="vr" style="height: 38px; opacity: 0.25;"></div>
 
-    <div class="home-chip">
-      <div class="home-chip-label">This week</div>
-      <div class="home-chip-value">
-        <%= weeklyWorkouts || 0 %> /
-        <%= weeklyGoal || 4 %>
-        <span class="home-chip-unit">sessions</span>
+    <div>
+      <div style="font-size: 1.2rem; font-weight: 600;">
+        <%= todayCalories %> kcal
+      </div>
+      <div class="text-secondary" style="font-size: 0.9rem;">
+        today’s meals
       </div>
     </div>
   </div>
 
-  <!-- Optional: highlight last workout -->
-  <% if (workoutOfDay) { %>
-    <div class="glass-card p-3 mt-4 home-last-workout">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <div class="home-last-label">Last workout</div>
-          <div class="home-last-title">
-            <%= workoutOfDay.exercise %>
-          </div>
-          <div class="home-last-meta">
-            <%= workoutOfDay.sets %> × <%= workoutOfDay.reps %>
-            <% if (workoutOfDay.weight) { %>
-              · <%= workoutOfDay.weight %> kg
-            <% } %>
-          </div>
-        </div>
-        <a href="/workouts" class="btn btn-outline-light btn-sm btn-pill">
-          View all
-        </a>
-      </div>
-    </div>
-  <% } %>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="/workouts/new" class="btn btn-primary btn-sm px-3">
+      Log workout
+    </a>
+    <a href="/meals/new" class="btn btn-outline-light btn-sm px-3">
+      Log meal
+    </a>
+  </div>
 </div>
 
-<%- include('./partials/footer') %>
+<div class="home-stats-grid mb-4">
+  <!-- This week -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">This week</div>
+    <div class="home-stat-value">
+      <%= weeklyWorkouts %> / <%= weeklyGoal %>
+    </div>
+    <div class="text-secondary" style="font-size: 0.8rem;">
+      workouts
+    </div>
+    <div
+      class="progress mt-2"
+      style="
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.85);
+      "
+    >
+      <div
+        class="progress-bar"
+        role="progressbar"
+        style="
+          width: <%= weeklyProgressPercent %>%;
+          background: linear-gradient(to right, #22c55e, #4ade80);
+          border-radius: 999px;
+        "
+        aria-valuenow="<%= weeklyProgressPercent %>"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      ></div>
+    </div>
+  </div>
+
+  <!-- Today volume -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Today volume</div>
+    <div class="home-stat-value"><%= todayVolume %></div>
+    <div class="text-secondary" style="font-size: 0.8rem;">
+      total weight × reps
+    </div>
+  </div>
+
+  <!-- Today calories -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Today calories</div>
+    <div class="home-stat-value"><%= todayCalories %> kcal</div>
+    <div class="text-secondary" style="font-size: 0.8rem;">
+      from logged meals
+    </div>
+  </div>
+
+  <!-- Quick streak teaser -->
+  <div class="home-stat-card">
+    <div class="home-stat-label">Streak</div>
+    <div class="home-stat-value">
+      <%= weeklyWorkouts %> days
+    </div>
+    <div class="text-secondary" style="font-size: 0.8rem;">
+      See full streak on the Streak tab.
+    </div>
+  </div>
+</div>
+
+<% if (workoutOfDay) { %>
+  <div class="glass-card p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+      <span class="text-secondary" style="font-size: 0.8rem;">
+        Workout highlight
+      </span>
+      <span class="badge-category">
+        <%= workoutOfDay.category || 'Workout' %>
+      </span>
+    </div>
+    <div style="font-weight: 600;">
+      <%= workoutOfDay.exercise %>
+    </div>
+    <div class="text-secondary" style="font-size: 0.85rem;">
+      <%= workoutOfDay.sets %> × <%= workoutOfDay.reps %>
+      <% if (workoutOfDay.weight) { %>
+        · <%= workoutOfDay.weight %> kg
+      <% } %>
+    </div>
+    <% if (workoutOfDay.notes) { %>
+      <div class="text-secondary mt-1" style="font-size: 0.8rem;">
+        <%= workoutOfDay.notes %>
+      </div>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>
