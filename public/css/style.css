@@ -656,8 +656,35 @@ a:hover {
   color: #e5e7eb;
 }
 
-/* ------------------ FOOTER ------------------ */
+/* ------------------ FOOTER (APP STYLE) ------------------ */
 
+.app-footer {
+  padding: 0.75rem 0;
+  margin-top: 2rem;
+  border-color: rgba(148, 163, 184, 0.2); /* subtle line */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.9),
+    rgba(15, 23, 42, 0.4)
+  );
+}
+
+.app-footer-brand {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #e5e7eb; /* light gray */
+}
+
+.app-footer-meta {
+  font-size: 0.75rem;
+  color: #9ca3af; /* muted gray */
+}
+
+/* Old footer text helper (still safe to keep if used anywhere) */
 .footer-text {
   font-size: 0.8rem;
   color: #9ca3af;
@@ -772,6 +799,20 @@ body.theme-light .btn-outline-light {
 body.theme-light .library-card {
   background: #ffffff;
   border-color: #cbd5e1;
+}
+
+/* light theme overrides for app footer */
+body.theme-light .app-footer {
+  background: #ffffff;
+  border-top-color: #cbd5e1;
+}
+
+body.theme-light .app-footer-brand {
+  color: #0f172a;
+}
+
+body.theme-light .app-footer-meta {
+  color: #64748b;
 }
 
 /* ------------------ WORKOUT FILTERS / SEARCH ------------------ */
