@@ -1,75 +1,164 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Workouts – LetsBetFit</title>
-  <link rel="stylesheet" href="/css/styles.css" />
-</head>
-<body class="page-body">
-  <%- include('../partials/header', { currentPath }) %>
+<%- include('../partials/header', { title: 'Workouts' }) %>
 
-  <main class="page-main">
-    <section class="page-section">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Workouts</h1>
-          <p class="section-subtitle">Log your training sessions and track your progress.</p>
+<%
+  function badgeClass(category) {
+    const c = (category || '').toLowerCase();
+    if (c === 'push') return 'badge-push';
+    if (c === 'pull') return 'badge-pull';
+    if (c === 'legs') return 'badge-legs';
+    if (c === 'upper body' || c === 'upper') return 'badge-upper';
+    if (c === 'lower body' || c === 'lower') return 'badge-lower';
+    if (c === 'cardio') return 'badge-cardio';
+    if (c === 'core') return 'badge-core';
+    if (c === 'full body' || c === 'full') return 'badge-full';
+    return 'badge-other';
+  }
+%>
+
+<div class="main-shell">
+  <section class="mb-4">
+    <h1 class="mb-1">Workouts</h1>
+    <p class="text-secondary mb-3">
+      All workouts logged for your account.
+    </p>
+
+    <div class="workout-filters mb-3">
+      <input
+        id="workoutSearch"
+        class="form-control"
+        type="text"
+        placeholder="Search by exercise or notes…"
+        autocomplete="off"
+      />
+
+      <select id="categoryFilter" class="form-select">
+        <option value="all">All categories</option>
+        <option value="push">Push</option>
+        <option value="pull">Pull</option>
+        <option value="legs">Legs</option>
+        <option value="upper">Upper Body</option>
+        <option value="lower">Lower Body</option>
+        <option value="core">Core</option>
+        <option value="cardio">Cardio</option>
+        <option value="full">Full Body</option>
+        <option value="other">Other</option>
+      </select>
+
+      <a href="/workouts/new" class="btn btn-primary btn-pill">
+        Add Workout
+      </a>
+    </div>
+  </section>
+
+  <% if (workouts && workouts.length > 0) { %>
+    <% workouts.forEach(function (workout) { %>
+      <div
+        class="workout-card swipeable"
+        data-exercise="<%= (workout.exercise || '').toLowerCase() %>"
+        data-notes="<%= (workout.notes || '').toLowerCase() %>"
+        data-category="<%= (workout.category || 'other').toLowerCase() %>"
+      >
+        <div class="workout-main">
+          <div class="d-flex align-items-center gap-2">
+            <span class="workout-title">
+              <%= workout.exercise || 'Untitled' %>
+            </span>
+
+            <% if (workout.category) { %>
+              <span class="badge-category <%= badgeClass(workout.category) %>">
+                <%= workout.category.toUpperCase() %>
+              </span>
+            <% } %>
+
+            <% if (workout.isPR) { %>
+              <span class="badge-pr">PR</span>
+            <% } %>
+          </div>
+
+          <div class="workout-meta">
+            <%= workout.sets || '-' %> x
+            <%= workout.reps || '-' %>
+            <% if (workout.weight) { %>
+              · <%= workout.weight %> lb
+            <% } %>
+            <% if (workout.date) { %>
+              · <%= workout.date.toLocaleDateString('en-CA') %>
+            <% } %>
+          </div>
+
+          <% if (workout.notes) { %>
+            <div class="workout-meta"><%= workout.notes %></div>
+          <% } %>
         </div>
-        <a href="/workouts/new" class="btn btn-primary">Add Workout</a>
+
+        <div class="workout-actions">
+          <form
+            action="/workouts/<%= workout._id %>/duplicate"
+            method="POST"
+          >
+            <button
+              type="submit"
+              class="btn btn-sm btn-outline-light btn-pill"
+            >
+              Duplicate
+            </button>
+          </form>
+
+          <a
+            href="/workouts/<%= workout._id %>/edit"
+            class="btn btn-sm btn-outline-light btn-pill"
+          >
+            Edit
+          </a>
+
+          <form
+            action="/workouts/<%= workout._id %>/delete"
+            method="POST"
+            onsubmit="return confirm('Delete this workout?');"
+          >
+            <button type="submit" class="btn btn-sm btn-danger btn-pill">
+              Delete
+            </button>
+          </form>
+        </div>
       </div>
+    <% }) %>
+  <% } else { %>
+    <p class="text-secondary mb-0">
+      No workouts logged yet. Tap “Add Workout” to log your first session.
+    </p>
+  <% } %>
+</div>
 
-      <% if (!workouts || workouts.length === 0) { %>
-        <div class="card empty-card">
-          <p>You haven’t logged any workouts yet.</p>
-          <a href="/workouts/new" class="btn btn-primary">Log your first workout</a>
-        </div>
-      <% } else { %>
-        <div class="card table-card">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Exercise</th>
-                <th>Category</th>
-                <th>Sets</th>
-                <th>Reps</th>
-                <th>Weight</th>
-                <th>Date</th>
-                <th>PR</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% workouts.forEach(function(w) { %>
-                <tr>
-                  <td><strong><%= w.exercise %></strong></td>
-                  <td><%= w.category || '—' %></td>
-                  <td><%= w.sets || '—' %></td>
-                  <td><%= w.reps || '—' %></td>
-                  <td><%= w.weight ? w.weight + ' lb' : '—' %></td>
-                  <td>
-                    <% if (w.date) { %>
-                      <%= new Date(w.date).toLocaleDateString() %>
-                    <% } else { %>
-                      —
-                    <% } %>
-                  </td>
-                  <td><%= w.isPR ? '🏆' : '' %></td>
-                  <td class="table-actions">
-                    <form action="/workouts/<%= w._id %>/duplicate" method="POST" class="inline-form">
-                      <button type="submit" class="btn btn-ghost">Duplicate</button>
-                    </form>
-                    <a href="/workouts/<%= w._id %>/edit" class="btn btn-ghost">Edit</a>
-                    <a href="/workouts/<%= w._id %>/delete" class="btn btn-danger-outline">Delete</a>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      <% } %>
-    </section>
-  </main>
+<script>
+  (function () {
+    const cards = Array.from(document.querySelectorAll('.workout-card'));
+    const searchInput = document.getElementById('workoutSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
 
-  <%- include('../partials/footer') %>
-</body>
-</html>
+    function norm(v) {
+      return (v || '').toLowerCase();
+    }
+
+    function applyFilters() {
+      const q = norm(searchInput && searchInput.value);
+      const cat = norm(categoryFilter && categoryFilter.value || 'all');
+
+      cards.forEach(card => {
+        const ex = card.dataset.exercise || '';
+        const notes = card.dataset.notes || '';
+        const cardCat = card.dataset.category || 'other';
+
+        const matchesText = !q || ex.includes(q) || notes.includes(q);
+        const matchesCat = cat === 'all' || cardCat === cat;
+
+        card.style.display = (matchesText && matchesCat) ? '' : 'none';
+      });
+    }
+
+    if (searchInput) searchInput.addEventListener('input', applyFilters);
+    if (categoryFilter) categoryFilter.addEventListener('change', applyFilters);
+  })();
+</script>
+
+<%- include('../partials/footer') %>
