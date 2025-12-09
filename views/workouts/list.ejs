@@ -1,153 +1,75 @@
-<%- include('../partials/header', { currentPath: '/workouts' }) %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Workouts – LetsBetFit</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="page-body">
+  <%- include('../partials/header', { currentPath }) %>
 
-<%
-  // Helper to map category -> color class (uses your existing .badge-* CSS)
-  function categoryClass(cat) {
-    if (!cat) return 'badge-other';
-    const c = cat.toLowerCase();
-
-    if (c.includes('push')) return 'badge-push';
-    if (c.includes('pull')) return 'badge-pull';
-    if (c.includes('leg'))  return 'badge-legs';
-    if (c.includes('upper')) return 'badge-upper';
-    if (c.includes('lower')) return 'badge-lower';
-    if (c.includes('cardio')) return 'badge-cardio';
-    if (c.includes('core') || c.includes('abs')) return 'badge-core';
-    if (c.includes('full')) return 'badge-full';
-
-    return 'badge-other';
-  }
-
-  // Collect distinct categories for the filter dropdown
-  const categorySet = new Set();
-  workouts.forEach(w => {
-    if (w.category) categorySet.add(w.category);
-  });
-  const categoryList = Array.from(categorySet).sort();
-%>
-
-<h2 class="mb-1">Workouts</h2>
-<p class="text-secondary mb-4">All workouts logged for your account.</p>
-
-<!-- Filters row -->
-<div class="workout-filters mb-3">
-  <div class="flex-grow-1">
-    <input
-      id="workout-search"
-      type="text"
-      class="form-control"
-      placeholder="Search by exercise or notes..."
-      autocomplete="off"
-    />
-  </div>
-
-  <div>
-    <select id="workout-category-filter" class="form-select">
-      <option value="">All categories</option>
-      <% categoryList.forEach(cat => { %>
-        <option value="<%= cat %>"><%= cat %></option>
-      <% }) %>
-    </select>
-  </div>
-
-  <div>
-    <a href="/workouts/new" class="btn btn-primary">Add Workout</a>
-  </div>
-</div>
-
-<% if (workouts.length === 0) { %>
-  <p class="text-secondary">No workouts logged yet. Start today.</p>
-<% } %>
-
-<% workouts.forEach(workout => { %>
-  <div
-    class="workout-card"
-    data-exercise="<%= workout.exercise || '' %>"
-    data-notes="<%= workout.notes || '' %>"
-    data-category="<%= workout.category || '' %>"
-  >
-    <div class="workout-main">
-
-      <!-- Workout Title (exercise name) -->
-      <div class="workout-title">
-        <%= workout.exercise || 'Workout' %>
-
-        <% if (workout.isPR) { %>
-          <span class="badge-pr">PR</span>
-        <% } %>
+  <main class="page-main">
+    <section class="page-section">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Workouts</h1>
+          <p class="section-subtitle">Log your training sessions and track your progress.</p>
+        </div>
+        <a href="/workouts/new" class="btn btn-primary">Add Workout</a>
       </div>
 
-      <!-- Meta info with colored category pill -->
-      <div class="workout-meta">
-        <span class="badge-category <%= categoryClass(workout.category) %>">
-          <%= workout.category || 'Other' %>
-        </span>
+      <% if (!workouts || workouts.length === 0) { %>
+        <div class="card empty-card">
+          <p>You haven’t logged any workouts yet.</p>
+          <a href="/workouts/new" class="btn btn-primary">Log your first workout</a>
+        </div>
+      <% } else { %>
+        <div class="card table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th>Category</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Weight</th>
+                <th>Date</th>
+                <th>PR</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% workouts.forEach(function(w) { %>
+                <tr>
+                  <td><strong><%= w.exercise %></strong></td>
+                  <td><%= w.category || '—' %></td>
+                  <td><%= w.sets || '—' %></td>
+                  <td><%= w.reps || '—' %></td>
+                  <td><%= w.weight ? w.weight + ' lb' : '—' %></td>
+                  <td>
+                    <% if (w.date) { %>
+                      <%= new Date(w.date).toLocaleDateString() %>
+                    <% } else { %>
+                      —
+                    <% } %>
+                  </td>
+                  <td><%= w.isPR ? '🏆' : '' %></td>
+                  <td class="table-actions">
+                    <form action="/workouts/<%= w._id %>/duplicate" method="POST" class="inline-form">
+                      <button type="submit" class="btn btn-ghost">Duplicate</button>
+                    </form>
+                    <a href="/workouts/<%= w._id %>/edit" class="btn btn-ghost">Edit</a>
+                    <a href="/workouts/<%= w._id %>/delete" class="btn btn-danger-outline">Delete</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </main>
 
-        · <%= workout.sets %> x <%= workout.reps %>
-        · <%= workout.weight %> kg
-
-        <span class="badge-date">
-          · <%= workout.date.toLocaleDateString() %>
-        </span>
-      </div>
-    </div>
-
-    <div class="workout-actions">
-      <!-- Duplicate: open prefilled Add Workout form -->
-      <a
-        href="/workouts/<%= workout._id %>/duplicate"
-        class="btn btn-outline-light btn-sm"
-      >
-        Duplicate
-      </a>
-
-      <!-- Edit -->
-      <a href="/workouts/<%= workout._id %>/edit" class="btn btn-outline-light btn-sm">
-        Edit
-      </a>
-
-      <!-- Delete (POST) -->
-      <form method="POST" action="/workouts/<%= workout._id %>/delete" class="d-inline">
-        <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
-      </form>
-    </div>
-  </div>
-<% }) %>
-
-<script>
-  (function () {
-    const searchInput = document.getElementById('workout-search');
-    const categorySelect = document.getElementById('workout-category-filter');
-    const cards = Array.from(document.querySelectorAll('.workout-card'));
-
-    function applyFilters() {
-      const term = (searchInput.value || '').toLowerCase();
-      const cat = (categorySelect.value || '').toLowerCase();
-
-      cards.forEach(card => {
-        const exercise = (card.dataset.exercise || '').toLowerCase();
-        const notes = (card.dataset.notes || '').toLowerCase();
-        const category = (card.dataset.category || '').toLowerCase();
-
-        const matchesText =
-          !term ||
-          exercise.includes(term) ||
-          notes.includes(term);
-
-        const matchesCat =
-          !cat || category === cat.toLowerCase();
-
-        card.style.display = (matchesText && matchesCat) ? '' : 'none';
-      });
-    }
-
-    if (searchInput) {
-      searchInput.addEventListener('input', applyFilters);
-    }
-    if (categorySelect) {
-      categorySelect.addEventListener('change', applyFilters);
-    }
-  })();
-</script>
-
-<%- include('../partials/footer') %>
+  <%- include('../partials/footer') %>
+</body>
+</html>

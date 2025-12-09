@@ -1,86 +1,79 @@
-<%- include('../partials/header', { currentPath: '/meals' }) %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meals – LetsBetFit</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="page-body">
+  <%- include('../partials/header', { currentPath }) %>
 
-<div class="main-shell">
-  <h2 class="mb-1">Meals</h2>
-  <p class="text-secondary mb-3">
-    Today’s total:
-    <strong><%= typeof totalCaloriesToday !== 'undefined' ? totalCaloriesToday : 0 %> kcal</strong>
-  </p>
-
-  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <span class="text-secondary small">
-      Log your meals to keep calories and macros on track.
-    </span>
-    <a href="/meals/new" class="btn btn-primary btn-pill">
-      Add Meal
-    </a>
-  </div>
-
-  <% if (!meals || meals.length === 0) { %>
-    <div class="glass-card p-4">
-      <p class="mb-0 text-secondary">
-        No meals logged yet for today. Tap <strong>Add Meal</strong> to get started.
-      </p>
-    </div>
-  <% } else { %>
-    <div class="glass-card meal-card-shell mb-4">
-      <div class="meal-table-wrapper">
-        <table class="table align-middle mb-0 meal-table">
-          <thead>
-            <tr>
-              <th scope="col">Meal</th>
-              <th scope="col">Calories</th>
-              <th scope="col">Macros</th>
-              <th scope="col">Time</th>
-              <th scope="col">Date</th>
-              <th scope="col" class="text-end">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% meals.forEach(meal => { %>
-              <tr>
-                <td><strong><%= meal.name %></strong></td>
-                <td><%= meal.calories %></td>
-                <td class="meal-macros">
-                  P: <%= meal.protein || 0 %>g ·
-                  C: <%= meal.carbs || 0 %>g ·
-                  F: <%= meal.fat || 0 %>g
-                </td>
-                <td><%= meal.timeOfDay || '' %></td>
-                <td>
-                  <%= meal.date
-                    ? new Date(meal.date).toLocaleDateString()
-                    : '' %>
-                </td>
-                <td class="text-end">
-                  <div class="d-inline-flex gap-1">
-                    <a
-                      href="/meals/<%= meal._id %>/edit"
-                      class="btn btn-outline-light btn-sm"
-                    >
-                      Edit
-                    </a>
-                    <form
-                      action="/meals/<%= meal._id %>/delete"
-                      method="POST"
-                      class="d-inline"
-                    >
-                      <button
-                        type="submit"
-                        class="btn btn-outline-danger btn-sm"
-                      >
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+  <main class="page-main">
+    <section class="page-section">
+      <div class="section-header">
+        <div>
+          <h1 class="section-title">Meals</h1>
+          <p class="section-subtitle">
+            Log your meals to keep calories and macros on track.
+          </p>
+          <p class="section-meta">
+            Today’s total: <strong><%= todayCalories %> kcal</strong>
+          </p>
+        </div>
+        <a href="/meals/new" class="btn btn-primary">Add Meal</a>
       </div>
-    </div>
-  <% } %>
-</div>
 
-<%- include('../partials/footer') %>
+      <% if (!meals || meals.length === 0) { %>
+        <div class="card empty-card">
+          <p>No meals logged yet.</p>
+          <a href="/meals/new" class="btn btn-primary">Log your first meal</a>
+        </div>
+      <% } else { %>
+        <div class="card table-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Meal</th>
+                <th>Calories</th>
+                <th>Macros</th>
+                <th>Time</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% meals.forEach(function(m) { %>
+                <tr>
+                  <td><strong><%= m.name %></strong></td>
+                  <td><%= m.calories || 0 %></td>
+                  <td>
+                    P: <%= m.protein || 0 %>g ·
+                    C: <%= m.carbs || 0 %>g ·
+                    F: <%= m.fats || 0 %>g
+                  </td>
+                  <td><%= m.timeOfDay || '—' %></td>
+                  <td>
+                    <% if (m.date) { %>
+                      <%= new Date(m.date).toLocaleDateString() %>
+                    <% } else { %>
+                      —
+                    <% } %>
+                  </td>
+                  <td class="table-actions">
+                    <a href="/meals/<%= m._id %>/edit" class="btn btn-ghost">Edit</a>
+                    <form action="/meals/<%= m._id %>/delete" method="POST" class="inline-form">
+                      <button type="submit" class="btn btn-danger-outline">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </main>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>
