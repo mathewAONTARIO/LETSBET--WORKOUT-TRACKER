@@ -6,11 +6,14 @@ const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * Multer storage for profile photos
+ */
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination(req, file, cb) {
     cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
   },
-  filename: function (req, file, cb) {
+  filename(req, file, cb) {
     const ext = path.extname(file.originalname) || '.png';
     const userId = req.session.userId || 'anon';
     cb(null, `${userId}-${Date.now()}${ext}`);
@@ -19,7 +22,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter(req, file, cb) {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image files are allowed'));
@@ -28,6 +31,9 @@ const upload = multer({
   }
 });
 
+/**
+ * SETTINGS PAGE  -> /account/settings
+ */
 router.get('/settings', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -40,7 +46,7 @@ router.get('/settings', requireLogin, async (req, res) => {
     const reminderSaved = req.query.reminder === '1';
 
     res.render('workouts/settings', {
-      currentPath: '/workouts/settings',
+      currentPath: '/account/settings',   // 👈 matches header active state
       currentUser: user,
       profileSaved,
       reminderSaved
@@ -51,6 +57,9 @@ router.get('/settings', requireLogin, async (req, res) => {
   }
 });
 
+/**
+ * UPDATE PROFILE
+ */
 router.post(
   '/profile',
   requireLogin,
@@ -138,6 +147,9 @@ router.post(
   }
 );
 
+/**
+ * UPDATE THEME
+ */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -163,6 +175,9 @@ router.post('/theme', requireLogin, async (req, res) => {
   }
 });
 
+/**
+ * UPDATE REMINDERS
+ */
 router.post('/reminder', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -177,10 +192,11 @@ router.post('/reminder', requireLogin, async (req, res) => {
 
     await user.save();
 
-    req.session.userId = user._id;
+    const _id = user._id;
+    req.session.userId = _id;
     req.session.user = {
       ...(req.session.user || {}),
-      _id: user._id,
+      _id,
       dailyReminderEnabled: user.dailyReminderEnabled,
       reminderTime: user.reminderTime
     };
@@ -194,6 +210,9 @@ router.post('/reminder', requireLogin, async (req, res) => {
   }
 });
 
+/**
+ * DELETE ACCOUNT
+ */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
