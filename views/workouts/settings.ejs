@@ -1,38 +1,28 @@
 <%- include('../partials/header', { currentPath: '/workouts/settings' }) %>
 
-<div class="main-shell">
-  <h1 class="mb-1">Settings</h1>
-  <p class="text-secondary mb-4">
-    Customize your LETSBETFit profile and preferences.
-  </p>
+<h2 class="mb-1">Settings</h2>
+<p class="text-secondary mb-4">Customize your LETSBETFit profile and preferences.</p>
 
-  <!-- Success alerts (safe checks so they never crash) -->
-  <% if (typeof profileSaved !== 'undefined' && profileSaved) { %>
-    <div
-      class="alert alert-success py-2 mb-3"
-      role="alert"
-      style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;"
-    >
-      Profile updated.
-    </div>
-  <% } %>
+<!-- Success alerts (safe checks so they never crash) -->
+<% if (typeof profileSaved !== 'undefined' && profileSaved) { %>
+  <div class="alert alert-success py-2 mb-3" role="alert" style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;">
+    Profile updated.
+  </div>
+<% } %>
 
-  <% if (typeof reminderSaved !== 'undefined' && reminderSaved) { %>
-    <div
-      class="alert alert-success py-2 mb-3"
-      role="alert"
-      style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;"
-    >
-      Reminder settings saved.
-    </div>
-  <% } %>
+<% if (typeof reminderSaved !== 'undefined' && reminderSaved) { %>
+  <div class="alert alert-success py-2 mb-3" role="alert" style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;">
+    Reminder settings saved.
+  </div>
+<% } %>
 
-  <div class="settings-grid mt-2">
-    <!-- LEFT: PROFILE CARD -->
-    <div class="glass-card p-4">
-      <h2 class="settings-section-title mb-3">Profile</h2>
+<div class="row g-4 settings-grid">
+  <!-- Profile -->
+  <div class="col-lg-6">
+    <div class="glass-card p-4 h-100">
+      <h5 class="mb-3">Profile</h5>
       <p class="text-secondary" style="font-size: 0.9rem;">
-        Update how LETSBETFit sees you and your weekly workout goal.
+        Customize your LETSBETFit profile details.
       </p>
 
       <!-- Profile picture + details all in one form -->
@@ -44,7 +34,7 @@
         <!-- Profile picture upload -->
         <div class="d-flex align-items-center mb-3">
           <div class="me-3">
-            <% if (currentUser.profilePhotoUrl) { %>
+            <% if (currentUser && currentUser.profilePhotoUrl) { %>
               <img
                 src="<%= currentUser.profilePhotoUrl %>"
                 alt="Profile picture"
@@ -55,21 +45,26 @@
                 class="avatar-circle d-flex align-items-center justify-content-center"
                 style="width: 40px; height: 40px;"
               >
-                <%= currentUser.displayName
+                <%= currentUser && currentUser.displayName
                   ? currentUser.displayName.charAt(0).toUpperCase()
-                  : (currentUser.email || '?').charAt(0).toUpperCase() %>
+                  : (currentUser && currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?') %>
               </div>
             <% } %>
           </div>
 
           <div class="flex-grow-1">
             <label class="form-label mb-1">Profile picture</label>
-            <input
-              type="file"
-              name="profilePhoto"
-              accept="image/png,image/jpeg"
-              class="form-control form-control-sm"
-            />
+            <div class="d-flex align-items-center gap-2">
+              <input
+                type="file"
+                name="profilePhoto"
+                accept="image/png,image/jpeg"
+                class="form-control form-control-sm"
+              />
+              <button class="btn btn-primary btn-sm" type="submit">
+                Upload
+              </button>
+            </div>
             <small class="text-secondary d-block mt-1">
               PNG or JPG, up to 2MB.
             </small>
@@ -83,7 +78,7 @@
             type="text"
             name="displayName"
             class="form-control"
-            value="<%= currentUser.displayName || '' %>"
+            value="<%= currentUser && currentUser.displayName ? currentUser.displayName : '' %>"
             required
           />
         </div>
@@ -95,14 +90,11 @@
             <% [3,4,5,6,7].forEach(function(goal) { %>
               <option
                 value="<%= goal %>"
-                <%= (currentUser.weeklyGoal || 4) === goal ? 'selected' : '' %>>
+                <%= ((currentUser && currentUser.weeklyGoal) || 4) === goal ? 'selected' : '' %>>
                 <%= goal %> per week
               </option>
             <% }) %>
           </select>
-          <small class="text-secondary" style="font-size: 0.8rem;">
-            Home uses this to show your weekly progress bar.
-          </small>
         </div>
 
         <!-- Gender / Age -->
@@ -110,20 +102,19 @@
           <div class="col-md-6">
             <label class="form-label">Gender</label>
             <select name="gender" class="form-select">
-              <option value=""
-                <%= !currentUser.gender || currentUser.gender === 'prefer-not-to-say' ? 'selected' : '' %>>
+              <option value="" <%= !currentUser || !currentUser.gender || currentUser.gender === 'prefer-not-to-say' ? 'selected' : '' %>>
                 Prefer not to say
               </option>
-              <option value="male" <%= currentUser.gender === 'male' ? 'selected' : '' %>>
+              <option value="male" <%= currentUser && currentUser.gender === 'male' ? 'selected' : '' %>>
                 Male
               </option>
-              <option value="female" <%= currentUser.gender === 'female' ? 'selected' : '' %>>
+              <option value="female" <%= currentUser && currentUser.gender === 'female' ? 'selected' : '' %>>
                 Female
               </option>
-              <option value="non-binary" <%= currentUser.gender === 'non-binary' ? 'selected' : '' %>>
+              <option value="non-binary" <%= currentUser && currentUser.gender === 'non-binary' ? 'selected' : '' %>>
                 Non-binary
               </option>
-              <option value="other" <%= currentUser.gender === 'other' ? 'selected' : '' %>>
+              <option value="other" <%= currentUser && currentUser.gender === 'other' ? 'selected' : '' %>>
                 Other
               </option>
             </select>
@@ -137,7 +128,7 @@
               min="10"
               max="100"
               class="form-control"
-              value="<%= currentUser.age || '' %>"
+              value="<%= currentUser && currentUser.age ? currentUser.age : '' %>"
             />
           </div>
         </div>
@@ -152,15 +143,13 @@
                 name="height"
                 class="form-control"
                 placeholder="e.g. 5'10 or 180"
-                value="<%= currentUser.heightValue || '' %>"
+                value="<%= currentUser && currentUser.heightValue ? currentUser.heightValue : '' %>"
               />
               <select name="heightUnit" class="form-select" style="max-width: 90px;">
-                <option value="cm"
-                  <%= (currentUser.heightUnit || 'cm') === 'cm' ? 'selected' : '' %>>
+                <option value="cm" <%= (!currentUser || (currentUser.heightUnit || 'cm') === 'cm') ? 'selected' : '' %>>
                   cm
                 </option>
-                <option value="ft"
-                  <%= currentUser.heightUnit === 'ft' ? 'selected' : '' %>>
+                <option value="ft" <%= currentUser && currentUser.heightUnit === 'ft' ? 'selected' : '' %>>
                   ft
                 </option>
               </select>
@@ -178,19 +167,44 @@
                 name="weight"
                 class="form-control"
                 placeholder="e.g. 82.5"
-                value="<%= currentUser.weightValue || '' %>"
+                value="<%= currentUser && currentUser.weightValue ? currentUser.weightValue : '' %>"
               />
               <select name="weightUnit" class="form-select" style="max-width: 90px;">
-                <option value="kg"
-                  <%= (currentUser.weightUnit || 'kg') === 'kg' ? 'selected' : '' %>>
+                <option value="kg" <%= (!currentUser || (currentUser.weightUnit || 'kg') === 'kg') ? 'selected' : '' %>>
                   kg
                 </option>
-                <option value="lb"
-                  <%= currentUser.weightUnit === 'lb' ? 'selected' : '' %>>
+                <option value="lb" <%= currentUser && currentUser.weightUnit === 'lb' ? 'selected' : '' %>>
                   lb
                 </option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <!-- Weight goal -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label">Weight goal</label>
+            <div class="input-group">
+              <input
+                type="text"
+                name="targetWeight"
+                class="form-control"
+                placeholder="e.g. 78"
+                value="<%= currentUser && currentUser.targetWeightValue ? currentUser.targetWeightValue : '' %>"
+              />
+              <select name="targetWeightUnit" class="form-select" style="max-width: 90px;">
+                <option value="kg" <%= (!currentUser || (currentUser.targetWeightUnit || 'kg') === 'kg') ? 'selected' : '' %>>
+                  kg
+                </option>
+                <option value="lb" <%= currentUser && currentUser.targetWeightUnit === 'lb' ? 'selected' : '' %>>
+                  lb
+                </option>
+              </select>
+            </div>
+            <small class="text-secondary" style="font-size: 0.8rem;">
+              Used later to show progress toward your goal on Home/Stats.
+            </small>
           </div>
         </div>
 
@@ -199,31 +213,25 @@
           <div class="col-md-6">
             <label class="form-label">Primary goal</label>
             <select name="primaryGoal" class="form-select">
-              <option value="" <%= !currentUser.primaryGoal ? 'selected' : '' %>>
+              <option value="" <%= !currentUser || !currentUser.primaryGoal ? 'selected' : '' %>>
                 Select goal
               </option>
-              <option value="general-fitness"
-                <%= currentUser.primaryGoal === 'general-fitness' ? 'selected' : '' %>>
+              <option value="general-fitness" <%= currentUser && currentUser.primaryGoal === 'general-fitness' ? 'selected' : '' %>>
                 General fitness
               </option>
-              <option value="muscle-gain"
-                <%= currentUser.primaryGoal === 'muscle-gain' ? 'selected' : '' %>>
+              <option value="muscle-gain" <%= currentUser && currentUser.primaryGoal === 'muscle-gain' ? 'selected' : '' %>>
                 Muscle gain
               </option>
-              <option value="fat-loss"
-                <%= currentUser.primaryGoal === 'fat-loss' ? 'selected' : '' %>>
+              <option value="fat-loss" <%= currentUser && currentUser.primaryGoal === 'fat-loss' ? 'selected' : '' %>>
                 Fat loss
               </option>
-              <option value="performance"
-                <%= currentUser.primaryGoal === 'performance' ? 'selected' : '' %>>
+              <option value="performance" <%= currentUser && currentUser.primaryGoal === 'performance' ? 'selected' : '' %>>
                 Performance / sports
               </option>
-              <option value="strength"
-                <%= currentUser.primaryGoal === 'strength' ? 'selected' : '' %>>
+              <option value="strength" <%= currentUser && currentUser.primaryGoal === 'strength' ? 'selected' : '' %>>
                 Strength
               </option>
-              <option value="endurance"
-                <%= currentUser.primaryGoal === 'endurance' ? 'selected' : '' %>>
+              <option value="endurance" <%= currentUser && currentUser.primaryGoal === 'endurance' ? 'selected' : '' %>>
                 Endurance
               </option>
             </select>
@@ -232,20 +240,16 @@
           <div class="col-md-6">
             <label class="form-label">Training experience</label>
             <select name="trainingExperience" class="form-select">
-              <option value=""
-                <%= !currentUser.trainingExperience ? 'selected' : '' %>>
+              <option value="" <%= !currentUser || !currentUser.trainingExperience ? 'selected' : '' %>>
                 Select level
               </option>
-              <option value="beginner-0-6"
-                <%= currentUser.trainingExperience === 'beginner-0-6' ? 'selected' : '' %>>
+              <option value="beginner-0-6" <%= currentUser && currentUser.trainingExperience === 'beginner-0-6' ? 'selected' : '' %>>
                 Beginner (0–6 months)
               </option>
-              <option value="intermediate-6-24"
-                <%= currentUser.trainingExperience === 'intermediate-6-24' ? 'selected' : '' %>>
+              <option value="intermediate-6-24" <%= currentUser && currentUser.trainingExperience === 'intermediate-6-24' ? 'selected' : '' %>>
                 Intermediate (6–24 months)
               </option>
-              <option value="advanced-24-plus"
-                <%= currentUser.trainingExperience === 'advanced-24-plus' ? 'selected' : '' %>>
+              <option value="advanced-24-plus" <%= currentUser && currentUser.trainingExperience === 'advanced-24-plus' ? 'selected' : '' %>>
                 Advanced (2+ years)
               </option>
             </select>
@@ -257,13 +261,14 @@
         </button>
       </form>
     </div>
+  </div>
 
-    <!-- RIGHT: WORKOUT REMINDERS -->
-    <div class="glass-card p-4">
-      <h2 class="settings-section-title mb-3">Workout reminders</h2>
+  <!-- Workout reminders -->
+  <div class="col-lg-6">
+    <div class="glass-card p-4 h-100">
+      <h5 class="mb-3">Workout reminders</h5>
       <p class="text-secondary" style="font-size: 0.9rem;">
-        Set a daily time to remind yourself to log workouts.
-        (Future versions could send real notifications.)
+        Set a daily time to remind yourself to log workouts. (Future versions could send real notifications.)
       </p>
 
       <form action="/account/reminder" method="POST">
@@ -274,7 +279,7 @@
             id="reminderEnabled"
             name="reminderEnabled"
             value="true"
-            <%= currentUser.dailyReminderEnabled ? 'checked' : '' %>
+            <%= currentUser && currentUser.dailyReminderEnabled ? 'checked' : '' %>
           />
           <label class="form-check-label" for="reminderEnabled">
             Enable daily reminder
@@ -287,7 +292,7 @@
             type="time"
             name="reminderTime"
             class="form-control"
-            value="<%= currentUser.reminderTime || '18:00' %>"
+            value="<%= (currentUser && currentUser.reminderTime) || '18:00' %>"
           />
           <small class="text-secondary">
             This just stores your preferred time for now.
@@ -300,24 +305,19 @@
       </form>
     </div>
   </div>
+</div>
 
-  <!-- Danger zone -->
-  <div class="glass-card p-4 mt-4 danger-zone">
-    <h5 class="mb-2">Danger zone</h5>
-    <p class="text-secondary mb-3" style="font-size: 0.9rem;">
-      Deleting your account will remove all workouts and meals linked to this login.
-      This cannot be undone.
-    </p>
-    <form
-      action="/account/delete"
-      method="POST"
-      onsubmit="return confirm('Delete your account and all data?');"
-    >
-      <button type="submit" class="btn btn-outline-light btn-sm btn-pill">
-        Delete my account
-      </button>
-    </form>
-  </div>
+<!-- Danger zone -->
+<div class="glass-card danger-zone p-4 mt-4 border-danger" style="border-width: 1px;">
+  <h5 class="mb-2">Danger zone</h5>
+  <p class="text-secondary mb-3" style="font-size: 0.9rem;">
+    Deleting your account will remove all workouts and data linked to this login. This cannot be undone.
+  </p>
+  <form action="/account/delete" method="POST" onsubmit="return confirm('Delete your account and all data?');">
+    <button type="submit" class="btn btn-outline-danger">
+      Delete my account
+    </button>
+  </form>
 </div>
 
 <%- include('../partials/footer') %>
