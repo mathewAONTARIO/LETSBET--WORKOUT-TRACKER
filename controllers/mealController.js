@@ -1,3 +1,4 @@
+// controllers/mealController.js
 const mongoose = require('mongoose');
 const Meal = require('../models/Meal');
 
@@ -5,7 +6,7 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-exports.listMeals = async (req, res) => {
+async function listMeals(req, res) {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
@@ -41,9 +42,9 @@ exports.listMeals = async (req, res) => {
       currentPath: '/meals'
     });
   }
-};
+}
 
-exports.showNewForm = (req, res) => {
+function showNewForm(req, res) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   res.render('meals/new', {
@@ -51,9 +52,9 @@ exports.showNewForm = (req, res) => {
     today: todayStr,
     formAction: '/meals/new'
   });
-};
+}
 
-exports.createMeal = async (req, res) => {
+async function createMeal(req, res) {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
@@ -86,9 +87,9 @@ exports.createMeal = async (req, res) => {
     console.error('createMeal error:', err);
     res.redirect('/meals?toast=error&type=error');
   }
-};
+}
 
-exports.showEditForm = async (req, res) => {
+async function showEditForm(req, res) {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
@@ -109,9 +110,9 @@ exports.showEditForm = async (req, res) => {
     console.error('showEditForm error:', err);
     res.redirect('/meals');
   }
-};
+}
 
-exports.updateMeal = async (req, res) => {
+async function updateMeal(req, res) {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
@@ -146,9 +147,9 @@ exports.updateMeal = async (req, res) => {
     console.error('updateMeal error:', err);
     res.redirect('/meals?toast=error&type=error');
   }
-};
+}
 
-exports.deleteMeal = async (req, res) => {
+async function deleteMeal(req, res) {
   try {
     const userId = getUserId(req);
     const { id } = req.params;
@@ -156,6 +157,7 @@ exports.deleteMeal = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.warn('deleteMeal invalid id:', id);
       return res.redirect('/meals?toast=error&type=error');
     }
 
@@ -166,4 +168,13 @@ exports.deleteMeal = async (req, res) => {
     console.error('deleteMeal error:', err);
     res.redirect('/meals?toast=error&type=error');
   }
+}
+
+module.exports = {
+  listMeals,
+  showNewForm,
+  createMeal,
+  showEditForm,
+  updateMeal,
+  deleteMeal
 };

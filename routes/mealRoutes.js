@@ -1,16 +1,23 @@
 // routes/mealRoutes.js
 const express = require('express');
 const router = express.Router();
-const mealController = require('../controllers/mealController');
+const {
+  listMeals,
+  showNewForm,
+  createMeal,
+  showEditForm,
+  updateMeal,
+  deleteMeal
+} = require('../controllers/mealController');
 
-// /meals
-router.get('/', mealController.getMeals);
+router.get('/', listMeals);
 
-// /meals/new
-router.get('/new', mealController.showNewMealForm);
-router.post('/new', mealController.createMeal);
+router.get('/new', showNewForm);
+router.post('/new', createMeal);
 
-// /meals/:id/delete
-router.post('/:id/delete', mealController.deleteMeal);
+router.get('/:id/edit', showEditForm);
+router.post('/:id/edit', updateMeal);
+
+router.post('/:id/delete', deleteMeal);
 
 module.exports = router;
