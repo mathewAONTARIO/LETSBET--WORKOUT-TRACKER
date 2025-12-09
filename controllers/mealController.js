@@ -1,4 +1,3 @@
-// controllers/mealController.js
 const mongoose = require('mongoose');
 const Meal = require('../models/Meal');
 
@@ -6,54 +5,51 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-/* ---------- LIST ---------- */
-
-exports.getMeals = async (req, res) => {
+exports.listMeals = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
     const meals = await Meal.find({ user: userId }).sort({ date: -1 });
 
-    // simple daily total for today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const todaysMeals = meals.filter(m => {
+    const todayMeals = meals.filter(m => {
+      if (!m.date) return false;
       const d = new Date(m.date);
       return d >= today && d < tomorrow;
     });
 
-    const todayTotalCalories = todaysMeals.reduce(
+    const todayCalories = todayMeals.reduce(
       (sum, m) => sum + (m.calories || 0),
       0
     );
 
     res.render('meals/list', {
       meals,
-      todayTotalCalories,
+      todayCalories,
       currentPath: '/meals'
     });
   } catch (err) {
-    console.error('getMeals error:', err);
+    console.error('listMeals error:', err);
     res.render('meals/list', {
       meals: [],
-      todayTotalCalories: 0,
+      todayCalories: 0,
       currentPath: '/meals'
     });
   }
 };
 
-/* ---------- CREATE ---------- */
-
-exports.showNewMealForm = (req, res) => {
+exports.showNewForm = (req, res) => {
   const todayStr = new Date().toISOString().slice(0, 10);
 
   res.render('meals/new', {
-    currentPath: '/meals/new',
-    today: todayStr
+    currentPath: '/meals',
+    today: todayStr,
+    formAction: '/meals/new'
   });
 };
 
@@ -68,55 +64,49 @@ exports.createMeal = async (req, res) => {
       protein,
       carbs,
       fats,
-      date,
       timeOfDay,
+      date,
       notes
     } = req.body;
 
-    const caloriesNumber = parseInt(calories, 10) || 0;
-    const proteinNumber = parseFloat(protein) || 0;
-    const carbsNumber = parseFloat(carbs) || 0;
-    const fatNumber = parseFloat(fats) || 0;
-
     await Meal.create({
-      user: userId,
       name,
-      calories: caloriesNumber,
-      protein: proteinNumber,
-      carbs: carbsNumber,
-      fats: fatNumber,       // primary
-      fat: fatNumber,        // keep both keys safe
-      date: date || new Date(),
+      calories,
+      protein,
+      carbs,
+      fats,
       timeOfDay,
-      notes
+      date,
+      notes,
+      user: userId
     });
 
-    res.redirect('/meals');
+    res.redirect('/meals?toast=meal-saved&type=success');
   } catch (err) {
     console.error('createMeal error:', err);
-    res.redirect('/meals');
+    res.redirect('/meals?toast=error&type=error');
   }
 };
 
-/* ---------- EDIT ---------- */
-
-exports.showEditMealForm = async (req, res) => {
+exports.showEditForm = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.redirect('/meals');
+    const meal = await Meal.findOne({
+      _id: req.params.id,
+      user: userId
+    });
 
-    const meal = await Meal.findOne({ _id: id, user: userId });
     if (!meal) return res.redirect('/meals');
 
     res.render('meals/edit', {
       meal,
-      currentPath: '/meals'
+      currentPath: '/meals',
+      formAction: `/meals/${meal._id}/edit`
     });
   } catch (err) {
-    console.error('showEditMealForm error:', err);
+    console.error('showEditForm error:', err);
     res.redirect('/meals');
   }
 };
@@ -126,48 +116,37 @@ exports.updateMeal = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.redirect('/meals');
-
     const {
       name,
       calories,
       protein,
       carbs,
       fats,
-      date,
       timeOfDay,
+      date,
       notes
     } = req.body;
 
-    const caloriesNumber = parseInt(calories, 10) || 0;
-    const proteinNumber = parseFloat(protein) || 0;
-    const carbsNumber = parseFloat(carbs) || 0;
-    const fatNumber = parseFloat(fats) || 0;
-
     await Meal.findOneAndUpdate(
-      { _id: id, user: userId },
+      { _id: req.params.id, user: userId },
       {
         name,
-        calories: caloriesNumber,
-        protein: proteinNumber,
-        carbs: carbsNumber,
-        fats: fatNumber,
-        fat: fatNumber,
-        date: date || new Date(),
+        calories,
+        protein,
+        carbs,
+        fats,
         timeOfDay,
+        date,
         notes
       }
     );
 
-    res.redirect('/meals');
+    res.redirect('/meals?toast=meal-saved&type=success');
   } catch (err) {
     console.error('updateMeal error:', err);
-    res.redirect('/meals');
+    res.redirect('/meals?toast=error&type=error');
   }
 };
-
-/* ---------- DELETE ---------- */
 
 exports.deleteMeal = async (req, res) => {
   try {
@@ -175,12 +154,16 @@ exports.deleteMeal = async (req, res) => {
     const { id } = req.params;
 
     if (!userId) return res.redirect('/auth/login');
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.redirect('/meals');
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.redirect('/meals?toast=error&type=error');
+    }
 
     await Meal.findOneAndDelete({ _id: id, user: userId });
-    res.redirect('/meals');
+
+    res.redirect('/meals?toast=meal-deleted&type=success');
   } catch (err) {
     console.error('deleteMeal error:', err);
-    res.redirect('/meals');
+    res.redirect('/meals?toast=error&type=error');
   }
 };

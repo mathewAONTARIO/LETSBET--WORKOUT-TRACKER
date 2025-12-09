@@ -1,4 +1,3 @@
-// routes/profileRoutes.js
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
@@ -7,9 +6,6 @@ const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
 
-/**
- * MULTER CONFIG FOR PROFILE PHOTO UPLOADS
- */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, '..', 'public', 'uploads', 'avatars'));
@@ -23,7 +19,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(req, file, cb) {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image files are allowed'));
@@ -32,9 +28,6 @@ const upload = multer({
   }
 });
 
-/**
- * SETTINGS PAGE
- */
 router.get('/settings', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -58,9 +51,6 @@ router.get('/settings', requireLogin, async (req, res) => {
   }
 });
 
-/**
- * UPDATE PROFILE (INCLUDING PROFILE PHOTO)
- */
 router.post(
   '/profile',
   requireLogin,
@@ -73,7 +63,6 @@ router.post(
       const user = await User.findById(userId);
       if (!user) return res.redirect('/auth/login');
 
-      // Basic fields
       if (req.body.displayName) {
         user.displayName = req.body.displayName;
       }
@@ -94,7 +83,6 @@ router.post(
         }
       }
 
-      // Height (text, can be 5'10 or 180)
       if (req.body.height) {
         user.heightValue = req.body.height.trim();
       }
@@ -102,7 +90,6 @@ router.post(
         user.heightUnit = req.body.heightUnit;
       }
 
-      // Weight (text, can be decimal)
       if (req.body.weight) {
         user.weightValue = req.body.weight.trim();
       }
@@ -110,7 +97,6 @@ router.post(
         user.weightUnit = req.body.weightUnit;
       }
 
-      // Weight goal
       if (req.body.targetWeight) {
         user.targetWeightValue = req.body.targetWeight.trim();
       }
@@ -118,7 +104,6 @@ router.post(
         user.targetWeightUnit = req.body.targetWeightUnit;
       }
 
-      // Goal / experience
       if (req.body.primaryGoal) {
         user.primaryGoal = req.body.primaryGoal;
       }
@@ -126,7 +111,6 @@ router.post(
         user.trainingExperience = req.body.trainingExperience;
       }
 
-      // Profile picture
       if (req.file) {
         const relPath = `/uploads/avatars/${req.file.filename}`;
         user.profilePhotoUrl = relPath;
@@ -134,7 +118,6 @@ router.post(
 
       await user.save();
 
-      // Keep session alive + update cached user info
       req.session.userId = user._id;
       req.session.user = {
         _id: user._id,
@@ -155,9 +138,6 @@ router.post(
   }
 );
 
-/**
- * UPDATE THEME
- */
 router.post('/theme', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -169,7 +149,6 @@ router.post('/theme', requireLogin, async (req, res) => {
     user.theme = req.body.theme === 'light' ? 'light' : 'dark';
     await user.save();
 
-    // update session copy
     req.session.userId = user._id;
     req.session.user = {
       ...(req.session.user || {}),
@@ -184,9 +163,6 @@ router.post('/theme', requireLogin, async (req, res) => {
   }
 });
 
-/**
- * UPDATE REMINDER SETTINGS
- */
 router.post('/reminder', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;
@@ -218,9 +194,6 @@ router.post('/reminder', requireLogin, async (req, res) => {
   }
 });
 
-/**
- * DELETE ACCOUNT
- */
 router.post('/delete', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId;

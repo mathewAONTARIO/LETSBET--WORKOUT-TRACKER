@@ -3,70 +3,57 @@ const express = require('express');
 const router = express.Router();
 const workoutController = require('../controllers/workoutController');
 
-/* ---------- MAIN LIST ---------- */
+// Helper so Express never gets "undefined" as a handler
+function safe(name) {
+  const fn = workoutController[name];
+  if (typeof fn !== 'function') {
+    console.error(`❌ workoutController.${name} is NOT a function. Got:`, fn);
+    return (req, res) => {
+      res
+        .status(500)
+        .send(`Handler "${name}" is not implemented on workoutController.`);
+    };
+  }
+  return fn;
+}
 
-// /workouts
-router.get('/', workoutController.getWorkouts);
+// MAIN LIST
+router.get('/', safe('getWorkouts'));
 
-/* ---------- CREATE (NORMAL) ---------- */
+// CREATE WORKOUT (generic)
+router.get('/new', safe('showNewForm'));
+router.post('/new', safe('createWorkout'));
 
-// /workouts/new  (show form)
-router.get('/new', workoutController.showNewForm);
+// CREATE FOR SPECIFIC DAY
+router.get('/day/:date/new', safe('showNewFormForDate'));
+router.post('/day/:date/new', safe('createWorkoutForDate'));
 
-// /workouts/new  (handle submit)
-router.post('/new', workoutController.createWorkout);
+// DAY SUMMARY
+router.get('/day/:date', safe('getDaySummary'));
 
-/* ---------- CREATE FOR SPECIFIC DAY (FROM CALENDAR) ---------- */
+// STREAK + STATS
+router.get('/streak', safe('getStreak'));
+router.get('/stats', safe('getStats'));
+router.get('/stats/prs', safe('getPRs'));
 
-// /workouts/day/2025-11-26/new  (show form for that date)
-router.get('/day/:date/new', workoutController.showNewFormForDate);
+// LIBRARY + CALENDAR
+router.get('/library', safe('getLibrary'));
+router.get('/calendar', safe('getCalendar'));
 
-// /workouts/day/2025-11-26/new  (submit form for that date)
-router.post('/day/:date/new', workoutController.createWorkoutForDate);
-
-/* ---------- DAY SUMMARY (CALENDAR) ---------- */
-
-// /workouts/day/2025-11-26
-router.get('/day/:date', workoutController.getDaySummary);
-
-/* ---------- STREAK / STATS / LIBRARY / CALENDAR / SETTINGS ---------- */
-
-// /workouts/streak
-router.get('/streak', workoutController.getStreak);
-
-// /workouts/stats
-router.get('/stats', workoutController.getStats);
-
-// /workouts/stats/prs
-router.get('/stats/prs', workoutController.getPRs);
-
-// /workouts/library
-router.get('/library', workoutController.getLibrary);
-
-// /workouts/calendar
-router.get('/calendar', workoutController.getCalendar);
-
-// /workouts/settings  → simple render of settings page
+// SIMPLE SETTINGS PAGE (no controller needed)
 router.get('/settings', (req, res) => {
-  // you already have views/workouts/settings.ejs
   res.render('workouts/settings', {
     currentPath: '/workouts/settings'
   });
 });
 
-/* ---------- DUPLICATE / EDIT / DELETE ---------- */
+// DUPLICATE / EDIT / DELETE
+router.post('/:id/duplicate', safe('duplicateWorkout'));
 
-// /workouts/:id/duplicate
-router.get('/:id/duplicate', workoutController.duplicateWorkout);
+router.get('/:id/edit', safe('showEditForm'));
+router.post('/:id/edit', safe('updateWorkout'));
 
-// /workouts/:id/edit
-router.get('/:id/edit', workoutController.showEditForm);
-router.post('/:id/edit', workoutController.updateWorkout);
-
-// /workouts/:id/delete (confirm page)
-router.get('/:id/delete', workoutController.showDeleteConfirm);
-
-// /workouts/:id/delete (form POST)
-router.post('/:id/delete', workoutController.deleteWorkout);
+router.get('/:id/delete', safe('showDeleteConfirm'));
+router.post('/:id/delete', safe('deleteWorkout'));
 
 module.exports = router;

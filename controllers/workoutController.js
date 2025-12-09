@@ -6,8 +6,6 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-/* ---------- LIST ---------- */
-
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -28,17 +26,13 @@ exports.getWorkouts = async (req, res) => {
   }
 };
 
-/* ---------- CREATE (NORMAL) ---------- */
-
 exports.showNewForm = (req, res) => {
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  // Normal "Add Workout" form
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: todayStr,
-    formAction: '/workouts/new', // POST here
-    duplicateOf: null
+    formAction: '/workouts/new'
   });
 };
 
@@ -61,27 +55,23 @@ exports.createWorkout = async (req, res) => {
       user: userId
     });
 
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=workout-saved&type=success');
   } catch (err) {
     console.error('createWorkout error:', err);
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
-
-/* ---------- CREATE FOR SPECIFIC DAY (FROM CALENDAR) ---------- */
 
 exports.showNewFormForDate = (req, res) => {
   const userId = getUserId(req);
   if (!userId) return res.redirect('/auth/login');
 
-  const dateStr = req.params.date; // YYYY-MM-DD from URL
+  const dateStr = req.params.date;
 
-  // Form opened from calendar → lock to that day
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: dateStr,
-    formAction: `/workouts/day/${dateStr}/new`, // POST back to that day
-    duplicateOf: null
+    formAction: `/workouts/day/${dateStr}/new`
   });
 };
 
@@ -90,7 +80,7 @@ exports.createWorkoutForDate = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const forcedDate = req.params.date; // YYYY-MM-DD from URL
+    const forcedDate = req.params.date;
     const { exercise, category, sets, reps, weight, notes, isPR } = req.body;
 
     await Workout.create({
@@ -99,23 +89,20 @@ exports.createWorkoutForDate = async (req, res) => {
       sets,
       reps,
       weight,
-      date: forcedDate, // lock to the day page you’re on
+      date: forcedDate,
       notes,
       isPR: isPR === 'on',
       user: userId
     });
 
-    // After adding, go back to that day’s summary
-    res.redirect(`/workouts/day/${forcedDate}`);
+    res.redirect(`/workouts/day/${forcedDate}?toast=workout-saved&type=success`);
   } catch (err) {
     console.error('createWorkoutForDate error:', err);
-    res.redirect('/workouts');
+    res.redirect(`/workouts/day/${req.params.date}?toast=error&type=error`);
   }
 };
 
-/* ---------- DUPLICATE (OPEN PREFILLED FORM) ---------- */
-
-exports.showDuplicateForm = async (req, res) => {
+exports.duplicateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
@@ -126,30 +113,32 @@ exports.showDuplicateForm = async (req, res) => {
     });
 
     if (!original) {
-      console.warn('showDuplicateForm: original not found for id', req.params.id);
-      return res.redirect('/workouts');
+      return res.redirect('/workouts?toast=error&type=error');
     }
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-
-    // Reuse the "new" form but prefill with this workout's data.
-    res.render('workouts/new', {
-      currentPath: '/workouts',
-      today: todayStr, // keep date default to today
-      formAction: '/workouts/new',
-      duplicateOf: original
+    await Workout.create({
+      exercise: original.exercise,
+      category: original.category,
+      sets: original.sets,
+      reps: original.reps,
+      weight: original.weight,
+      date: new Date(),
+      notes: original.notes,
+      isPR: false,
+      user: userId
     });
+
+    res.redirect('/workouts?toast=workout-duplicated&type=success');
   } catch (err) {
-    console.error('showDuplicateForm error:', err);
-    res.redirect('/workouts');
+    console.error('duplicateWorkout error:', err);
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
-
-/* ---------- EDIT / UPDATE ---------- */
 
 exports.showEditForm = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({
       _id: req.params.id,
@@ -171,6 +160,8 @@ exports.showEditForm = async (req, res) => {
 exports.updateWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
     const { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
 
     await Workout.findOneAndUpdate(
@@ -187,18 +178,17 @@ exports.updateWorkout = async (req, res) => {
       }
     );
 
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=workout-saved&type=success');
   } catch (err) {
     console.error('updateWorkout error:', err);
-    res.redirect('/workouts');
+    res.redirect('/workouts?toast=error&type=error');
   }
 };
-
-/* ---------- DELETE (SAFE) ---------- */
 
 exports.showDeleteConfirm = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({
       _id: req.params.id,
@@ -217,20 +207,17 @@ exports.showDeleteConfirm = async (req, res) => {
   }
 };
 
-// safer delete – checks id + user, never crashes
 exports.deleteWorkout = async (req, res) => {
   try {
     const userId = getUserId(req);
     const { id } = req.params;
 
     if (!userId) {
-      console.warn('deleteWorkout: no user in session');
       return res.redirect('/auth/login');
     }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.warn('deleteWorkout: invalid workout id', id);
-      return res.redirect('/workouts');
+      return res.redirect('/workouts?toast=error&type=error');
     }
 
     const deleted = await Workout.findOneAndDelete({
@@ -242,14 +229,12 @@ exports.deleteWorkout = async (req, res) => {
       console.warn('deleteWorkout: nothing deleted for id', id);
     }
 
-    return res.redirect('/workouts');
+    return res.redirect('/workouts?toast=workout-deleted&type=success');
   } catch (err) {
     console.error('deleteWorkout error:', err);
-    return res.redirect('/workouts');
+    return res.redirect('/workouts?toast=error&type=error');
   }
 };
-
-/* ---------- STREAK / STATS / PRS / LIBRARY ---------- */
 
 exports.getStreak = async (req, res) => {
   try {
@@ -271,13 +256,11 @@ exports.getStreak = async (req, res) => {
     let currentStreak = 0;
     let longestStreak = 0;
 
-    // today (normalized to midnight)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayKey = today.toISOString().slice(0, 10);
 
     if (days.length > 0) {
-      // current streak: walk backwards from today
       let cursor = new Date(todayKey);
       while (true) {
         const key = cursor.toISOString().slice(0, 10);
@@ -289,7 +272,6 @@ exports.getStreak = async (req, res) => {
         }
       }
 
-      // longest streak over history
       let temp = 1;
       for (let i = 1; i < days.length; i++) {
         const prev = new Date(days[i - 1]);
@@ -310,9 +292,7 @@ exports.getStreak = async (req, res) => {
         ? new Date(workouts[workouts.length - 1].date).toLocaleDateString()
         : null;
 
-    // ---- Weekly progress toward goal ----
     const startOfWeek = new Date(today);
-    // Sunday = 0, Monday = 1, ...
     startOfWeek.setDate(today.getDate() - today.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
@@ -356,12 +336,6 @@ exports.getStreak = async (req, res) => {
   }
 };
 
-/**
- * Nicer stats:
- * - Total workouts + volume
- * - Line chart for LAST 30 DAYS only (shorter, cleaner)
- * - PR list stays the same
- */
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -377,14 +351,13 @@ exports.getStats = async (req, res) => {
       return sum + weight * sets * reps;
     }, 0);
 
-    // ----- Build volume over LAST 30 DAYS -----
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const start = new Date(today);
-    start.setDate(start.getDate() - 29); // 30 days including today
+    start.setDate(start.getDate() - 29);
 
-    const volumeByDay = new Map(); // key: YYYY-MM-DD, value: volume
+    const volumeByDay = new Map();
 
     workouts.forEach(w => {
       if (!w.date) return;
@@ -392,7 +365,7 @@ exports.getStats = async (req, res) => {
       const d = new Date(w.date);
       d.setHours(0, 0, 0, 0);
 
-      if (d < start || d > today) return; // ignore outside 30-day window
+      if (d < start || d > today) return;
 
       const key = d.toISOString().slice(0, 10);
       const sets = w.sets || 0;
@@ -414,7 +387,6 @@ exports.getStats = async (req, res) => {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // ----- Personal records -----
     const prMap = {};
     workouts.forEach(w => {
       if (!w.isPR || !w.weight) return;
@@ -491,8 +463,6 @@ exports.getPRs = async (req, res) => {
 exports.getLibrary = (req, res) => {
   res.render('workouts/library', { currentPath: '/workouts/library' });
 };
-
-/* ---------- CALENDAR / DAY SUMMARY ---------- */
 
 exports.getCalendar = async (req, res) => {
   try {
@@ -593,6 +563,7 @@ exports.getCalendar = async (req, res) => {
 exports.getDaySummary = async (req, res) => {
   try {
     const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
 
     const day = new Date(req.params.date);
     const nextDay = new Date(day);

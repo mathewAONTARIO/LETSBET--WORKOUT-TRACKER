@@ -36,9 +36,9 @@ app.use(
   })
 );
 
-// Global middleware
-app.use(setTheme);
+// Global middleware (user first, then theme so it can read user)
 app.use(attachUser);
+app.use(setTheme);
 
 // Routes
 app.use('/', indexRoutes);
