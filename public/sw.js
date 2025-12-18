@@ -1,19 +1,20 @@
-// public/sw.js
 const CACHE_NAME = 'letsbet-static-v1';
 
 const ASSETS = [
   '/',
+  '/offline',
   '/css/style.css',
   '/img/letsbet-logo.png',
-  '/manifest.json',          // match <link rel="manifest" href="/manifest.json">
+  '/manifest.json',
   '/workouts',
   '/workouts/stats',
   '/workouts/calendar',
   '/workouts/streak',
-  '/workouts/library'
+  '/workouts/library',
+  '/meals',
+  '/insights'
 ];
 
-// Install: pre-cache shell assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -22,15 +23,12 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate: cleanup old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
+          if (key !== CACHE_NAME) return caches.delete(key);
           return null;
         })
       )
@@ -38,14 +36,12 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch: network-first for pages, cache-first for static assets
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const req = event.request;
   const acceptHeader = req.headers.get('accept') || '';
 
-  // HTML pages → network first, fallback to cache
   if (acceptHeader.includes('text/html')) {
     event.respondWith(
       fetch(req)
@@ -55,13 +51,12 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          return caches.match(req).then(cached => cached || caches.match('/'));
+          return caches.match(req).then(cached => cached || caches.match('/offline') || caches.match('/'));
         })
     );
     return;
   }
 
-  // Static assets → cache first, then network
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
