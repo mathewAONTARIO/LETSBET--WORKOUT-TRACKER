@@ -21,6 +21,16 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production') {
+    const proto = req.headers['x-forwarded-proto'];
+    if (proto && proto !== 'https') {
+      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    }
+  }
+  next();
+});
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -34,14 +44,11 @@ connectDB();
 app.get('/health', async (req, res) => {
   try {
     const dbState = mongoose.connection.readyState;
-    const dbOk = dbState === 1;
-
-    if (!dbOk) {
-      return res.status(500).json({ status: 'degraded', db: 'disconnected', dbState });
+    if (dbState !== 1) {
+      return res.status(500).json({ status: 'degraded' });
     }
-
-    return res.status(200).json({ status: 'ok', db: 'connected' });
-  } catch (e) {
+    return res.status(200).json({ status: 'ok' });
+  } catch {
     return res.status(500).json({ status: 'error' });
   }
 });
@@ -54,7 +61,6 @@ const mongoUrl = process.env.MONGODB_URI || process.env.MONGO_URI;
 const sessionSecret = process.env.SESSION_SECRET;
 
 if (process.env.NODE_ENV === 'production' && !sessionSecret) {
-  console.error('SESSION_SECRET is missing in production environment variables');
   process.exit(1);
 }
 
@@ -75,7 +81,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production' ? 'auto' : false,
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 24 * 7
     }
   })
@@ -96,8 +102,4 @@ app.use((req, res) => {
 });
 
 const PORT = Number(process.env.PORT) || 8080;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`NODE_ENV=${process.env.NODE_ENV || 'undefined'}`);
-  console.log(`Mongo session store: ${mongoUrl ? 'ON' : 'OFF'}`);
-});
+app.listen(PORT, '0.0.0.0');
