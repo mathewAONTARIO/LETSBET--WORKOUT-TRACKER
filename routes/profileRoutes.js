@@ -21,12 +21,48 @@ const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(req, file, cb) {
-    if (!file.mimetype.startsWith('image/')) {
-      return cb(new Error('Only image files are allowed'));
-    }
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image files are allowed'));
     cb(null, true);
   }
 });
+
+function safeRedirectTarget(target) {
+  if (typeof target !== 'string') return '/';
+  if (target.startsWith('/')) return target;
+  return '/';
+}
+
+async function applyTheme(req, res, themeValue, fallbackRedirect) {
+  const userId = req.session.userId;
+  if (!userId) return res.redirect('/auth/login');
+
+  const user = await User.findById(userId);
+  if (!user) return res.redirect('/auth/login');
+
+  const nextTheme =
+    themeValue === 'light' || themeValue === 'dark'
+      ? themeValue
+      : (user.theme === 'light' ? 'dark' : 'light');
+
+  user.theme = nextTheme;
+  await user.save();
+
+  req.session.userId = user._id;
+  req.session.user = {
+    ...(req.session.user || {}),
+    _id: user._id,
+    theme: user.theme
+  };
+
+  const redirectTo =
+    safeRedirectTarget(req.body?.next) ||
+    safeRedirectTarget(req.query?.next) ||
+    safeRedirectTarget(req.get('referer')) ||
+    fallbackRedirect ||
+    '/';
+
+  return res.redirect(redirectTo);
+}
 
 router.get('/settings', requireLogin, async (req, res) => {
   try {
@@ -46,77 +82,12 @@ router.get('/settings', requireLogin, async (req, res) => {
       reminderSaved
     });
   } catch (err) {
+    console.error('Error rendering settings page:', err);
     res.redirect('/');
   }
 });
 
-router.post(
-  '/profile',
-  requireLogin,
-  upload.single('profilePhoto'),
-  async (req, res) => {
-    try {
-      const userId = req.session.userId;
-      if (!userId) return res.redirect('/auth/login');
-
-      const user = await User.findById(userId);
-      if (!user) return res.redirect('/auth/login');
-
-      if (req.body.displayName) user.displayName = req.body.displayName;
-
-      if (req.body.weeklyGoal) {
-        const wg = parseInt(req.body.weeklyGoal, 10);
-        if (!Number.isNaN(wg)) user.weeklyGoal = wg;
-      }
-
-      user.gender = req.body.gender || user.gender || 'prefer-not-to-say';
-
-      if (req.body.age) {
-        const ageNum = parseInt(req.body.age, 10);
-        if (!Number.isNaN(ageNum)) user.age = ageNum;
-      }
-
-      if (req.body.height) user.heightValue = req.body.height.trim();
-      if (req.body.heightUnit) user.heightUnit = req.body.heightUnit;
-
-      if (req.body.weight) user.weightValue = req.body.weight.trim();
-      if (req.body.weightUnit) user.weightUnit = req.body.weightUnit;
-
-      if (req.body.targetWeight)
-        user.targetWeightValue = req.body.targetWeight.trim();
-      if (req.body.targetWeightUnit)
-        user.targetWeightUnit = req.body.targetWeightUnit;
-
-      if (req.body.primaryGoal) user.primaryGoal = req.body.primaryGoal;
-      if (req.body.trainingExperience)
-        user.trainingExperience = req.body.trainingExperience;
-
-      if (req.file) {
-        user.profilePhotoUrl = `/uploads/avatars/${req.file.filename}`;
-      }
-
-      await user.save();
-
-      req.session.userId = user._id;
-      req.session.user = {
-        _id: user._id,
-        email: user.email,
-        displayName: user.displayName,
-        profilePhotoUrl: user.profilePhotoUrl,
-        theme: user.theme,
-        weeklyGoal: user.weeklyGoal,
-        dailyReminderEnabled: user.dailyReminderEnabled,
-        reminderTime: user.reminderTime
-      };
-
-      res.redirect('/account/settings?saved=1');
-    } catch (err) {
-      res.redirect('/account/settings');
-    }
-  }
-);
-
-router.post('/theme', requireLogin, async (req, res) => {
+router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req, res) => {
   try {
     const userId = req.session.userId;
     if (!userId) return res.redirect('/auth/login');
@@ -124,22 +95,72 @@ router.post('/theme', requireLogin, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.redirect('/auth/login');
 
-    user.theme = req.body.theme === 'light' ? 'light' : 'dark';
+    if (req.body.displayName) user.displayName = req.body.displayName;
+
+    if (req.body.weeklyGoal) {
+      const wg = parseInt(req.body.weeklyGoal, 10);
+      if (!Number.isNaN(wg)) user.weeklyGoal = wg;
+    }
+
+    user.gender = req.body.gender || user.gender || 'prefer-not-to-say';
+
+    if (req.body.age) {
+      const ageNum = parseInt(req.body.age, 10);
+      if (!Number.isNaN(ageNum)) user.age = ageNum;
+    }
+
+    if (req.body.height) user.heightValue = req.body.height.trim();
+    if (req.body.heightUnit) user.heightUnit = req.body.heightUnit;
+
+    if (req.body.weight) user.weightValue = req.body.weight.trim();
+    if (req.body.weightUnit) user.weightUnit = req.body.weightUnit;
+
+    if (req.body.targetWeight) user.targetWeightValue = req.body.targetWeight.trim();
+    if (req.body.targetWeightUnit) user.targetWeightUnit = req.body.targetWeightUnit;
+
+    if (req.body.primaryGoal) user.primaryGoal = req.body.primaryGoal;
+    if (req.body.trainingExperience) user.trainingExperience = req.body.trainingExperience;
+
+    if (req.file) {
+      user.profilePhotoUrl = `/uploads/avatars/${req.file.filename}`;
+    }
+
     await user.save();
 
+    req.session.userId = user._id;
     req.session.user = {
-      ...(req.session.user || {}),
       _id: user._id,
-      theme: user.theme
+      email: user.email,
+      displayName: user.displayName,
+      profilePhotoUrl: user.profilePhotoUrl,
+      theme: user.theme,
+      weeklyGoal: user.weeklyGoal,
+      dailyReminderEnabled: user.dailyReminderEnabled,
+      reminderTime: user.reminderTime
     };
 
-    const next = req.body.next;
-    const redirectTo =
-      typeof next === 'string' && next.startsWith('/') ? next : '/';
-
-    res.redirect(redirectTo);
+    res.redirect('/account/settings?saved=1&toast=profile-saved&type=success');
   } catch (err) {
-    res.redirect('/');
+    console.error('Error updating profile:', err);
+    res.redirect('/account/settings?toast=error&type=error');
+  }
+});
+
+router.get('/theme', requireLogin, async (req, res) => {
+  try {
+    return await applyTheme(req, res, req.query.theme, '/');
+  } catch (err) {
+    console.error('Error updating theme:', err);
+    res.redirect('/account/settings?toast=error&type=error');
+  }
+});
+
+router.post('/theme', requireLogin, async (req, res) => {
+  try {
+    return await applyTheme(req, res, req.body.theme, '/');
+  } catch (err) {
+    console.error('Error updating theme:', err);
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 
@@ -157,16 +178,19 @@ router.post('/reminder', requireLogin, async (req, res) => {
 
     await user.save();
 
+    const _id = user._id;
+    req.session.userId = _id;
     req.session.user = {
       ...(req.session.user || {}),
-      _id: user._id,
+      _id,
       dailyReminderEnabled: user.dailyReminderEnabled,
       reminderTime: user.reminderTime
     };
 
-    res.redirect('/account/settings?reminder=1');
+    res.redirect('/account/settings?reminder=1&toast=reminder-saved&type=success');
   } catch (err) {
-    res.redirect('/account/settings');
+    console.error('Error updating reminders:', err);
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 
@@ -178,7 +202,8 @@ router.post('/delete', requireLogin, async (req, res) => {
     await User.deleteOne({ _id: userId });
     req.session.destroy(() => res.redirect('/'));
   } catch (err) {
-    res.redirect('/account/settings');
+    console.error('Error deleting account:', err);
+    res.redirect('/account/settings?toast=error&type=error');
   }
 });
 
