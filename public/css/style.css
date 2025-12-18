@@ -1,5 +1,3 @@
-/* ------------------ GLOBAL LAYOUT ------------------ */
-
 body {
   min-height: 100vh;
   margin: 0;
@@ -11,14 +9,11 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Layout helper so content isn't 100% width */
 .main-shell {
   max-width: 980px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem;
 }
-
-/* Generic typography */
 
 h1,
 h2,
@@ -36,13 +31,10 @@ label {
   color: #e5e7eb;
 }
 
-/* “secondary” text actually readable in dark mode */
 .text-secondary {
   color: #cbd5f5 !important;
   opacity: 0.9;
 }
-
-/* ------------------ NAVBAR ------------------ */
 
 .navbar {
   backdrop-filter: blur(18px);
@@ -62,8 +54,6 @@ label {
   color: #f9fafb;
   font-size: 0.9rem;
 }
-
-/* SVG logo + wordmark */
 
 .brand-mark {
   width: 24px;
@@ -112,8 +102,6 @@ label {
   width: 100%;
 }
 
-/* Mobile nav menu */
-
 .navbar-dark .navbar-nav .nav-link {
   color: #e5e7eb;
 }
@@ -122,7 +110,43 @@ label {
   background: rgba(15, 23, 42, 0.98);
 }
 
-/* Theme toggle + profile pill */
+/* --- Avatar dropdown menu (dark mode) --- */
+.dropdown-menu {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+  padding: 6px;
+  z-index: 2000; /* ensure above navbar collapse */
+}
+
+.dropdown-item {
+  color: #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 500;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: rgba(59, 130, 246, 0.22);
+  color: #f9fafb;
+}
+
+.dropdown-divider {
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+/* danger (logout) */
+.dropdown-item.text-danger {
+  color: #fca5a5 !important;
+}
+
+.dropdown-item.text-danger:hover,
+.dropdown-item.text-danger:focus {
+  background: rgba(220, 38, 38, 0.22);
+  color: #fee2e2 !important;
+}
 
 .theme-toggle-btn {
   border-radius: 999px;
@@ -140,6 +164,15 @@ label {
   background: rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(75, 85, 99, 0.95);
   color: #f9fafb;
+
+  /* fixes */
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+}
+
+.profile-pill:hover {
+  text-decoration: none;
 }
 
 .avatar-circle {
@@ -155,8 +188,6 @@ label {
   font-weight: 600;
   margin-right: 6px;
 }
-
-/* ------------------ BUTTONS & LINKS ------------------ */
 
 .btn-primary {
   border-radius: 999px;
@@ -191,13 +222,10 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Utility to force pill buttons where needed */
 .btn-pill {
   border-radius: 999px !important;
   padding-inline: 1.2rem;
 }
-
-/* ------------------ HERO / HOME (legacy hero still used for logged-out) ------------------ */
 
 .hero {
   padding: 4rem 0 3rem;
@@ -228,8 +256,6 @@ a:hover {
   z-index: -1;
 }
 
-/* Home stats cards */
-
 .home-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -256,8 +282,6 @@ a:hover {
   font-weight: 700;
   color: #f9fafb;
 }
-
-/* ------------------ NEW HOME DASHBOARD (iOS-style) ------------------ */
 
 .home-hero {
   padding-top: 2.5rem;
@@ -305,7 +329,6 @@ a:hover {
   align-items: flex-end;
 }
 
-/* Today summary chips */
 .home-today-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -339,7 +362,6 @@ a:hover {
   color: #cbd5f5;
 }
 
-/* Last workout card */
 .home-last-workout .home-last-label {
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -359,8 +381,6 @@ a:hover {
   color: #cbd5f5;
   margin-top: 2px;
 }
-
-/* ------------------ GLASS CARDS & WORKOUT LIST ------------------ */
 
 .glass-card {
   background: rgba(15, 23, 42, 0.92);
@@ -425,8 +445,6 @@ a:hover {
   flex-wrap: wrap;
   gap: 8px;
 }
-
-/* Category badges */
 
 .badge-category {
   padding: 4px 10px;
@@ -494,8 +512,6 @@ a:hover {
   margin-left: 6px;
 }
 
-/* ------------------ STREAK PAGE ------------------ */
-
 .streak-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -547,8 +563,6 @@ a:hover {
   height: 100%;
   background: linear-gradient(to right, #22c55e, #4ade80, #22c55e);
 }
-
-/* ------------------ CALENDAR ------------------ */
 
 .calendar-shell {
   max-width: 900px;
@@ -663,8 +677,6 @@ a:hover {
   opacity: 0.35;
 }
 
-/* ------------------ FORMS ------------------ */
-
 .form-label {
   font-weight: 500;
   font-size: 0.9rem;
@@ -681,8 +693,6 @@ a:hover {
 .form-control::placeholder {
   color: #9ca3af;
 }
-
-/* ------------------ SETTINGS PAGE ------------------ */
 
 .settings-grid {
   display: grid;
@@ -703,8 +713,6 @@ a:hover {
   background: rgba(127, 29, 29, 0.85) !important;
   color: #fee2e2;
 }
-
-/* ------------------ LIBRARY PAGE ------------------ */
 
 .library-grid {
   display: grid;
@@ -753,8 +761,6 @@ a:hover {
   color: #e5e7eb;
 }
 
-/* ------------------ MEALS TABLE POLISH ------------------ */
-
 .meal-card-shell {
   border-radius: 20px;
   padding: 14px 16px;
@@ -762,14 +768,8 @@ a:hover {
   margin: 0 auto;
 }
 
-.meal-table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-}
-
 .meal-table {
   width: 100%;
-  min-width: 560px;
 }
 
 .meal-table thead tr th {
@@ -794,8 +794,6 @@ a:hover {
   font-size: 0.86rem;
   color: #cbd5f5;
 }
-
-/* ------------------ FOOTER (APP STYLE) ------------------ */
 
 .app-footer {
   padding: 0.75rem 0;
@@ -846,8 +844,6 @@ a:hover {
   vertical-align: middle;
   margin: 0 4px;
 }
-
-/* ------------------ TOAST / LOADER / SWIPE ------------------ */
 
 .d-none {
   display: none !important;
@@ -920,8 +916,6 @@ a:hover {
 .workout-card.swipeable.swiped-left .workout-actions {
   transform: translateX(-64px);
 }
-
-/* ------------------ LIGHT THEME (READABLE) ------------------ */
 
 body.theme-light {
   background: #e5edf7;
@@ -1038,7 +1032,26 @@ body.theme-light .app-footer-meta {
   color: #16a34a;
 }
 
-/* ------------------ WORKOUT FILTERS / SEARCH ------------------ */
+/* --- Avatar dropdown menu (light mode) --- */
+body.theme-light .dropdown-menu {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+body.theme-light .dropdown-item {
+  color: #0f172a;
+}
+
+body.theme-light .dropdown-item:hover,
+body.theme-light .dropdown-item:focus {
+  background: rgba(37, 99, 235, 0.12);
+  color: #0f172a;
+}
+
+body.theme-light .dropdown-divider {
+  border-top: 1px solid #e2e8f0;
+}
 
 .workout-filters {
   display: flex;
@@ -1057,7 +1070,17 @@ body.theme-light .app-footer-meta {
   max-width: 260px;
 }
 
-/* ------------------ RESPONSIVE ------------------ */
+@media (max-width: 767px) {
+  .workout-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workout-filters .form-control,
+  .workout-filters .form-select {
+    width: 100%;
+  }
+}
 
 @media (max-width: 991px) {
   .home-stats-grid {
@@ -1118,23 +1141,47 @@ body.theme-light .app-footer-meta {
     grid-template-columns: 1fr;
   }
 
-  /* meals: keep table, shrink + allow scroll */
-  .meal-card-shell {
-    padding: 12px 12px;
+  .meal-table thead {
+    display: none;
   }
 
-  .meal-table {
-    min-width: 520px;
+  .meal-table tbody tr {
+    display: block;
+    background: rgba(15, 23, 42, 0.97);
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.9);
   }
 
-  .meal-table thead tr th,
-  .meal-table tbody tr td {
-    font-size: 0.78rem;
-    white-space: nowrap;
+  .meal-table tbody tr:last-child {
+    margin-bottom: 0;
   }
 
-  .meal-macros {
-    font-size: 0.76rem;
+  .meal-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: none;
+    padding: 4px 0;
+    font-size: 0.92rem;
+  }
+
+  .meal-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9ca3af;
+    margin-right: 0.75rem;
+  }
+
+  .meal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-top: 4px;
   }
 }
 
