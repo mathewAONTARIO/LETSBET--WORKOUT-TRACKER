@@ -1,103 +1,118 @@
-// routes/index.js
-const express = require('express');
-const router = express.Router();
+<%- include('partials/header', { currentPath: '/' }) %>
 
-const Workout = require('../models/Workout');
-const Meal = require('../models/Meal'); // make sure this file exists
+<section class="hero">
+  <h1>Lets Bet – Keep Going</h1>
+  <p class="mt-2 mb-4">
+    Log your workouts, stack your streaks, and keep betting on yourself. 
+    Simple, clean, and built for consistency.
+  </p>
 
-router.get('/', async (req, res) => {
-  const currentUser = res.locals.currentUser;
-  const isLoggedIn = !!currentUser;
+  <div class="d-flex justify-content-center gap-3 mb-4">
+    <% if (!currentUser) { %>
+      <a href="/auth/register" class="btn btn-primary px-4">Get Started</a>
+      <a href="/auth/login" class="btn btn-outline-light px-4">Log In</a>
+    <% } else { %>
+      <a href="/workouts/new" class="btn btn-primary px-4">Log a Workout</a>
+      <a href="/workouts" class="btn btn-outline-light px-4">View All Workouts</a>
+    <% } %>
+  </div>
+</section>
 
-  // default props so the page never crashes
-  const baseProps = {
-    currentPath: '/',
-    isLoggedIn,
-    todayWorkoutCount: 0,
-    todayVolume: 0,
-    todayCalories: 0,
-    weeklyWorkouts: 0,
-    weeklyGoal: isLoggedIn ? (currentUser.weeklyGoal || 4) : 4,
-    weeklyProgressPercent: 0,
-    workoutOfDay: null
-  };
+<section class="mt-4">
+  <div class="home-stats-grid">
+    <div class="home-stat-card">
+      <div class="home-stat-label">This Week</div>
+      <div class="home-stat-value"><%= weeklyWorkouts || 0 %> Workouts</div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        Keep the streak alive.
+      </p>
+    </div>
 
-  // not logged in → simple landing dashboard
-  if (!isLoggedIn) {
-    return res.render('home', baseProps);
-  }
+    <div class="home-stat-card">
+      <div class="home-stat-label">Weekly Volume</div>
+      <div class="home-stat-value"><%= weeklyVolume || 0 %></div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        Sets × reps × weight.
+      </p>
+    </div>
 
-  try {
-    // ----- date helpers -----
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    <div class="home-stat-card">
+      <div class="home-stat-label">Best Day</div>
+      <div class="home-stat-value"><%= bestDay || '—' %></div>
+      <p class="text-secondary mb-0" style="font-size: 0.85rem;">
+        The day you moved the most.
+      </p>
+    </div>
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    <div class="home-stat-card">
+      <div class="home-stat-label">Weekly Goal</div>
+      <div class="home-stat-value">
+        <%= weeklyWorkouts || 0 %> / <%= weeklyGoal || 4 %> this week
+      </div>
+      <div class="mt-2 streak-bar">
+        <div
+          class="streak-bar-fill"
+          style="width: <%= weeklyProgressPercent || 0 %>%"
+        ></div>
+      </div>
+      <p class="text-secondary mb-0 mt-1" style="font-size: 0.8rem;">
+        <%= Math.round(weeklyProgressPercent || 0) %>% of your goal.
+      </p>
+    </div>
+  </div>
+</section>
 
-    const weekStart = new Date(today);
-    weekStart.setDate(weekStart.getDate() - 6); // last 7 days including today
+<section class="mt-4">
+  <div class="glass-card p-4">
+    <h5 class="mb-2">Workout of the Day</h5>
 
-    // ----- today’s workouts -----
-    const todayWorkouts = await Workout.find({
-      user: currentUser._id,
-      date: { $gte: today, $lt: tomorrow }
-    }).sort({ date: -1 });
+    <% if (workoutOfDay) { %>
+      <p class="text-secondary mb-3" style="font-size: 0.9rem;">
+        Your most recent session.
+      </p>
 
-    const todayWorkoutCount = todayWorkouts.length;
+      <div class="workout-card mb-0">
+        <div class="workout-main">
+          <div class="workout-title">
+            <%= workoutOfDay.exercise %>
+            <% if (workoutOfDay.category) { %>
+              <span class="badge-category badge-<%= workoutOfDay.category.toLowerCase() %> ms-2">
+                <%= workoutOfDay.category %>
+              </span>
+            <% } %>
+          </div>
+          <div class="workout-meta">
+            <%= workoutOfDay.sets %>×<%= workoutOfDay.reps %>
+            <% if (workoutOfDay.weight) { %>
+              @ <%= workoutOfDay.weight %> kg
+            <% } %>
+            ·
+            <%= new Date(workoutOfDay.date).toLocaleDateString() %>
+          </div>
+          <% if (workoutOfDay.notes) { %>
+            <div class="text-secondary" style="font-size: 0.85rem;">
+              "<%= workoutOfDay.notes %>"
+            </div>
+          <% } %>
+        </div>
 
-    const todayVolume = todayWorkouts.reduce((sum, w) => {
-      const sets = w.sets || 0;
-      const reps = w.reps || 0;
-      const weight = w.weight || 0;
-      return sum + sets * reps * weight;
-    }, 0);
+        <div class="workout-actions">
+          <a href="/workouts" class="btn btn-outline-light btn-sm">
+            View All
+          </a>
+          <form action="/workouts/duplicate/<%= workoutOfDay._id %>" method="POST">
+            <button type="submit" class="btn btn-primary btn-sm">
+              Repeat This
+            </button>
+          </form>
+        </div>
+      </div>
+    <% } else { %>
+      <p class="text-secondary mb-0" style="font-size: 0.9rem;">
+        Log a workout to see your latest session featured here.
+      </p>
+    <% } %>
+  </div>
+</section>
 
-    // ----- today’s meals -----
-    const todayMeals = await Meal.find({
-      user: currentUser._id,
-      date: { $gte: today, $lt: tomorrow }
-    }).sort({ date: -1 });
-
-    const todayCalories = todayMeals.reduce(
-      (sum, m) => sum + (m.calories || 0),
-      0
-    );
-
-    // ----- weekly workouts (for goal bar) -----
-    const weeklyWorkoutsDocs = await Workout.find({
-      user: currentUser._id,
-      date: { $gte: weekStart }
-    }).sort({ date: 1 });
-
-    const weeklyWorkouts = weeklyWorkoutsDocs.length;
-    const weeklyGoal = currentUser.weeklyGoal || 4;
-    const weeklyProgressPercent = Math.min(
-      Math.round((weeklyWorkouts / weeklyGoal) * 100),
-      100
-    );
-
-    // pick a “highlight” workout
-    const workoutOfDay =
-      todayWorkouts[0] ||
-      (weeklyWorkoutsDocs.length > 0
-        ? weeklyWorkoutsDocs[weeklyWorkoutsDocs.length - 1]
-        : null);
-
-    return res.render('home', {
-      ...baseProps,
-      todayWorkoutCount,
-      todayVolume,
-      todayCalories,
-      weeklyWorkouts,
-      weeklyGoal,
-      weeklyProgressPercent,
-      workoutOfDay
-    });
-  } catch (err) {
-    console.error('Home route error:', err);
-    return res.render('home', baseProps);
-  }
-});
-
-module.exports = router;
+<%- include('partials/footer') %>

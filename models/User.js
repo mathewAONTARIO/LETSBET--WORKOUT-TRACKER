@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const UserSchema = new mongoose.Schema(
   {
@@ -73,16 +74,8 @@ const UserSchema = new mongoose.Schema(
 UserSchema.pre('save', async function (next) {
   try {
     if (!this.isModified('password')) return next();
-
-    const pwd = String(this.password || '');
-
-    // If it's already a bcrypt hash, don't hash again (prevents breaking existing users)
-    if (pwd.startsWith('$2a$') || pwd.startsWith('$2b$') || pwd.startsWith('$2y$')) {
-      return next();
-    }
-
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(pwd, salt);
+    this.password = await bcrypt.hash(this.password, salt);
     return next();
   } catch (e) {
     return next(e);
@@ -90,7 +83,13 @@ UserSchema.pre('save', async function (next) {
 });
 
 UserSchema.methods.comparePassword = function (candidate) {
-  return bcrypt.compare(String(candidate || ''), String(this.password || ''));
+  return bcrypt.compare(String(candidate || ''), this.password);
+};
+
+UserSchema.methods.makeTokenPair = function () {
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  return { token, tokenHash };
 };
 
 module.exports = mongoose.model('User', UserSchema);

@@ -10,12 +10,12 @@
   "theme_color": "#020617",
   "icons": [
     {
-      "src": "/img/letsbet-icon-192.png",
+      "src": "/img/logo/lb-icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/img/letsbet-icon-512.png",
+      "src": "/img/logo/lb-icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }

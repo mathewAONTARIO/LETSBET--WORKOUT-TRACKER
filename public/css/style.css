@@ -1405,3 +1405,21 @@ body.theme-light .dropdown-divider {
     font-size: 16px;
   }
 }
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+
+.brand-text-sub {
+  color: #22c55e;
+}
+
+body.theme-light .brand-text-sub {
+  color: #16a34a; 
+}

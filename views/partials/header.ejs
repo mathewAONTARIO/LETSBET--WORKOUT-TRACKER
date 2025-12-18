@@ -20,23 +20,14 @@
     <nav class="navbar navbar-dark navbar-expand-lg border-bottom border-slate-800 mb-4">
       <div class="container px-3">
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-            <defs>
-              <linearGradient id="lbfit-grad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#60a5fa" />
-                <stop offset="100%" stop-color="#22c55e" />
-              </linearGradient>
-            </defs>
-            <rect x="2.5" y="2.5" width="27" height="27" rx="8" ry="8" fill="url(#lbfit-grad)" />
-            <polyline
-              points="5 18 10 18 13 11 17 23 20 16 24 18 27 18"
-              fill="none"
-              stroke="#0b1120"
-              stroke-width="2.4"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
+          <!-- ✅ LOGO SWAP: SVG -> LB PNG (auto switches for theme) -->
+          <img
+            class="brand-mark"
+            src="<%= currentTheme === 'light'
+              ? '/img/logo/lb-logo-dark.png'
+              : '/img/logo/lb-logo-light.png' %>"
+            alt="LetsBet Fit"
+          />
 
           <span class="brand-wordmark">
             <span class="brand-text-main">LETSBET</span>
