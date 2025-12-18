@@ -12,6 +12,7 @@ const workoutRoutes = require('./routes/workoutRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const mealRoutes = require('./routes/mealRoutes');
+const insightsRoutes = require('./routes/insightsRoutes'); // ✅ NEW
 
 const { attachUser } = require('./middleware/auth');
 const setTheme = require('./middleware/setTheme');
@@ -102,6 +103,7 @@ app.use(setTheme);
 
 /* -------------------- ROUTES -------------------- */
 app.use('/', indexRoutes);
+app.use('/', insightsRoutes);          // ✅ THIS is what to do with it
 app.use('/workouts', workoutRoutes);
 app.use('/meals', mealRoutes);
 app.use('/auth', authRoutes);
