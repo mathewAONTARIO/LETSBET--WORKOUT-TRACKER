@@ -6,6 +6,29 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
+// Force YYYY-MM-DD to a consistent Date (UTC midnight)
+function normalizeDate(dateStr) {
+  if (!dateStr) return null;
+  // Expecting "YYYY-MM-DD"
+  return new Date(`${dateStr}T00:00:00.000Z`);
+}
+
+// For /day/:date, query the whole day (UTC)
+function dayRange(dateStr) {
+  const start = normalizeDate(dateStr);
+  if (!start || Number.isNaN(start.getTime())) return null;
+
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
+}
+
+function toNumber(v) {
+  if (v === '' || v === null || v === undefined) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -44,25 +67,22 @@ exports.createWorkout = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    let { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
+    const { exercise, category, date, notes, isPR } = req.body;
 
-    sets = sets !== undefined && sets !== '' ? Number(sets) : undefined;
-    reps = reps !== undefined && reps !== '' ? Number(reps) : undefined;
-    weight = weight !== undefined && weight !== '' ? Number(weight) : undefined;
+    const sets = toNumber(req.body.sets);
+    const reps = toNumber(req.body.reps);
+    const weight = toNumber(req.body.weight);
 
-    const parsedDate = date ? new Date(date) : new Date();
-    if (date && isNaN(parsedDate.getTime())) {
-      return res.redirect('/workouts/new?toast=invalid-date&type=error');
-    }
+    const safeDate = normalizeDate(date) || normalizeDate(new Date().toISOString().slice(0, 10));
 
     await Workout.create({
-      exercise: (exercise || '').trim(),
-      category: (category || '').trim(),
+      exercise,
+      category,
       sets,
       reps,
       weight,
-      date: parsedDate,
-      notes: (notes || '').trim(),
+      date: safeDate,
+      notes,
       isPR: isPR === 'on',
       user: userId
     });
@@ -93,26 +113,22 @@ exports.createWorkoutForDate = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const forcedDateStr = req.params.date;
-    const forcedDate = new Date(forcedDateStr);
 
-    if (isNaN(forcedDate.getTime())) {
-      return res.redirect('/workouts/calendar?toast=invalid-date&type=error');
-    }
+    const { exercise, category, notes, isPR } = req.body;
+    const sets = toNumber(req.body.sets);
+    const reps = toNumber(req.body.reps);
+    const weight = toNumber(req.body.weight);
 
-    let { exercise, category, sets, reps, weight, notes, isPR } = req.body;
-
-    sets = sets !== undefined && sets !== '' ? Number(sets) : undefined;
-    reps = reps !== undefined && reps !== '' ? Number(reps) : undefined;
-    weight = weight !== undefined && weight !== '' ? Number(weight) : undefined;
+    const safeDate = normalizeDate(forcedDateStr);
 
     await Workout.create({
-      exercise: (exercise || '').trim(),
-      category: (category || '').trim(),
+      exercise,
+      category,
       sets,
       reps,
       weight,
-      date: forcedDate,
-      notes: (notes || '').trim(),
+      date: safeDate,
+      notes,
       isPR: isPR === 'on',
       user: userId
     });
@@ -138,13 +154,15 @@ exports.duplicateWorkout = async (req, res) => {
       return res.redirect('/workouts?toast=error&type=error');
     }
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+
     await Workout.create({
       exercise: original.exercise,
       category: original.category,
       sets: original.sets,
       reps: original.reps,
       weight: original.weight,
-      date: new Date(),
+      date: normalizeDate(todayStr),
       notes: original.notes,
       isPR: false,
       user: userId
@@ -184,27 +202,24 @@ exports.updateWorkout = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    let { exercise, category, sets, reps, weight, date, notes, isPR } = req.body;
+    const { exercise, category, date, notes, isPR } = req.body;
 
-    sets = sets !== undefined && sets !== '' ? Number(sets) : undefined;
-    reps = reps !== undefined && reps !== '' ? Number(reps) : undefined;
-    weight = weight !== undefined && weight !== '' ? Number(weight) : undefined;
+    const sets = toNumber(req.body.sets);
+    const reps = toNumber(req.body.reps);
+    const weight = toNumber(req.body.weight);
 
-    const parsedDate = date ? new Date(date) : undefined;
-    if (date && isNaN(parsedDate.getTime())) {
-      return res.redirect('/workouts?toast=invalid-date&type=error');
-    }
+    const safeDate = normalizeDate(date);
 
     await Workout.findOneAndUpdate(
       { _id: req.params.id, user: userId },
       {
-        exercise: (exercise || '').trim(),
-        category: (category || '').trim(),
+        exercise,
+        category,
         sets,
         reps,
         weight,
-        ...(parsedDate ? { date: parsedDate } : {}),
-        notes: (notes || '').trim(),
+        date: safeDate,
+        notes,
         isPR: isPR === 'on'
       }
     );
@@ -281,12 +296,12 @@ exports.getStreak = async (req, res) => {
     let longestStreak = 0;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     let cursor = new Date(today);
     while (daySet.has(cursor.toISOString().slice(0, 10))) {
       currentStreak++;
-      cursor.setDate(cursor.getDate() - 1);
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
     }
 
     let temp = 1;
@@ -395,10 +410,13 @@ exports.getDaySummary = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
+    const range = dayRange(req.params.date);
+    if (!range) return res.redirect('/workouts/calendar');
+
     const workouts = await Workout.find({
       user: userId,
-      date: new Date(req.params.date)
-    });
+      date: { $gte: range.start, $lt: range.end }
+    }).sort({ date: -1 });
 
     res.render('workouts/day', {
       workouts,

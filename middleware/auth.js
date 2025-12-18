@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 const attachUser = async (req, res, next) => {
@@ -7,8 +8,21 @@ const attachUser = async (req, res, next) => {
       return next();
     }
 
+    // If it's not even a valid ObjectId, clear it
+    if (!mongoose.Types.ObjectId.isValid(req.session.userId)) {
+      req.session.destroy(() => {});
+      res.locals.currentUser = null;
+      return next();
+    }
+
     const user = await User.findById(req.session.userId).lean();
     res.locals.currentUser = user || null;
+
+    // If user no longer exists (DB got wiped), clear session
+    if (!user) {
+      req.session.destroy(() => {});
+    }
+
     next();
   } catch (err) {
     console.error(err);
@@ -17,17 +31,23 @@ const attachUser = async (req, res, next) => {
   }
 };
 
-
 const requireLogin = async (req, res, next) => {
   try {
-    const userId = req.session && req.session.userId;
-    if (!userId) return res.redirect('/auth/login');
+    if (!req.session || !req.session.userId) {
+      return res.redirect('/auth/login');
+    }
 
-    const userExists = await User.exists({ _id: userId });
-    if (!userExists) {
-    
+    // Invalid ID in session → force re-login
+    if (!mongoose.Types.ObjectId.isValid(req.session.userId)) {
       req.session.destroy(() => {});
-      return res.redirect('/auth/login?toast=session-expired&type=error');
+      return res.redirect('/auth/login');
+    }
+
+    // Session userId exists but user got deleted → force re-login
+    const exists = await User.exists({ _id: req.session.userId });
+    if (!exists) {
+      req.session.destroy(() => {});
+      return res.redirect('/auth/login');
     }
 
     return next();
