@@ -1439,4 +1439,24 @@ body.theme-light .brand-text-sub {
   border-radius: 999px;
   background-color: #22c55e;
 }
+/* --- Progress bar: make dark + light match --- */
+.progress {
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  border-radius: 999px;
+  background-color: #22c55e;
+}
+
+/* Light mode track */
+body.theme-light .progress {
+  background-color: rgba(15, 23, 42, 0.18);
+}
+
+/* Dark mode track */
+body:not(.theme-light) .progress {
+  background-color: rgba(148, 163, 184, 0.22);
 }
