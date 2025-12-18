@@ -1,9 +1,8 @@
-// routes/insightsRoutes.js
 const express = require('express');
 const router = express.Router();
-const { getDaySummary, getWeekOverview } = require('../controllers/insightsController');
+const { requireLogin } = require('../middleware/auth');
+const { getInsights } = require('../controllers/insightsController');
 
-router.get('/day/:date', getDaySummary);     // /day/2025-12-18
-router.get('/week', getWeekOverview);        // /week (current week) or /week?start=YYYY-MM-DD
+router.get('/insights', requireLogin, getInsights);
 
 module.exports = router;

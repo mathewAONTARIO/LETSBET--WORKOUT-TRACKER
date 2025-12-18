@@ -1,8 +1,9 @@
-// routes/mealRoutes.js
 const express = require('express');
 const router = express.Router();
+const { requireLogin } = require('../middleware/auth');
 const {
   listMeals,
+  exportMealsCsv,
   showNewForm,
   createMeal,
   showEditForm,
@@ -12,21 +13,18 @@ const {
   duplicateMeal
 } = require('../controllers/mealController');
 
-router.get('/', listMeals);
+router.get('/', requireLogin, listMeals);
+router.get('/export.csv', requireLogin, exportMealsCsv);
 
-// NEW
-router.get('/new', showNewForm);
-router.post('/new', createMeal);
+router.get('/new', requireLogin, showNewForm);
+router.post('/new', requireLogin, createMeal);
 
-// DUPLICATE (pre-fills the /new form)
-router.get('/:id/duplicate', duplicateMeal);
+router.get('/:id/duplicate', requireLogin, duplicateMeal);
 
-// EDIT
-router.get('/:id/edit', showEditForm);
-router.post('/:id/edit', updateMeal);
+router.get('/:id/edit', requireLogin, showEditForm);
+router.post('/:id/edit', requireLogin, updateMeal);
 
-// DELETE confirm page + actual delete
-router.get('/:id/delete', showDeleteConfirm);
-router.post('/:id/delete', deleteMeal);
+router.get('/:id/delete', requireLogin, showDeleteConfirm);
+router.post('/:id/delete', requireLogin, deleteMeal);
 
 module.exports = router;

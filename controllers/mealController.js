@@ -1,4 +1,3 @@
-// controllers/mealController.js
 const mongoose = require('mongoose');
 const Meal = require('../models/Meal');
 
@@ -10,6 +9,12 @@ function toDateOrToday(value) {
   if (!value) return new Date();
   const dt = new Date(value);
   return isNaN(dt) ? new Date() : dt;
+}
+
+function csvEscape(v) {
+  const s = String(v ?? '');
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
 
 async function listMeals(req, res) {
@@ -30,10 +35,7 @@ async function listMeals(req, res) {
       return d >= today && d < tomorrow;
     });
 
-    const todayCalories = todayMeals.reduce((sum, m) => {
-      const c = Number(m.calories) || 0;
-      return sum + c;
-    }, 0);
+    const todayCalories = todayMeals.reduce((sum, m) => sum + (Number(m.calories) || 0), 0);
 
     res.render('meals/list', {
       meals,
@@ -47,6 +49,53 @@ async function listMeals(req, res) {
       todayCalories: 0,
       currentPath: '/meals'
     });
+  }
+}
+
+async function exportMealsCsv(req, res) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).send('Unauthorized');
+
+    const meals = await Meal.find({ user: userId }).sort({ date: -1 }).lean();
+
+    const headers = [
+      'date',
+      'timeOfDay',
+      'name',
+      'calories',
+      'protein',
+      'carbs',
+      'fats',
+      'notes'
+    ];
+
+    const lines = [];
+    lines.push(headers.join(','));
+
+    meals.forEach(m => {
+      const row = [
+        m.date ? new Date(m.date).toISOString().slice(0, 10) : '',
+        m.timeOfDay || '',
+        m.name || '',
+        m.calories ?? '',
+        m.protein ?? '',
+        m.carbs ?? '',
+        m.fats ?? '',
+        m.notes || ''
+      ].map(csvEscape);
+
+      lines.push(row.join(','));
+    });
+
+    const csv = lines.join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="meals.csv"');
+    res.status(200).send(csv);
+  } catch (err) {
+    console.error('exportMealsCsv error:', err);
+    res.status(500).send('Error');
   }
 }
 
@@ -90,14 +139,12 @@ async function createMeal(req, res) {
   }
 }
 
-// ✅ DUPLICATE -> renders meals/new with duplicateOf pre-filled
 async function duplicateMeal(req, res) {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
     const { id } = req.params;
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.redirect('/meals?toast=error&type=error');
     }
@@ -124,11 +171,7 @@ async function showEditForm(req, res) {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const meal = await Meal.findOne({
-      _id: req.params.id,
-      user: userId
-    });
-
+    const meal = await Meal.findOne({ _id: req.params.id, user: userId });
     if (!meal) return res.redirect('/meals');
 
     res.render('meals/edit', {
@@ -170,7 +213,6 @@ async function updateMeal(req, res) {
   }
 }
 
-// ✅ DELETE confirm page (like workouts delete confirm)
 async function showDeleteConfirm(req, res) {
   try {
     const userId = getUserId(req);
@@ -202,7 +244,6 @@ async function deleteMeal(req, res) {
     if (!userId) return res.redirect('/auth/login');
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      console.warn('deleteMeal invalid id:', id);
       return res.redirect('/meals?toast=error&type=error');
     }
 
@@ -217,6 +258,7 @@ async function deleteMeal(req, res) {
 
 module.exports = {
   listMeals,
+  exportMealsCsv,
   showNewForm,
   createMeal,
   duplicateMeal,

@@ -27,15 +27,7 @@
                 <stop offset="100%" stop-color="#22c55e" />
               </linearGradient>
             </defs>
-            <rect
-              x="2.5"
-              y="2.5"
-              width="27"
-              height="27"
-              rx="8"
-              ry="8"
-              fill="url(#lbfit-grad)"
-            />
+            <rect x="2.5" y="2.5" width="27" height="27" rx="8" ry="8" fill="url(#lbfit-grad)" />
             <polyline
               points="5 18 10 18 13 11 17 23 20 16 24 18 27 18"
               fill="none"
@@ -89,6 +81,9 @@
                 <a class="nav-link <%= currentPath.startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
               </li>
               <li class="nav-item">
+                <a class="nav-link <%= currentPath === '/insights' ? 'active' : '' %>" href="/insights">Insights</a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/account/settings' ? 'active' : '' %>" href="/account/settings">Settings</a>
               </li>
             <% } %>
@@ -97,10 +92,7 @@
           <div class="d-flex align-items-center gap-3">
             <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
               <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
-              <button
-                type="submit"
-                class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn"
-              >
+              <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
                 <% if (currentTheme === 'light') { %>🌙<% } else { %>☀️<% } %>
               </button>
             </form>

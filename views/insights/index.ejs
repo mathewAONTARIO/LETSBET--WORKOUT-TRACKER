@@ -1,0 +1,74 @@
+<%- include('../partials/header', { title: 'Insights' }) %>
+
+<div class="main-shell">
+  <section class="mb-4">
+    <h1 class="mb-1">Insights</h1>
+    <p class="text-secondary mb-0">Your last 7 days at a glance.</p>
+  </section>
+
+  <section class="home-stats-grid mb-4">
+    <div class="home-stat-card">
+      <div class="home-stat-label">7-day total calories</div>
+      <div class="home-stat-value"><%= total7Cal %> kcal</div>
+    </div>
+    <div class="home-stat-card">
+      <div class="home-stat-label">7-day avg calories</div>
+      <div class="home-stat-value"><%= avg7Cal %> kcal</div>
+    </div>
+    <div class="home-stat-card">
+      <div class="home-stat-label">Export</div>
+      <div class="home-stat-value">
+        <a class="btn btn-outline-light btn-sm" href="/meals/export.csv">Meals CSV</a>
+      </div>
+    </div>
+    <div class="home-stat-card">
+      <div class="home-stat-label">Export</div>
+      <div class="home-stat-value">
+        <a class="btn btn-outline-light btn-sm" href="/workouts/export.csv">Workouts CSV</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="glass-card p-4 mb-4">
+    <h3 class="mb-3">Calories (7 days)</h3>
+    <canvas id="calChart" height="120"></canvas>
+  </section>
+
+  <section class="glass-card p-4 mb-4">
+    <h3 class="mb-3">Workouts (7 days)</h3>
+    <canvas id="workoutChart" height="120"></canvas>
+  </section>
+
+  <section class="glass-card p-4">
+    <h3 class="mb-3">PRs (7 days)</h3>
+    <canvas id="prChart" height="120"></canvas>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const labels = <%- labels %>;
+  const calories = <%- calories %>;
+  const workouts = <%- workouts %>;
+  const prs = <%- prs %>;
+
+  new Chart(document.getElementById('calChart'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Calories', data: calories, tension: 0.3 }] },
+    options: { responsive: true, plugins: { legend: { display: true } } }
+  });
+
+  new Chart(document.getElementById('workoutChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Workouts', data: workouts }] },
+    options: { responsive: true, plugins: { legend: { display: true } } }
+  });
+
+  new Chart(document.getElementById('prChart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'PRs', data: prs }] },
+    options: { responsive: true, plugins: { legend: { display: true } } }
+  });
+</script>
+
+<%- include('../partials/footer') %>

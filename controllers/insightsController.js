@@ -1,28 +1,8 @@
-// controllers/insightsController.js
 const Workout = require('../models/Workout');
 const Meal = require('../models/Meal');
 
 function getUserId(req) {
   return req.session && req.session.userId;
-}
-
-function toDateOrToday(value) {
-  if (!value) return new Date();
-
-  if (value instanceof Date && !isNaN(value)) return value;
-
-  if (typeof value === 'string') {
-    // accepts YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [y, m, d] = value.split('-').map(Number);
-      const dt = new Date(y, m - 1, d);
-      if (!isNaN(dt)) return dt;
-    }
-    const dt = new Date(value);
-    if (!isNaN(dt)) return dt;
-  }
-
-  return new Date();
 }
 
 function startOfDay(d) {
@@ -31,133 +11,59 @@ function startOfDay(d) {
   return x;
 }
 
-function endOfDayExclusive(d) {
-  const x = startOfDay(d);
-  x.setDate(x.getDate() + 1);
+function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
   return x;
 }
 
-function ymd(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+exports.getInsights = async (req, res) => {
+  const userId = getUserId(req);
+  if (!userId) return res.redirect('/auth/login');
 
-// Monday-start week
-function startOfWeekMonday(date) {
-  const d = startOfDay(date);
-  const day = d.getDay(); // 0=Sun ... 6=Sat
-  const diff = (day === 0 ? -6 : 1 - day); // if Sunday, go back 6
-  d.setDate(d.getDate() + diff);
-  return d;
-}
+  const today = startOfDay(new Date());
+  const from7 = startOfDay(addDays(today, -6));
+  const tomorrow = startOfDay(addDays(today, 1));
 
-exports.getDaySummary = async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
+  const meals = await Meal.find({
+    user: userId,
+    date: { $gte: from7, $lt: tomorrow }
+  }).select('date calories').lean();
 
-    const picked = toDateOrToday(req.params.date);
-    const dayStart = startOfDay(picked);
-    const dayEnd = endOfDayExclusive(picked);
+  const workouts = await Workout.find({
+    user: userId,
+    date: { $gte: from7, $lt: tomorrow }
+  }).select('date isPR').lean();
 
-    const [workouts, meals] = await Promise.all([
-      Workout.find({ user: userId, date: { $gte: dayStart, $lt: dayEnd } }).sort({ date: -1 }).lean(),
-      Meal.find({ user: userId, date: { $gte: dayStart, $lt: dayEnd } }).sort({ date: -1 }).lean()
-    ]);
+  const labels = [];
+  const cals = [];
+  const workoutCounts = [];
+  const prCounts = [];
 
-    const totals = meals.reduce(
-      (acc, m) => {
-        acc.calories += Number(m.calories) || 0;
-        acc.protein += Number(m.protein) || 0;
-        acc.carbs += Number(m.carbs) || 0;
-        acc.fats += Number(m.fats) || 0;
-        return acc;
-      },
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
-    );
+  for (let i = 0; i < 7; i++) {
+    const day = startOfDay(addDays(from7, i));
+    const next = startOfDay(addDays(day, 1));
+    const key = day.toISOString().slice(0, 10);
 
-    const totalWorkouts = workouts.length;
-    const totalMeals = meals.length;
+    const dayMeals = meals.filter(m => m.date && new Date(m.date) >= day && new Date(m.date) < next);
+    const dayWorkouts = workouts.filter(w => w.date && new Date(w.date) >= day && new Date(w.date) < next);
 
-    // simple volume estimate (optional)
-    const totalVolume = workouts.reduce((sum, w) => {
-      const sets = Number(w.sets) || 0;
-      const reps = Number(w.reps) || 0;
-      const weight = Number(w.weight) || 0;
-      return sum + sets * reps * weight;
-    }, 0);
-
-    res.render('insights/day', {
-      currentPath: '/day',
-      dateLabel: ymd(dayStart),
-      workouts,
-      meals,
-      totals,
-      totalWorkouts,
-      totalMeals,
-      totalVolume
-    });
-  } catch (err) {
-    console.error('getDaySummary error:', err);
-    return res.redirect('/workouts');
+    labels.push(key);
+    cals.push(dayMeals.reduce((s, m) => s + (Number(m.calories) || 0), 0));
+    workoutCounts.push(dayWorkouts.length);
+    prCounts.push(dayWorkouts.filter(w => w.isPR).length);
   }
+
+  const total7Cal = cals.reduce((a, b) => a + b, 0);
+  const avg7Cal = Math.round(total7Cal / 7);
+
+  res.render('insights/index', {
+    currentPath: '/insights',
+    labels: JSON.stringify(labels),
+    calories: JSON.stringify(cals),
+    workouts: JSON.stringify(workoutCounts),
+    prs: JSON.stringify(prCounts),
+    avg7Cal,
+    total7Cal
+  });
 };
-
-exports.getWeekOverview = async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    if (!userId) return res.redirect('/auth/login');
-
-    // optional: /week?start=YYYY-MM-DD (must be a Monday ideally, but we’ll normalize)
-    const startParam = typeof req.query.start === 'string' ? req.query.start : '';
-    const base = startParam ? toDateOrToday(startParam) : new Date();
-
-    const weekStart = startOfWeekMonday(base);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 7);
-
-    const [workouts, meals] = await Promise.all([
-      Workout.find({ user: userId, date: { $gte: weekStart, $lt: weekEnd } }).lean(),
-      Meal.find({ user: userId, date: { $gte: weekStart, $lt: weekEnd } }).lean()
-    ]);
-
-    const totalWorkouts = workouts.length;
-
-    const totals = meals.reduce(
-      (acc, m) => {
-        acc.calories += Number(m.calories) || 0;
-        acc.protein += Number(m.protein) || 0;
-        acc.carbs += Number(m.carbs) || 0;
-        acc.fats += Number(m.fats) || 0;
-        return acc;
-      },
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
-    );
-
-    // days-with-data (for better averages)
-    const mealDays = new Set();
-    meals.forEach(m => {
-      if (!m.date) return;
-      mealDays.add(ymd(startOfDay(new Date(m.date))));
-    });
-
-    const avgCalories = totals.calories / 7;
-    const avgProtein = totals.protein / 7;
-
-    res.render('insights/week', {
-      currentPath: '/week',
-      weekStart: ymd(weekStart),
-      weekEnd: ymd(new Date(weekEnd.getTime() - 1)), // just for display
-      totalWorkouts,
-      totals,
-      avgCalories,
-      avgProtein,
-      mealDaysCount: mealDays.size
-    });
-  } catch (err) {
-    console.error('getWeekOverview error:', err);
-    return res.redirect('/workouts');
-  }
-}; 

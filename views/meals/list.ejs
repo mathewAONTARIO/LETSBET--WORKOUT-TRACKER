@@ -1,34 +1,39 @@
 <%- include('../partials/header', { title: 'Meals' }) %>
 
 <div class="main-shell">
-  <!-- Page header -->
   <section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
       <div>
         <h1 class="mb-1">Meals</h1>
-        <p class="mb-1 text-secondary">
-          Log your meals to keep calories and macros on track.
-        </p>
-        <p class="mb-0 text-secondary">
-          Today’s total:
-          <strong><%= todayCalories || 0 %> kcal</strong>
-        </p>
+        <p class="mb-1 text-secondary">Log your meals to keep calories and macros on track.</p>
+        <p class="mb-0 text-secondary">Today’s total: <strong><%= todayCalories || 0 %> kcal</strong></p>
       </div>
 
-      <div>
-        <a href="/meals/new" class="btn btn-primary btn-lg btn-pill">
-          Add Meal
-        </a>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/meals/export.csv" class="btn btn-outline-light btn-lg btn-pill">Export CSV</a>
+        <a href="/meals/new" class="btn btn-primary btn-lg btn-pill">Add Meal</a>
       </div>
+    </div>
+
+    <div class="workout-filters mt-3">
+      <input id="mealSearch" class="form-control" type="text" placeholder="Search by meal name or notes…" autocomplete="off" />
+
+      <select id="timeFilter" class="form-select">
+        <option value="all">All times</option>
+        <option value="Breakfast">Breakfast</option>
+        <option value="Lunch">Lunch</option>
+        <option value="Dinner">Dinner</option>
+        <option value="Snack">Snack</option>
+      </select>
+
+      <input id="mealDateFrom" class="form-control" type="date" />
+      <input id="mealDateTo" class="form-control" type="date" />
     </div>
   </section>
 
-  <!-- Meals list -->
   <section class="glass-card meal-card-shell mt-3">
     <% if (!meals || meals.length === 0) { %>
-      <p class="mb-0 text-secondary">
-        No meals logged yet. Tap <strong>Add Meal</strong> to add your first one.
-      </p>
+      <p class="mb-0 text-secondary">No meals logged yet. Tap <strong>Add Meal</strong> to add your first one.</p>
     <% } else { %>
       <table class="meal-table">
         <thead>
@@ -37,14 +42,19 @@
             <th scope="col">Calories</th>
             <th scope="col">Time</th>
             <th scope="col">Date</th>
-            <th scope="col" style="width: 240px;">Actions</th>
+            <th scope="col" style="width: 260px;">Actions</th>
           </tr>
         </thead>
 
         <tbody>
           <% meals.forEach(meal => { %>
-            <tr>
-              <!-- Meal name + macros -->
+            <tr
+              class="meal-row"
+              data-name="<%= (meal.name || '').toLowerCase() %>"
+              data-notes="<%= (meal.notes || '').toLowerCase() %>"
+              data-time="<%= meal.timeOfDay || '' %>"
+              data-date="<%= meal.date ? new Date(meal.date).toISOString().slice(0,10) : '' %>"
+            >
               <td data-label="Meal">
                 <div class="fw-semibold text-capitalize"><%= meal.name %></div>
                 <div class="meal-macros">
@@ -52,31 +62,29 @@
                   C: <%= meal.carbs || 0 %>g ·
                   F: <%= meal.fats || 0 %>g
                 </div>
+                <% if (meal.notes) { %>
+                  <div class="meal-macros"><%= meal.notes %></div>
+                <% } %>
               </td>
 
-              <!-- Calories -->
-              <td data-label="Calories">
-                <%= meal.calories || 0 %>
-              </td>
+              <td data-label="Calories"><%= meal.calories || 0 %></td>
 
-              <!-- Time -->
-              <td data-label="Time">
-                <%= meal.timeOfDay || '—' %>
-              </td>
+              <td data-label="Time"><%= meal.timeOfDay || '—' %></td>
 
-              <!-- Date -->
               <td data-label="Date">
                 <% if (meal.date) { %>
-                  <%= new Date(meal.date).toLocaleDateString() %>
+                  <%= new Date(meal.date).toLocaleDateString('en-CA') %>
                 <% } else { %>—<% } %>
               </td>
 
-              <!-- Actions -->
               <td data-label="Actions">
                 <div class="d-flex gap-2 flex-wrap justify-content-end">
                   <a class="btn btn-outline-light btn-sm" href="/meals/<%= meal._id %>/duplicate">Duplicate</a>
                   <a class="btn btn-outline-light btn-sm" href="/meals/<%= meal._id %>/edit">Edit</a>
-                  <a class="btn btn-danger btn-sm" href="/meals/<%= meal._id %>/delete">Delete</a>
+
+                  <form action="/meals/<%= meal._id %>/delete" method="POST" onsubmit="return confirm('Delete this meal?');">
+                    <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -86,5 +94,46 @@
     <% } %>
   </section>
 </div>
+
+<script>
+  (function () {
+    const rows = Array.from(document.querySelectorAll('.meal-row'));
+    const search = document.getElementById('mealSearch');
+    const time = document.getElementById('timeFilter');
+    const from = document.getElementById('mealDateFrom');
+    const to = document.getElementById('mealDateTo');
+
+    function norm(v) {
+      return (v || '').toLowerCase();
+    }
+
+    function apply() {
+      const q = norm(search && search.value);
+      const t = (time && time.value) ? time.value : 'all';
+      const f = (from && from.value) ? from.value : '';
+      const tt = (to && to.value) ? to.value : '';
+
+      rows.forEach(r => {
+        const name = r.dataset.name || '';
+        const notes = r.dataset.notes || '';
+        const rTime = r.dataset.time || '';
+        const rDate = r.dataset.date || '';
+
+        const matchesText = !q || name.includes(q) || notes.includes(q);
+        const matchesTime = t === 'all' || rTime === t;
+        const matchesFrom = !f || (rDate && rDate >= f);
+        const matchesTo = !tt || (rDate && rDate <= tt);
+
+        r.style.display = (matchesText && matchesTime && matchesFrom && matchesTo) ? '' : 'none';
+      });
+    }
+
+    [search, time, from, to].forEach(el => {
+      if (!el) return;
+      el.addEventListener('input', apply);
+      el.addEventListener('change', apply);
+    });
+  })();
+</script>
 
 <%- include('../partials/footer') %>
