@@ -78,7 +78,7 @@
                 <a class="nav-link <%= currentPath === '/workouts/library' ? 'active' : '' %>" href="/workouts/library">Library</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link <%= currentPath.startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
+                <a class="nav-link <%= currentPath && currentPath.startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
               </li>
               <li class="nav-item">
                 <a class="nav-link <%= currentPath === '/insights' ? 'active' : '' %>" href="/insights">Insights</a>
@@ -92,6 +92,7 @@
           <div class="d-flex align-items-center gap-3">
             <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
               <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
+              <input type="hidden" name="next" value="<%= currentPath || '/' %>" />
               <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
                 <% if (currentTheme === 'light') { %>🌙<% } else { %>☀️<% } %>
               </button>
