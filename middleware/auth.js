@@ -17,11 +17,24 @@ const attachUser = async (req, res, next) => {
   }
 };
 
-const requireLogin = (req, res, next) => {
-  if (!req.session || !req.session.userId) {
+
+const requireLogin = async (req, res, next) => {
+  try {
+    const userId = req.session && req.session.userId;
+    if (!userId) return res.redirect('/auth/login');
+
+    const userExists = await User.exists({ _id: userId });
+    if (!userExists) {
+    
+      req.session.destroy(() => {});
+      return res.redirect('/auth/login?toast=session-expired&type=error');
+    }
+
+    return next();
+  } catch (err) {
+    console.error('requireLogin error:', err);
     return res.redirect('/auth/login');
   }
-  next();
 };
 
 module.exports = { attachUser, requireLogin };
