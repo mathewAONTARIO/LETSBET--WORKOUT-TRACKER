@@ -994,6 +994,19 @@ body.theme-light .nav-link.active {
   opacity: 1;
 }
 
+/* ✅ ✅ HAMBURGER ICON FIX (light mode) */
+body.theme-light .navbar .navbar-toggler {
+  border-color: rgba(15, 23, 42, 0.25);
+}
+
+body.theme-light .navbar .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(15, 23, 42, 0.85)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+body.theme-light .navbar .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+}
+
 /* ✅ pills/buttons in navbar */
 body.theme-light .btn-outline-light {
   border-color: #d1d5db;
@@ -1309,7 +1322,7 @@ body.theme-light .dropdown-divider {
 
   .calendar-day {
     padding: 5px 0;
-    font-size: 0.68rem; 
+    font-size: 0.68rem;
   }
 }
 
@@ -1389,6 +1402,6 @@ body.theme-light .dropdown-divider {
 
   .form-control,
   .form-select {
-    font-size: 16px; /* ✅ prevents iOS zoom + feels cleaner */
+    font-size: 16px;
   }
 }
