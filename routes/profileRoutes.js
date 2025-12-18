@@ -21,48 +21,12 @@ const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(req, file, cb) {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image files are allowed'));
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
+    }
     cb(null, true);
   }
 });
-
-function safeRedirectTarget(target) {
-  if (typeof target !== 'string') return '/';
-  if (target.startsWith('/')) return target;
-  return '/';
-}
-
-async function applyTheme(req, res, themeValue, fallbackRedirect) {
-  const userId = req.session.userId;
-  if (!userId) return res.redirect('/auth/login');
-
-  const user = await User.findById(userId);
-  if (!user) return res.redirect('/auth/login');
-
-  const nextTheme =
-    themeValue === 'light' || themeValue === 'dark'
-      ? themeValue
-      : (user.theme === 'light' ? 'dark' : 'light');
-
-  user.theme = nextTheme;
-  await user.save();
-
-  req.session.userId = user._id;
-  req.session.user = {
-    ...(req.session.user || {}),
-    _id: user._id,
-    theme: user.theme
-  };
-
-  const redirectTo =
-    safeRedirectTarget(req.body?.next) ||
-    safeRedirectTarget(req.query?.next) ||
-    safeRedirectTarget(req.get('referer')) ||
-    fallbackRedirect ||
-    '/';
-
-  return res.redirect(redirectTo);
-}
 
 router.get('/settings', requireLogin, async (req, res) => {
   try {
@@ -122,7 +86,8 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
     if (req.body.trainingExperience) user.trainingExperience = req.body.trainingExperience;
 
     if (req.file) {
-      user.profilePhotoUrl = `/uploads/avatars/${req.file.filename}`;
+      const relPath = `/uploads/avatars/${req.file.filename}`;
+      user.profilePhotoUrl = relPath;
     }
 
     await user.save();
@@ -146,18 +111,29 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
   }
 });
 
-router.get('/theme', requireLogin, async (req, res) => {
-  try {
-    return await applyTheme(req, res, req.query.theme, '/');
-  } catch (err) {
-    console.error('Error updating theme:', err);
-    res.redirect('/account/settings?toast=error&type=error');
-  }
-});
-
 router.post('/theme', requireLogin, async (req, res) => {
   try {
-    return await applyTheme(req, res, req.body.theme, '/');
+    const userId = req.session.userId;
+    if (!userId) return res.redirect('/auth/login');
+
+    const user = await User.findById(userId);
+    if (!user) return res.redirect('/auth/login');
+
+    user.theme = req.body.theme === 'light' ? 'light' : 'dark';
+    await user.save();
+
+    req.session.userId = user._id;
+    req.session.user = {
+      ...(req.session.user || {}),
+      _id: user._id,
+      theme: user.theme
+    };
+
+    const nextUrl = typeof req.body.next === 'string' ? req.body.next : '';
+    const safeNext = nextUrl.startsWith('/') ? nextUrl : '';
+    const back = req.get('referer');
+
+    res.redirect(safeNext || back || '/');
   } catch (err) {
     console.error('Error updating theme:', err);
     res.redirect('/account/settings?toast=error&type=error');
@@ -172,8 +148,7 @@ router.post('/reminder', requireLogin, async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.redirect('/auth/login');
 
-    user.dailyReminderEnabled =
-      req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
+    user.dailyReminderEnabled = req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
     user.reminderTime = req.body.reminderTime || user.reminderTime || '18:00';
 
     await user.save();
@@ -200,7 +175,9 @@ router.post('/delete', requireLogin, async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     await User.deleteOne({ _id: userId });
-    req.session.destroy(() => res.redirect('/'));
+    req.session.destroy(() => {
+      res.redirect('/');
+    });
   } catch (err) {
     console.error('Error deleting account:', err);
     res.redirect('/account/settings?toast=error&type=error');

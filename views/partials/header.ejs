@@ -77,7 +77,7 @@
             </ul>
 
             <div class="d-flex align-items-center gap-2">
-              <form id="themeToggleForm" action="/account/theme" method="POST" class="me-1">
+              <form action="/account/theme" method="POST" class="me-1">
                 <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
                 <input type="hidden" name="next" value="<%= currentPath || '/' %>" />
                 <button type="submit" class="btn btn-outline-light btn-sm d-flex align-items-center theme-toggle-btn">
