@@ -1423,3 +1423,20 @@ body.theme-light .dropdown-divider {
 body.theme-light .brand-text-sub {
   color: #16a34a; 
 }
+.progress {
+  height: 8px;
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.theme-dark .progress {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background-color: #22c55e;
+}
+}
