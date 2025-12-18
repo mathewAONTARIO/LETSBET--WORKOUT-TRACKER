@@ -1312,3 +1312,64 @@ body.theme-light .dropdown-divider {
     font-size: 0.68rem; 
   }
 }
+/* =========================
+   ✅ EXTRA MOBILE SIZING (iPhone)
+   Fixes Meals page feeling “desktop-y”
+========================= */
+@media (max-width: 575px) {
+  .main-shell {
+    max-width: 100%;
+    padding: 1rem 0.9rem 2.25rem;
+  }
+
+  .hero {
+    padding: 2.6rem 0 2rem;
+  }
+
+  /* Buttons feel better on mobile */
+  .btn,
+  .btn-sm {
+    min-height: 42px;
+  }
+
+  /* Meals wrapper should use full width */
+  .meal-card-shell {
+    max-width: 100%;
+    width: 100%;
+    padding: 12px 12px;
+  }
+
+  /* Filters / inputs should be full width */
+  .form-control,
+  .form-select {
+    width: 100%;
+  }
+
+  /* Mobile meal cards cleanup */
+  .meal-table tbody tr {
+    padding: 12px 12px;
+  }
+
+  .meal-table tbody td {
+    white-space: normal;
+    word-break: break-word;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* Action buttons: wrap + bigger tap targets */
+  .meal-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .meal-actions .btn,
+  .meal-actions button {
+    flex: 1 1 auto;
+    min-width: 110px;
+    padding: 10px 12px;
+    border-radius: 999px;
+  }
+}
