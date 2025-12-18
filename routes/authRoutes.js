@@ -4,12 +4,18 @@ const router = express.Router();
 const User = require('../models/User');
 const { sendMail } = require('../utils/mailer');
 
-const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
 
-function makeTokenPair() {
-  const token = crypto.randomBytes(32).toString('hex');
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-  return { token, tokenHash };
+function baseUrl(req) {
+  const envUrl = String(process.env.APP_URL || '').replace(/\/$/, '');
+  if (envUrl) return envUrl;
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+function smtpConfigured() {
+  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
 router.get('/login', (req, res) => {
@@ -23,26 +29,23 @@ router.post('/login', async (req, res) => {
     const normalizedEmail = String(email || '').toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });
 
-    if (!user) {
-      return res.render('auth/login', { error: 'Invalid email or password.' });
-    }
+    if (!user) return res.render('auth/login', { error: 'Invalid email or password.' });
 
-    const ok = await user.comparePassword(password);
-    if (!ok) {
-      return res.render('auth/login', { error: 'Invalid email or password.' });
-    }
+    const ok = await user.comparePassword(String(password || ''));
+    if (!ok) return res.render('auth/login', { error: 'Invalid email or password.' });
 
     if (!user.emailVerified) {
-      return res.render('auth/login', {
-        error: 'Please verify your email before logging in.'
-      });
+      const allowDevLogin = process.env.NODE_ENV !== 'production' && !smtpConfigured();
+      if (!allowDevLogin) {
+        return res.render('auth/login', { error: 'Please verify your email before logging in.' });
+      }
     }
 
     req.session.userId = user._id;
-    res.redirect('/workouts');
+    return res.redirect('/workouts');
   } catch (err) {
     console.error('Login error:', err);
-    res.render('auth/login', { error: 'Something went wrong. Try again.' });
+    return res.render('auth/login', { error: 'Something went wrong. Try again.' });
   }
 });
 
@@ -55,52 +58,54 @@ router.post('/register', async (req, res) => {
 
   try {
     const normalizedEmail = String(email || '').toLowerCase().trim();
+    const dn = String(displayName || '').trim();
+    const pw = String(password || '');
+
+    if (!normalizedEmail || !pw || pw.length < 6) {
+      return res.render('auth/register', { error: 'Please enter a valid email and a password (6+ chars).' });
+    }
 
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
-      return res.render('auth/register', {
-        error: 'An account with that email already exists.'
-      });
-    }
-
-    if (!password || password.length < 6) {
-      return res.render('auth/register', {
-        error: 'Password must be at least 6 characters.'
-      });
+      return res.render('auth/register', { error: 'An account with that email already exists.' });
     }
 
     const user = new User({
       email: normalizedEmail,
-      displayName: String(displayName || '').trim(),
-      password
+      displayName: dn,
+      password: pw
     });
 
-    const { token, tokenHash } = makeTokenPair();
-    user.emailVerifyTokenHash = tokenHash;
+    const token = crypto.randomBytes(32).toString('hex');
+    user.emailVerifyTokenHash = hashToken(token);
     user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+
+    const devNoSmtp = process.env.NODE_ENV !== 'production' && !smtpConfigured();
+    if (devNoSmtp) {
+      user.emailVerified = true;
+      user.emailVerifyTokenHash = '';
+      user.emailVerifyTokenExpires = undefined;
+      await user.save();
+
+      req.session.userId = user._id;
+      return res.redirect('/workouts');
+    }
 
     await user.save();
 
-    const verifyLink =
-      `${APP_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
-
+    const verifyLink = `${baseUrl(req)}/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
     await sendMail({
       to: user.email,
       subject: 'Verify your LETSBETFit email',
-      html: `
-        <p>Welcome to LETSBETFit 👋</p>
-        <p>Click below to verify your email and activate your account:</p>
-        <p><a href="${verifyLink}">Verify Email</a></p>
-        <p>This link expires in 24 hours.</p>
-      `
+      html: `<p>Verify your email to finish creating your account:</p><p><a href="${verifyLink}">Verify email</a></p><p>This link expires in 24 hours.</p>`
     });
 
-    res.render('auth/login', {
+    return res.render('auth/login', {
       error: 'Check your email to verify your account, then log in.'
     });
   } catch (err) {
     console.error('Register error:', err);
-    res.render('auth/register', { error: 'Something went wrong. Try again.' });
+    return res.render('auth/register', { error: 'Something went wrong. Try again.' });
   }
 });
 
@@ -108,12 +113,9 @@ router.get('/verify-email', async (req, res) => {
   try {
     const token = String(req.query.token || '');
     const email = String(req.query.email || '').toLowerCase().trim();
+    if (!token || !email) return res.status(400).send('Invalid verification link.');
 
-    if (!token || !email) {
-      return res.status(400).send('Invalid verification link.');
-    }
-
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = hashToken(token);
 
     const user = await User.findOne({
       email,
@@ -121,20 +123,17 @@ router.get('/verify-email', async (req, res) => {
       emailVerifyTokenExpires: { $gt: new Date() }
     });
 
-    if (!user) {
-      return res.status(400).send('Verification link expired or invalid.');
-    }
+    if (!user) return res.status(400).send('Verification link expired or invalid.');
 
     user.emailVerified = true;
-    user.emailVerifyTokenHash = null;
-    user.emailVerifyTokenExpires = null;
-
+    user.emailVerifyTokenHash = '';
+    user.emailVerifyTokenExpires = undefined;
     await user.save();
 
-    res.redirect('/auth/login');
+    return res.redirect('/auth/login');
   } catch (err) {
     console.error('Verify email error:', err);
-    res.status(500).send('Something went wrong.');
+    return res.status(500).send('Something went wrong.');
   }
 });
 
@@ -148,29 +147,23 @@ router.post('/forgot', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (user) {
-      const { token, tokenHash } = makeTokenPair();
-      user.resetPasswordTokenHash = tokenHash;
-      user.resetPasswordTokenExpires = new Date(Date.now() + 1000 * 60 * 30);
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordTokenHash = hashToken(token);
+      user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
       await user.save();
 
-      const resetLink =
-        `${APP_URL}/auth/reset?token=${token}&email=${encodeURIComponent(user.email)}`;
-
+      const link = `${baseUrl(req)}/auth/reset?token=${token}&email=${encodeURIComponent(user.email)}`;
       await sendMail({
         to: user.email,
         subject: 'Reset your LETSBETFit password',
-        html: `
-          <p>Reset your password:</p>
-          <p><a href="${resetLink}">Reset Password</a></p>
-          <p>This link expires in 30 minutes.</p>
-        `
+        html: `<p>Reset your password:</p><p><a href="${link}">Reset password</a></p><p>This link expires in 30 minutes.</p>`
       });
     }
 
-    res.render('auth/forgot', { error: null, sent: true });
+    return res.render('auth/forgot', { error: null, sent: true });
   } catch (err) {
     console.error('Forgot error:', err);
-    res.render('auth/forgot', { error: 'Something went wrong.', sent: false });
+    return res.render('auth/forgot', { error: 'Something went wrong. Try again.', sent: false });
   }
 });
 
@@ -189,42 +182,31 @@ router.post('/reset', async (req, res) => {
     const password = String(req.body.password || '');
 
     if (!email || !token || password.length < 6) {
-      return res.render('auth/reset', {
-        error: 'Invalid request.',
-        email,
-        token
-      });
+      return res.render('auth/reset', { error: 'Invalid request.', email, token });
     }
 
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = hashToken(token);
 
     const user = await User.findOne({
       email,
       resetPasswordTokenHash: tokenHash,
-      resetPasswordTokenExpires: { $gt: new Date() }
+      resetPasswordExpires: { $gt: new Date() }
     });
 
-    if (!user) {
-      return res.render('auth/reset', {
-        error: 'Reset link expired or invalid.',
-        email,
-        token
-      });
-    }
+    if (!user) return res.render('auth/reset', { error: 'Reset link expired or invalid.', email, token });
 
     user.password = password;
-    user.resetPasswordTokenHash = null;
-    user.resetPasswordTokenExpires = null;
-
+    user.resetPasswordTokenHash = '';
+    user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.redirect('/auth/login');
+    return res.redirect('/auth/login');
   } catch (err) {
     console.error('Reset error:', err);
-    res.render('auth/reset', {
-      error: 'Something went wrong.',
-      email: req.body.email,
-      token: req.body.token
+    return res.render('auth/reset', {
+      error: 'Something went wrong. Try again.',
+      email: String(req.body.email || ''),
+      token: String(req.body.token || '')
     });
   }
 });
