@@ -6,10 +6,6 @@ const { sendMail } = require('../utils/mailer');
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 
-/* =========================
-   LOGIN
-========================= */
-
 router.get('/login', (req, res) => {
   res.render('auth/login', { error: null });
 });
@@ -39,14 +35,10 @@ router.post('/login', async (req, res) => {
     req.session.userId = user._id;
     res.redirect('/workouts');
   } catch (err) {
-    console.error('Login error:', err);
+    console.error(err);
     res.render('auth/login', { error: 'Something went wrong. Try again.' });
   }
 });
-
-/* =========================
-   REGISTER
-========================= */
 
 router.get('/register', (req, res) => {
   res.render('auth/register', { error: null });
@@ -80,6 +72,7 @@ router.post('/register', async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
+    user.emailVerified = false;
     user.emailVerifyTokenHash = tokenHash;
     user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
@@ -87,32 +80,25 @@ router.post('/register', async (req, res) => {
 
     const verifyLink = `${APP_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
 
-    try {
-      await sendMail({
-        to: user.email,
-        subject: 'Verify your LETSBETFit email',
-        html: `
-          <p>Welcome to LETSBETFit 👋</p>
-          <p>Please verify your email to activate your account:</p>
-          <p><a href="${verifyLink}">Verify email</a></p>
-        `
-      });
-    } catch (mailErr) {
-      console.error('Email send failed:', mailErr);
-    }
+    await sendMail({
+      to: user.email,
+      subject: 'Verify your LETSBETFit email',
+      html: `
+        <p>Welcome to LETSBETFit 👋</p>
+        <p>Please verify your email to activate your account:</p>
+        <p><a href="${verifyLink}">Verify email</a></p>
+        <p>${verifyLink}</p>
+      `
+    });
 
     res.render('auth/login', {
       error: 'Check your email to verify your account, then log in.'
     });
   } catch (err) {
-    console.error('Register error:', err);
+    console.error(err);
     res.render('auth/register', { error: 'Something went wrong. Try again.' });
   }
 });
-
-/* =========================
-   VERIFY EMAIL
-========================= */
 
 router.get('/verify-email', async (req, res) => {
   try {
@@ -143,14 +129,10 @@ router.get('/verify-email', async (req, res) => {
 
     res.redirect('/auth/login');
   } catch (err) {
-    console.error('Verify email error:', err);
+    console.error(err);
     res.status(500).send('Something went wrong.');
   }
 });
-
-/* =========================
-   FORGOT PASSWORD
-========================= */
 
 router.get('/forgot', (req, res) => {
   res.render('auth/forgot', { error: null, sent: false });
@@ -167,35 +149,28 @@ router.post('/forgot', async (req, res) => {
 
       user.resetPasswordTokenHash = tokenHash;
       user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
+
       await user.save();
 
       const link = `${APP_URL}/auth/reset?token=${token}&email=${encodeURIComponent(user.email)}`;
 
-      try {
-        await sendMail({
-          to: user.email,
-          subject: 'Reset your LETSBETFit password',
-          html: `
-            <p>Reset your password:</p>
-            <p><a href="${link}">Reset password</a></p>
-            <p>This link expires in 30 minutes.</p>
-          `
-        });
-      } catch (mailErr) {
-        console.error('Reset email failed:', mailErr);
-      }
+      await sendMail({
+        to: user.email,
+        subject: 'Reset your LETSBETFit password',
+        html: `
+          <p>Reset your password:</p>
+          <p><a href="${link}">Reset password</a></p>
+          <p>${link}</p>
+        `
+      });
     }
 
     res.render('auth/forgot', { error: null, sent: true });
   } catch (err) {
-    console.error('Forgot error:', err);
+    console.error(err);
     res.render('auth/forgot', { error: 'Something went wrong.', sent: false });
   }
 });
-
-/* =========================
-   RESET PASSWORD
-========================= */
 
 router.get('/reset', (req, res) => {
   res.render('auth/reset', {
@@ -235,14 +210,10 @@ router.post('/reset', async (req, res) => {
 
     res.redirect('/auth/login');
   } catch (err) {
-    console.error('Reset error:', err);
+    console.error(err);
     res.render('auth/reset', { error: 'Something went wrong.', email, token });
   }
 });
-
-/* =========================
-   LOGOUT
-========================= */
 
 router.post('/logout', (req, res) => {
   req.session.destroy(() => {
