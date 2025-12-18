@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const mongoose = require('mongoose'); // ✅ for DB health check
 const connectDB = require('./config/db');
 
 const indexRoutes = require('./routes/index');
@@ -34,6 +35,31 @@ app.set('views', path.join(__dirname, 'views'));
 /* -------------------- DB -------------------- */
 connectDB();
 
+/* -------------------- HEALTH CHECK -------------------- */
+// Used by Elastic Beanstalk / ALB
+app.get('/health', async (req, res) => {
+  try {
+    // 1 = connected, 2 = connecting
+    const dbState = mongoose.connection.readyState;
+    const dbOk = dbState === 1;
+
+    if (!dbOk) {
+      return res.status(500).json({
+        status: 'degraded',
+        db: 'disconnected',
+        dbState
+      });
+    }
+
+    return res.status(200).json({
+      status: 'ok',
+      db: 'connected'
+    });
+  } catch (e) {
+    return res.status(500).json({ status: 'error' });
+  }
+});
+
 /* -------------------- SESSIONS -------------------- */
 const mongoUrl = process.env.MONGODB_URI || process.env.MONGO_URI;
 const sessionSecret = process.env.SESSION_SECRET;
@@ -63,8 +89,6 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      // IMPORTANT:
-      // On EB behind ALB, use secure cookies only when request is HTTPS.
       // 'auto' respects req.secure (works with trust proxy)
       secure: process.env.NODE_ENV === 'production' ? 'auto' : false,
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
