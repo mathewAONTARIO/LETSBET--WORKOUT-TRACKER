@@ -20,14 +20,8 @@
     <nav class="navbar navbar-dark navbar-expand-lg border-bottom border-slate-800 mb-4">
       <div class="container px-3">
         <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-          <!-- ✅ LOGO SWAP: SVG -> LB PNG (auto switches for theme) -->
-          <img
-            class="brand-mark"
-            src="<%= currentTheme === 'light'
-              ? '/img/logo/lb-logo-dark.png'
-              : '/img/logo/lb-logo-light.png' %>"
-            alt="LetsBet Fit"
-          />
+          <!-- ✅ LOGO SWAP: SVG -> LB PNG (single file) -->
+          <img class="brand-mark" src="/img/logo/lb-logo.png" alt="LetsBet Fit" />
 
           <span class="brand-wordmark">
             <span class="brand-text-main">LETSBET</span>
