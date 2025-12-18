@@ -1,83 +1,51 @@
-// models/User.js
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
-const SALT_ROUNDS = 10;
-
-// If you ever change how passwords are hashed, bump this number.
-const PASSWORD_VERSION = 1;
-
-const userSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
     email: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
-      trim: true
+      trim: true,
+      lowercase: true
     },
     password: {
       type: String,
       required: true
     },
-    displayName: {
-      type: String,
-      required: true,
-      trim: true
-    },
 
-    // Dashboard / profile stuff
-    weeklyGoal: {
-      type: Number,
-      default: 4
-    },
-    profilePhotoUrl: {
-      type: String
-    },
+    displayName: { type: String, default: '' },
+    profilePhotoUrl: { type: String, default: '' },
+
+    theme: { type: String, enum: ['dark', 'light'], default: 'dark' },
+
+    weeklyGoal: { type: Number, default: 4 },
 
     gender: {
       type: String,
-      enum: ['male', 'female', 'non-binary', 'prefer-not-to-say', 'other'],
+      enum: ['prefer-not-to-say', 'male', 'female', 'non-binary', 'other'],
       default: 'prefer-not-to-say'
     },
-    age: {
-      type: Number,
-      min: 0,
-      max: 130
-    },
+    age: { type: Number, min: 10, max: 100 },
 
-    // Height with unit (we store numeric value, but allow user to type 5'10 etc.)
-    heightValue: {
-      type: Number,
-      min: 0
-    },
-    heightUnit: {
-      type: String,
-      enum: ['cm', 'ft'],
-      default: 'cm'
-    },
+    heightValue: { type: String, default: '' },
+    heightUnit: { type: String, enum: ['cm', 'ft'], default: 'cm' },
 
-    // Weight with unit
-    weightValue: {
-      type: Number,
-      min: 0
-    },
-    weightUnit: {
-      type: String,
-      enum: ['kg', 'lb'],
-      default: 'kg'
-    },
+    weightValue: { type: String, default: '' },
+    weightUnit: { type: String, enum: ['kg', 'lb'], default: 'kg' },
+
+    targetWeightValue: { type: String, default: '' },
+    targetWeightUnit: { type: String, enum: ['kg', 'lb'], default: 'kg' },
 
     primaryGoal: {
       type: String,
       enum: [
         'general-fitness',
-        'muscle-gain',
         'fat-loss',
-        'performance',
+        'muscle-gain',
         'strength',
-        'endurance',
-        'other'
+        'performance',
+        'endurance'
       ],
       default: 'general-fitness'
     },
@@ -88,85 +56,10 @@ const userSchema = new mongoose.Schema(
       default: 'beginner-0-6'
     },
 
-    // Reminders
-    dailyReminderEnabled: {
-      type: Boolean,
-      default: false
-    },
-    reminderTime: {
-      type: String, // e.g. "18:00"
-      default: '18:00'
-    },
-
-    // Theme
-    theme: {
-      type: String,
-      enum: ['dark', 'light'],
-      default: 'dark'
-    },
-
-    // For future migrations
-    passwordVersion: {
-      type: Number,
-      default: PASSWORD_VERSION
-    }
+    dailyReminderEnabled: { type: Boolean, default: false },
+    reminderTime: { type: String, default: '18:00' }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
-// Hash password before save, but only if it was changed
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-
-  try {
-    const hash = await bcrypt.hash(this.password, SALT_ROUNDS);
-    this.password = hash;
-    this.passwordVersion = PASSWORD_VERSION;
-    next();
-  } catch (err) {
-    next(err);
-  }
-});
-
-/**
- * Compare a candidate password to the stored one.
- * - If stored password looks like a bcrypt hash -> normal compare.
- * - If it DOESN'T look like bcrypt (old plain text), we:
- *   1) compare as plain text,
- *   2) if it matches, re-hash and save (one-time migration).
- */
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  if (!this.password) return false;
-
-  const pwd = this.password;
-
-  const looksHashed =
-    typeof pwd === 'string' &&
-    (pwd.startsWith('$2a$') || pwd.startsWith('$2b$') || pwd.startsWith('$2y$'));
-
-  if (looksHashed) {
-    // Normal bcrypt compare
-    return bcrypt.compare(candidatePassword, pwd);
-  }
-
-  // Fallback: old/plain password stored (not great, but we fix it)
-  const isMatch = candidatePassword === pwd;
-  if (!isMatch) return false;
-
-  // Migrate this user to bcrypt on the fly
-  try {
-    const newHash = await bcrypt.hash(candidatePassword, SALT_ROUNDS);
-    this.password = newHash;
-    this.passwordVersion = PASSWORD_VERSION;
-    await this.save();
-  } catch (e) {
-    console.error('Error migrating password for user', this._id, e);
-  }
-
-  return true;
-};
-
-const User = mongoose.model('User', userSchema);
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);
