@@ -1,0 +1,37 @@
+<%- include('../partials/header', { title: 'Delete Meal', currentPath: '/meals' }) %>
+
+<div class="main-shell">
+  <h2 class="mb-1">Delete Meal</h2>
+  <p class="text-secondary mb-4">
+    This can’t be undone. Are you sure you want to delete this meal?
+  </p>
+
+  <section class="glass-card p-4">
+    <div class="mb-3">
+      <div class="fw-semibold text-capitalize"><%= meal.name %></div>
+      <div class="text-secondary">
+        <%= meal.calories || 0 %> kcal
+        <% if (meal.timeOfDay) { %> · <%= meal.timeOfDay %><% } %>
+        <% if (meal.date) { %> · <%= new Date(meal.date).toLocaleDateString() %><% } %>
+      </div>
+      <div class="text-secondary mt-2">
+        P: <%= meal.protein || 0 %>g · C: <%= meal.carbs || 0 %>g · F: <%= meal.fats || 0 %>g
+      </div>
+
+      <% if (meal.notes) { %>
+        <div class="text-secondary mt-2">
+          <span class="fw-semibold">Notes:</span> <%= meal.notes %>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="d-flex gap-2">
+      <form action="/meals/<%= meal._id %>/delete" method="POST">
+        <button type="submit" class="btn btn-danger">Yes, delete</button>
+      </form>
+      <a href="/meals" class="btn btn-outline-light">Cancel</a>
+    </div>
+  </section>
+</div>
+
+<%- include('../partials/footer') %>

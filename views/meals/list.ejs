@@ -37,6 +37,7 @@
             <th scope="col">Calories</th>
             <th scope="col">Time</th>
             <th scope="col">Date</th>
+            <th scope="col" style="width: 240px;">Actions</th>
           </tr>
         </thead>
 
@@ -68,6 +69,15 @@
                 <% if (meal.date) { %>
                   <%= new Date(meal.date).toLocaleDateString() %>
                 <% } else { %>—<% } %>
+              </td>
+
+              <!-- Actions -->
+              <td data-label="Actions">
+                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                  <a class="btn btn-outline-light btn-sm" href="/meals/<%= meal._id %>/duplicate">Duplicate</a>
+                  <a class="btn btn-outline-light btn-sm" href="/meals/<%= meal._id %>/edit">Edit</a>
+                  <a class="btn btn-danger btn-sm" href="/meals/<%= meal._id %>/delete">Delete</a>
+                </div>
               </td>
             </tr>
           <% }) %>

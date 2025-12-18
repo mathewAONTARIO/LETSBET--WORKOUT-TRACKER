@@ -1,12 +1,12 @@
-<%- include('../partials/header', { currentPath: '/meals/new' }) %>
+<%- include('../partials/header', { currentPath: '/meals/new', title: 'Meals' }) %>
 
 <div class="main-shell">
-  <h2 class="mb-1">Add Meal</h2>
+  <h2 class="mb-1"><%= duplicateOf ? 'Duplicate Meal' : 'Add Meal' %></h2>
   <p class="text-secondary mb-4">
     Log your calories for the day.
   </p>
 
-  <form action="/meals/new" method="POST" class="glass-card p-4">
+  <form action="<%= formAction %>" method="POST" class="glass-card p-4">
     <div class="row g-3">
       <div class="col-md-6">
         <label class="form-label">Meal name</label>
@@ -15,6 +15,7 @@
           name="name"
           class="form-control"
           placeholder="Chicken & rice, protein shake, etc."
+          value="<%= duplicateOf ? (duplicateOf.name || '') : '' %>"
           required
         />
       </div>
@@ -26,6 +27,7 @@
           name="calories"
           class="form-control"
           min="0"
+          value="<%= duplicateOf ? (duplicateOf.calories ?? '') : '' %>"
           required
         />
       </div>
@@ -34,10 +36,10 @@
         <label class="form-label">Time of day</label>
         <select name="timeOfDay" class="form-select">
           <option value="">-- Select --</option>
-          <option value="Breakfast">Breakfast</option>
-          <option value="Lunch">Lunch</option>
-          <option value="Dinner">Dinner</option>
-          <option value="Snack">Snack</option>
+          <option value="Breakfast" <%= duplicateOf && duplicateOf.timeOfDay === 'Breakfast' ? 'selected' : '' %>>Breakfast</option>
+          <option value="Lunch" <%= duplicateOf && duplicateOf.timeOfDay === 'Lunch' ? 'selected' : '' %>>Lunch</option>
+          <option value="Dinner" <%= duplicateOf && duplicateOf.timeOfDay === 'Dinner' ? 'selected' : '' %>>Dinner</option>
+          <option value="Snack" <%= duplicateOf && duplicateOf.timeOfDay === 'Snack' ? 'selected' : '' %>>Snack</option>
         </select>
       </div>
 
@@ -49,6 +51,7 @@
           name="protein"
           class="form-control"
           min="0"
+          value="<%= duplicateOf ? (duplicateOf.protein ?? '') : '' %>"
         />
       </div>
 
@@ -60,6 +63,7 @@
           name="carbs"
           class="form-control"
           min="0"
+          value="<%= duplicateOf ? (duplicateOf.carbs ?? '') : '' %>"
         />
       </div>
 
@@ -71,6 +75,7 @@
           name="fats"
           class="form-control"
           min="0"
+          value="<%= duplicateOf ? (duplicateOf.fats ?? '') : '' %>"
         />
       </div>
 
@@ -80,7 +85,11 @@
           type="date"
           name="date"
           class="form-control"
-          value="<%= today %>"
+          value="<%=
+            duplicateOf && duplicateOf.date
+              ? new Date(duplicateOf.date).toISOString().slice(0, 10)
+              : today
+          %>"
         />
       </div>
 
@@ -91,7 +100,7 @@
           class="form-control"
           rows="2"
           placeholder="Any extra details..."
-        ></textarea>
+        ><%= duplicateOf ? (duplicateOf.notes || '') : '' %></textarea>
       </div>
     </div>
 
