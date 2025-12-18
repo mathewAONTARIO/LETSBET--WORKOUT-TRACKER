@@ -43,7 +43,6 @@ label {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
 
-  /* ✅ FIX: ensure navbar sits above page content */
   position: relative;
   z-index: 1100;
 }
@@ -114,12 +113,6 @@ label {
   background: rgba(15, 23, 42, 0.98);
 }
 
-/* =========================
-   ✅ DROPDOWN FIXES
-   (prevents bleed-through + weird layering)
-========================= */
-
-/* ✅ FIX: anchor dropdown positioning properly */
 .dropdown,
 .dropup,
 .dropend,
@@ -127,24 +120,17 @@ label {
   position: relative;
 }
 
-/* --- Avatar dropdown menu (dark mode) --- */
 .dropdown-menu {
-  /* ✅ FIX: use SOLID background (no transparency) */
   background: #0b1220 !important;
-
-  /* keep your border + shape */
   border: 1px solid rgba(148, 163, 184, 0.35) !important;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
   padding: 6px;
 
-  /* ✅ FIX: stacking + isolation so it stays above page */
   z-index: 2200 !important;
   opacity: 1 !important;
   isolation: isolate;
 
-  /* ✅ FIX: blur on dropdown can cause weird blending in Safari,
-     so keep it clean */
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -166,7 +152,6 @@ label {
   border-top: 1px solid rgba(148, 163, 184, 0.22);
 }
 
-/* danger (logout) */
 .dropdown-item.text-danger {
   color: #fca5a5 !important;
 }
@@ -176,10 +161,6 @@ label {
   background: rgba(220, 38, 38, 0.22) !important;
   color: #fee2e2 !important;
 }
-
-/* =========================
-   THEME BUTTON + PROFILE
-========================= */
 
 .theme-toggle-btn {
   border-radius: 999px;
@@ -198,7 +179,6 @@ label {
   border: 1px solid rgba(75, 85, 99, 0.95);
   color: #f9fafb;
 
-  /* fixes */
   cursor: pointer;
   user-select: none;
   text-decoration: none;
@@ -950,18 +930,40 @@ a:hover {
   transform: translateX(-64px);
 }
 
+/* =========================
+   ✅ LIGHT THEME (Readable)
+========================= */
+
 body.theme-light {
-  background: #e5edf7;
+  background: radial-gradient(circle at top, #f8fafc, #e7eef9);
   color: #0f172a;
 }
 
-body.theme-light .navbar {
-  background-color: #ffffff !important;
-  border-bottom-color: #cbd5e1 !important;
+/* override your global text colors */
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light h4,
+body.theme-light h5 {
+  color: #0f172a !important;
 }
 
+body.theme-light p,
+body.theme-light span,
+body.theme-light li,
+body.theme-light label {
+  color: #334155 !important;
+}
+
+body.theme-light .navbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: #cbd5e1 !important;
+  backdrop-filter: blur(16px);
+}
+
+body.theme-light .navbar-brand,
 body.theme-light .navbar-brand span {
-  color: #020617;
+  color: #0f172a !important;
 }
 
 body.theme-light .nav-link {
@@ -973,36 +975,97 @@ body.theme-light .nav-link.active {
   color: #0f172a !important;
 }
 
-body.theme-light .glass-card {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-  color: #0f172a;
-}
-
-body.theme-light .workout-card {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
-  color: #0f172a;
-}
-
-body.theme-light .workout-title {
-  color: #0f172a;
-}
-
-body.theme-light .workout-meta {
-  color: #475569 !important;
+body.theme-light .nav-link::after {
+  background: #2563eb;
 }
 
 body.theme-light .text-secondary {
-  color: #64748b !important;
+  color: #475569 !important;
+  opacity: 1;
+}
+
+/* convert dark cards to light cards */
+body.theme-light .glass-card,
+body.theme-light .workout-card,
+body.theme-light .home-stat-card,
+body.theme-light .home-chip,
+body.theme-light .calendar-streak-pill,
+body.theme-light .library-card {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.10) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .home-stat-label,
+body.theme-light .home-chip-label,
+body.theme-light .home-hero-label,
+body.theme-light .home-hero-subtext,
+body.theme-light .home-last-workout .home-last-label,
+body.theme-light .home-last-workout .home-last-meta,
+body.theme-light .home-hero-metric-sub,
+body.theme-light .home-chip-unit,
+body.theme-light .workout-meta,
+body.theme-light .library-meta,
+body.theme-light .meal-macros {
+  color: #475569 !important;
+  opacity: 1;
+}
+
+body.theme-light .home-stat-value,
+body.theme-light .home-hero-metric,
+body.theme-light .home-chip-value,
+body.theme-light .workout-title,
+body.theme-light .library-title,
+body.theme-light .calendar-streak-value {
+  color: #0f172a !important;
+}
+
+body.theme-light .btn-outline-light,
+body.theme-light .theme-toggle-btn {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  color: #1d4ed8 !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.theme-light .btn-outline-light:hover,
+body.theme-light .theme-toggle-btn:hover {
+  background: rgba(37, 99, 235, 0.10) !important;
+  color: #1d4ed8 !important;
+}
+
+body.theme-light .btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+body.theme-light .profile-pill {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(203, 213, 225, 0.9);
+  color: #0f172a;
+}
+
+body.theme-light .avatar-circle {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+body.theme-light .form-control,
+body.theme-light .form-select {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  color: #0f172a;
+}
+
+body.theme-light .form-control::placeholder {
+  color: #94a3b8;
 }
 
 body.theme-light .calendar-day {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #475569;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(203, 213, 225, 0.95);
+  color: #334155;
 }
 
 body.theme-light .calendar-day.has-workout {
@@ -1021,40 +1084,9 @@ body.theme-light .calendar-day.today {
   box-shadow: 0 0 0 2px #f97316, 0 0 22px rgba(249, 115, 22, 0.5);
 }
 
-body.theme-light .footer-text {
-  color: #64748b;
-}
-
-body.theme-light .profile-pill {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-body.theme-light .avatar-circle {
-  background: #2563eb;
-  color: #ffffff;
-}
-
-body.theme-light .btn-primary {
-  background-color: #2563eb;
-  border-color: #2563eb;
-  color: #ffffff;
-}
-
-body.theme-light .btn-outline-light {
-  border-color: #2563eb;
-  color: #2563eb;
-}
-
-body.theme-light .library-card {
-  background: #ffffff;
-  border-color: #cbd5e1;
-}
-
 body.theme-light .app-footer {
-  background: #ffffff;
-  border-top-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.92);
+  border-top-color: rgba(203, 213, 225, 0.95);
 }
 
 body.theme-light .app-footer-brand {
@@ -1065,11 +1097,15 @@ body.theme-light .app-footer-meta {
   color: #16a34a;
 }
 
-/* --- Avatar dropdown menu (light mode) --- */
+body.theme-light .footer-text {
+  color: #64748b;
+}
+
+/* dropdown (light) */
 body.theme-light .dropdown-menu {
-  background: #ffffff !important; /* ✅ solid */
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(203, 213, 225, 0.95) !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
 }
 
 body.theme-light .dropdown-item {
@@ -1078,12 +1114,25 @@ body.theme-light .dropdown-item {
 
 body.theme-light .dropdown-item:hover,
 body.theme-light .dropdown-item:focus {
-  background: rgba(37, 99, 235, 0.12) !important;
+  background: rgba(37, 99, 235, 0.10) !important;
   color: #0f172a !important;
 }
 
 body.theme-light .dropdown-divider {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+/* ✅ mobile meal rows were still dark — fix for light mode */
+@media (max-width: 767px) {
+  body.theme-light .meal-table tbody tr {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(203, 213, 225, 0.95) !important;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10) !important;
+  }
+
+  body.theme-light .meal-table tbody td::before {
+    color: #64748b !important;
+  }
 }
 
 .workout-filters {
