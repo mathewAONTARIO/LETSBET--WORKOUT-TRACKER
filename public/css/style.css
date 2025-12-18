@@ -42,6 +42,10 @@ label {
   border-bottom: 1px solid rgba(148, 163, 184, 0.32);
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
+
+  /* ✅ FIX: ensure navbar sits above page content */
+  position: relative;
+  z-index: 1100;
 }
 
 .navbar .container {
@@ -110,18 +114,43 @@ label {
   background: rgba(15, 23, 42, 0.98);
 }
 
+/* =========================
+   ✅ DROPDOWN FIXES
+   (prevents bleed-through + weird layering)
+========================= */
+
+/* ✅ FIX: anchor dropdown positioning properly */
+.dropdown,
+.dropup,
+.dropend,
+.dropstart {
+  position: relative;
+}
+
 /* --- Avatar dropdown menu (dark mode) --- */
 .dropdown-menu {
-  background: rgba(15, 23, 42, 0.98);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  /* ✅ FIX: use SOLID background (no transparency) */
+  background: #0b1220 !important;
+
+  /* keep your border + shape */
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
   border-radius: 14px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
   padding: 6px;
-  z-index: 2000; /* ensure above navbar collapse */
+
+  /* ✅ FIX: stacking + isolation so it stays above page */
+  z-index: 2200 !important;
+  opacity: 1 !important;
+  isolation: isolate;
+
+  /* ✅ FIX: blur on dropdown can cause weird blending in Safari,
+     so keep it clean */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .dropdown-item {
-  color: #e5e7eb;
+  color: #e5e7eb !important;
   border-radius: 10px;
   padding: 10px 12px;
   font-weight: 500;
@@ -129,8 +158,8 @@ label {
 
 .dropdown-item:hover,
 .dropdown-item:focus {
-  background: rgba(59, 130, 246, 0.22);
-  color: #f9fafb;
+  background: rgba(59, 130, 246, 0.22) !important;
+  color: #f9fafb !important;
 }
 
 .dropdown-divider {
@@ -144,9 +173,13 @@ label {
 
 .dropdown-item.text-danger:hover,
 .dropdown-item.text-danger:focus {
-  background: rgba(220, 38, 38, 0.22);
+  background: rgba(220, 38, 38, 0.22) !important;
   color: #fee2e2 !important;
 }
+
+/* =========================
+   THEME BUTTON + PROFILE
+========================= */
 
 .theme-toggle-btn {
   border-radius: 999px;
@@ -1034,19 +1067,19 @@ body.theme-light .app-footer-meta {
 
 /* --- Avatar dropdown menu (light mode) --- */
 body.theme-light .dropdown-menu {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: #ffffff !important; /* ✅ solid */
+  border: 1px solid #cbd5e1 !important;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
 }
 
 body.theme-light .dropdown-item {
-  color: #0f172a;
+  color: #0f172a !important;
 }
 
 body.theme-light .dropdown-item:hover,
 body.theme-light .dropdown-item:focus {
-  background: rgba(37, 99, 235, 0.12);
-  color: #0f172a;
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #0f172a !important;
 }
 
 body.theme-light .dropdown-divider {
