@@ -17,19 +17,13 @@ router.post('/login', async (req, res) => {
     const normalizedEmail = (email || '').toLowerCase().trim();
     const user = await User.findOne({ email: normalizedEmail });
 
-    if (!user) {
-      return res.render('auth/login', { error: 'Invalid email or password.' });
-    }
+    if (!user) return res.render('auth/login', { error: 'Invalid email or password.' });
 
     const ok = await user.comparePassword(password);
-    if (!ok) {
-      return res.render('auth/login', { error: 'Invalid email or password.' });
-    }
+    if (!ok) return res.render('auth/login', { error: 'Invalid email or password.' });
 
     if (!user.emailVerified) {
-      return res.render('auth/login', {
-        error: 'Please verify your email before logging in.'
-      });
+      return res.render('auth/login', { error: 'Please verify your email before logging in.' });
     }
 
     req.session.userId = user._id;
@@ -49,18 +43,14 @@ router.post('/register', async (req, res) => {
 
   try {
     if (!email || !password || password.length < 6) {
-      return res.render('auth/register', {
-        error: 'Password must be at least 6 characters.'
-      });
+      return res.render('auth/register', { error: 'Password must be at least 6 characters.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
-      return res.render('auth/register', {
-        error: 'An account with that email already exists.'
-      });
+      return res.render('auth/register', { error: 'An account with that email already exists.' });
     }
 
     const user = new User({
@@ -78,22 +68,34 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    const verifyLink = `${APP_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
+    const verifyLink = `${APP_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(
+      user.email
+    )}`;
 
     await sendMail({
       to: user.email,
       subject: 'Verify your LETSBETFit email',
       html: `
-        <p>Welcome to LETSBETFit 👋</p>
-        <p>Please verify your email to activate your account:</p>
-        <p><a href="${verifyLink}">Verify email</a></p>
-        <p>${verifyLink}</p>
+        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5;">
+          <h2 style="margin:0 0 12px;">Welcome to LETSBETFit 👋</h2>
+          <p style="margin:0 0 16px;">Please verify your email to activate your account.</p>
+          <p style="margin:0 0 18px;">
+            <a href="${verifyLink}"
+               style="display:inline-block;padding:10px 14px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600;">
+              Verify email
+            </a>
+          </p>
+          <p style="margin:0;color:#64748b;font-size:12px;">
+            If the button doesn’t work, copy and paste this into your browser:
+          </p>
+          <p style="margin:6px 0 0;color:#0f172a;font-size:12px;word-break:break-all;">
+            ${verifyLink}
+          </p>
+        </div>
       `
     });
 
-    res.render('auth/login', {
-      error: 'Check your email to verify your account, then log in.'
-    });
+    res.render('auth/login', { error: 'Check your email to verify your account, then log in.' });
   } catch (err) {
     console.error(err);
     res.render('auth/register', { error: 'Something went wrong. Try again.' });
@@ -105,9 +107,7 @@ router.get('/verify-email', async (req, res) => {
     const token = String(req.query.token || '');
     const email = String(req.query.email || '').toLowerCase().trim();
 
-    if (!token || !email) {
-      return res.status(400).send('Invalid verification link.');
-    }
+    if (!token || !email) return res.status(400).send('Invalid verification link.');
 
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -117,9 +117,7 @@ router.get('/verify-email', async (req, res) => {
       emailVerifyTokenExpires: { $gt: new Date() }
     });
 
-    if (!user) {
-      return res.status(400).send('Verification link expired or invalid.');
-    }
+    if (!user) return res.status(400).send('Verification link expired or invalid.');
 
     user.emailVerified = true;
     user.emailVerifyTokenHash = undefined;
@@ -158,9 +156,22 @@ router.post('/forgot', async (req, res) => {
         to: user.email,
         subject: 'Reset your LETSBETFit password',
         html: `
-          <p>Reset your password:</p>
-          <p><a href="${link}">Reset password</a></p>
-          <p>${link}</p>
+          <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5;">
+            <h2 style="margin:0 0 12px;">Reset your password</h2>
+            <p style="margin:0 0 16px;">Click the button below to reset your password. This link expires in 30 minutes.</p>
+            <p style="margin:0 0 18px;">
+              <a href="${link}"
+                 style="display:inline-block;padding:10px 14px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600;">
+                Reset password
+              </a>
+            </p>
+            <p style="margin:0;color:#64748b;font-size:12px;">
+              If the button doesn’t work, copy and paste this into your browser:
+            </p>
+            <p style="margin:6px 0 0;color:#0f172a;font-size:12px;word-break:break-all;">
+              ${link}
+            </p>
+          </div>
         `
       });
     }
@@ -198,9 +209,7 @@ router.post('/reset', async (req, res) => {
       resetPasswordExpires: { $gt: new Date() }
     });
 
-    if (!user) {
-      return res.render('auth/reset', { error: 'Reset link expired or invalid.', email, token });
-    }
+    if (!user) return res.render('auth/reset', { error: 'Reset link expired or invalid.', email, token });
 
     user.password = password;
     user.resetPasswordTokenHash = undefined;
@@ -211,14 +220,16 @@ router.post('/reset', async (req, res) => {
     res.redirect('/auth/login');
   } catch (err) {
     console.error(err);
-    res.render('auth/reset', { error: 'Something went wrong.', email, token });
+    res.render('auth/reset', {
+      error: 'Something went wrong.',
+      email: req.body.email,
+      token: req.body.token
+    });
   }
 });
 
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/auth/login');
-  });
+  req.session.destroy(() => res.redirect('/auth/login'));
 });
 
 module.exports = router;
