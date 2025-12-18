@@ -58,20 +58,31 @@ const UserSchema = new mongoose.Schema(
     },
 
     dailyReminderEnabled: { type: Boolean, default: false },
-    reminderTime: { type: String, default: '18:00' }
+    reminderTime: { type: String, default: '18:00' },
+
+    emailVerified: { type: Boolean, default: false },
+    emailVerifyTokenHash: { type: String, default: '' },
+    emailVerifyTokenExpires: { type: Date },
+
+    resetPasswordTokenHash: { type: String, default: '' },
+    resetPasswordExpires: { type: Date }
   },
   { timestamps: true }
 );
 
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+  try {
+    if (!this.isModified('password')) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    return next();
+  } catch (e) {
+    return next(e);
+  }
 });
 
-UserSchema.methods.comparePassword = function (candidatePassword) {
-  return bcrypt.compare(candidatePassword || '', this.password || '');
+UserSchema.methods.comparePassword = function (candidate) {
+  return bcrypt.compare(candidate, this.password);
 };
 
 module.exports = mongoose.model('User', UserSchema);

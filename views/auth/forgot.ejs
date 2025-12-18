@@ -1,0 +1,23 @@
+<%- include('../partials/header', { currentPath: '/auth/forgot' }) %>
+
+<div class="main-shell">
+  <div class="glass-card p-4" style="max-width:520px;margin:0 auto;">
+    <h3 class="mb-3">Forgot password</h3>
+
+    <% if (sent) { %>
+      <div class="alert alert-success">If that email exists, a reset link was sent.</div>
+    <% } %>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/auth/forgot">
+      <label class="form-label">Email</label>
+      <input class="form-control mb-3" type="email" name="email" required />
+      <button class="btn btn-primary w-100" type="submit">Send reset link</button>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
