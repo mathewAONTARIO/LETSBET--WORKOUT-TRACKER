@@ -1,12 +1,21 @@
 <%- include('../partials/header', { title: 'Meals' }) %>
 
+<%
+  const isAll = (scope === 'all');
+  const headerLabel = isAll ? 'All time' : (selectedDateKey || new Date().toISOString().slice(0,10));
+%>
+
 <div class="main-shell">
   <section class="mb-4">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
       <div>
         <h1 class="mb-1">Meals</h1>
         <p class="mb-1 text-secondary">Log your meals to keep calories and macros on track.</p>
-        <p class="mb-0 text-secondary">Today’s total: <strong><%= todayCalories || 0 %> kcal</strong></p>
+
+        <p class="mb-0 text-secondary">
+          Total (<strong><%= headerLabel %></strong>):
+          <strong><%= todayCalories || 0 %> kcal</strong>
+        </p>
       </div>
 
       <div class="d-flex gap-2 flex-wrap">
@@ -26,8 +35,23 @@
         <option value="Snack">Snack</option>
       </select>
 
-      <input id="mealDateFrom" class="form-control" type="date" />
-      <input id="mealDateTo" class="form-control" type="date" />
+      <!-- ✅ Day / All switch -->
+      <input
+        id="mealDay"
+        class="form-control"
+        type="date"
+        value="<%= (selectedDateKey || new Date().toISOString().slice(0,10)) %>"
+        <%= isAll ? 'disabled' : '' %>
+      />
+
+      <div class="d-flex gap-2">
+        <a href="/meals?date=<%= (new Date().toISOString().slice(0,10)) %>" class="btn btn-outline-light btn-pill">
+          Today
+        </a>
+        <a href="/meals?scope=all" class="btn btn-outline-light btn-pill">
+          All time
+        </a>
+      </div>
     </div>
   </section>
 
@@ -68,7 +92,6 @@
               </td>
 
               <td data-label="Calories"><%= meal.calories || 0 %></td>
-
               <td data-label="Time"><%= meal.timeOfDay || '—' %></td>
 
               <td data-label="Date">
@@ -100,39 +123,40 @@
     const rows = Array.from(document.querySelectorAll('.meal-row'));
     const search = document.getElementById('mealSearch');
     const time = document.getElementById('timeFilter');
-    const from = document.getElementById('mealDateFrom');
-    const to = document.getElementById('mealDateTo');
+    const dayPicker = document.getElementById('mealDay');
 
-    function norm(v) {
-      return (v || '').toLowerCase();
-    }
+    function norm(v) { return (v || '').toLowerCase(); }
 
     function apply() {
       const q = norm(search && search.value);
       const t = (time && time.value) ? time.value : 'all';
-      const f = (from && from.value) ? from.value : '';
-      const tt = (to && to.value) ? to.value : '';
 
       rows.forEach(r => {
         const name = r.dataset.name || '';
         const notes = r.dataset.notes || '';
         const rTime = r.dataset.time || '';
-        const rDate = r.dataset.date || '';
 
         const matchesText = !q || name.includes(q) || notes.includes(q);
         const matchesTime = t === 'all' || rTime === t;
-        const matchesFrom = !f || (rDate && rDate >= f);
-        const matchesTo = !tt || (rDate && rDate <= tt);
 
-        r.style.display = (matchesText && matchesTime && matchesFrom && matchesTo) ? '' : 'none';
+        r.style.display = (matchesText && matchesTime) ? '' : 'none';
       });
     }
 
-    [search, time, from, to].forEach(el => {
+    [search, time].forEach(el => {
       if (!el) return;
       el.addEventListener('input', apply);
       el.addEventListener('change', apply);
     });
+
+    // ✅ switch day (sync with calendar day)
+    if (dayPicker && !dayPicker.disabled) {
+      dayPicker.addEventListener('change', function () {
+        const v = dayPicker.value;
+        if (!v) return;
+        window.location.href = '/meals?date=' + encodeURIComponent(v);
+      });
+    }
   })();
 </script>
 

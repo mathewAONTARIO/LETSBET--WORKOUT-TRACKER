@@ -5,8 +5,41 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+function ymd(d) {
+  const x = startOfDay(d);
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, '0');
+  const dd = String(x.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
 function toDateOrToday(value) {
   if (!value) return new Date();
+
+  if (value instanceof Date && !isNaN(value)) return value;
+
+  if (typeof value === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m, d] = value.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      return isNaN(dt) ? new Date() : dt;
+    }
+    const dt = new Date(value);
+    return isNaN(dt) ? new Date() : dt;
+  }
+
   const dt = new Date(value);
   return isNaN(dt) ? new Date() : dt;
 }
@@ -22,32 +55,36 @@ async function listMeals(req, res) {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const meals = await Meal.find({ user: userId }).sort({ date: -1 });
+    const scope = String(req.query.scope || '').toLowerCase(); // 'all' or ''
+    const isAll = scope === 'all';
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const selected = isAll ? startOfDay(new Date()) : startOfDay(toDateOrToday(req.query.date));
+    const next = addDays(selected, 1);
+    const selectedDateKey = ymd(selected);
 
-    const todayMeals = meals.filter(m => {
-      if (!m.date) return false;
-      const d = new Date(m.date);
-      return d >= today && d < tomorrow;
-    });
+    const query = isAll
+      ? { user: userId }
+      : { user: userId, date: { $gte: selected, $lt: next } };
 
-    const todayCalories = todayMeals.reduce((sum, m) => sum + (Number(m.calories) || 0), 0);
+    const meals = await Meal.find(query).sort({ date: -1 });
+
+    const totalCalories = meals.reduce((sum, m) => sum + (Number(m.calories) || 0), 0);
 
     res.render('meals/list', {
       meals,
-      todayCalories,
-      currentPath: '/meals'
+      todayCalories: totalCalories, // keep variable name so your EJS doesn't break
+      currentPath: '/meals',
+      scope: isAll ? 'all' : 'day',
+      selectedDateKey
     });
   } catch (err) {
     console.error('listMeals error:', err);
     res.render('meals/list', {
       meals: [],
       todayCalories: 0,
-      currentPath: '/meals'
+      currentPath: '/meals',
+      scope: 'day',
+      selectedDateKey: ymd(new Date())
     });
   }
 }
@@ -59,16 +96,7 @@ async function exportMealsCsv(req, res) {
 
     const meals = await Meal.find({ user: userId }).sort({ date: -1 }).lean();
 
-    const headers = [
-      'date',
-      'timeOfDay',
-      'name',
-      'calories',
-      'protein',
-      'carbs',
-      'fats',
-      'notes'
-    ];
+    const headers = ['date', 'timeOfDay', 'name', 'calories', 'protein', 'carbs', 'fats', 'notes'];
 
     const lines = [];
     lines.push(headers.join(','));
