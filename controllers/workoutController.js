@@ -6,6 +6,12 @@ function getUserId(req) {
   return req.session && req.session.userId;
 }
 
+function startOfDay(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
 function toDateOrToday(value) {
   if (!value) return new Date();
 
@@ -69,6 +75,88 @@ async function getWeeklyGoalForUser(userId) {
     return 5;
   }
 }
+
+/* -------------------- QUICK LOG (TEMPLATES) -------------------- */
+
+const QUICK_TEMPLATES = {
+  push: {
+    label: 'Push',
+    category: 'Push',
+    exercises: ['Bench Press', 'Incline DB Press', 'Shoulder Press', 'Lateral Raises', 'Tricep Pushdown', 'Dips']
+  },
+  pull: {
+    label: 'Pull',
+    category: 'Pull',
+    exercises: ['Deadlift', 'Lat Pulldown', 'Seated Row', 'One-Arm DB Row', 'Face Pull', 'Hammer Curls']
+  },
+  legs: {
+    label: 'Legs',
+    category: 'Legs',
+    exercises: ['Squat', 'Romanian Deadlift', 'Leg Press', 'Walking Lunges', 'Leg Curl', 'Calf Raises']
+  },
+  upper: {
+    label: 'Upper Body',
+    category: 'Upper Body',
+    exercises: ['Bench Press', 'Row', 'Shoulder Press', 'Lat Pulldown', 'Lateral Raises', 'Curls']
+  },
+  lower: {
+    label: 'Lower Body',
+    category: 'Lower Body',
+    exercises: ['Squat', 'Romanian Deadlift', 'Leg Press', 'Leg Curl', 'Calf Raises', 'Abs']
+  },
+  full: {
+    label: 'Full Body',
+    category: 'Full Body',
+    exercises: ['Squat', 'Bench Press', 'Row', 'Shoulder Press', 'Romanian Deadlift', 'Plank']
+  },
+  cardio: {
+    label: 'Cardio',
+    category: 'Cardio',
+    exercises: ['Run', 'Incline Walk', 'Bike', 'Stairmaster']
+  }
+};
+
+exports.showQuickLog = (req, res) => {
+  res.render('workouts/quick', {
+    currentPath: '/workouts/quick',
+    today: new Date().toISOString().slice(0, 10),
+    templates: QUICK_TEMPLATES
+  });
+};
+
+exports.createQuickLog = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
+    const split = String(req.body.split || '');
+    const pickedDate = toDateOrToday(req.body.date);
+    const t = QUICK_TEMPLATES[split];
+
+    if (!t) return res.redirect('/workouts/quick?toast=error&type=error');
+
+    const docs = t.exercises.map(exercise => ({
+      user: userId,
+      exercise,
+      category: t.category,
+      sets: 3,
+      reps: 10,
+      weight: 0,
+      date: startOfDay(pickedDate),
+      notes: '',
+      isPR: false
+    }));
+
+    await Workout.insertMany(docs);
+
+    return res.redirect('/workouts?toast=workout-saved&type=success');
+  } catch (err) {
+    console.error('createQuickLog error:', err);
+    return res.redirect('/workouts?toast=error&type=error');
+  }
+};
+
+/* -------------------- EXISTING CONTROLLER ACTIONS -------------------- */
 
 exports.getWorkouts = async (req, res) => {
   try {
@@ -333,7 +421,6 @@ exports.getStreak = async (req, res) => {
     }
 
     const workoutsThisWeek = weekDaySet.size;
-
     const weeklyGoal = await getWeeklyGoalForUser(userId);
 
     res.render('workouts/streak', {

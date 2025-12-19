@@ -1,0 +1,38 @@
+<%- include('../partials/header', { currentPath: '/workouts/quick' }) %>
+
+<div class="main-shell">
+  <h2 class="mb-1">Quick Log</h2>
+  <p class="text-secondary mb-4">Tap a split and we’ll auto-fill the session for today.</p>
+
+  <form action="/workouts/quick" method="POST" class="glass-card p-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" class="form-control" value="<%= today %>" required />
+      </div>
+
+      <div class="col-md-8">
+        <label class="form-label">Choose a split</label>
+        <div class="d-flex flex-wrap gap-2">
+          <% Object.keys(templates || {}).forEach(function(key){ %>
+            <button
+              type="submit"
+              name="split"
+              value="<%= key %>"
+              class="btn btn-primary"
+              style="min-width: 140px;"
+            >
+              <%= templates[key].label %>
+            </button>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 text-secondary" style="font-size:0.9rem;">
+      Creates multiple exercises instantly (you can edit after).
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

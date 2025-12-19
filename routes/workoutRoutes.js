@@ -4,6 +4,10 @@ const workoutController = require('../controllers/workoutController');
 const { requireLogin } = require('../middleware/auth');
 
 router.get('/', requireLogin, workoutController.getWorkouts);
+
+router.get('/quick', requireLogin, workoutController.showQuickLog);
+router.post('/quick', requireLogin, workoutController.createQuickLog);
+
 router.get('/new', requireLogin, workoutController.showNewForm);
 router.post('/new', requireLogin, workoutController.createWorkout);
 

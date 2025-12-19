@@ -2,9 +2,15 @@
 
 <div class="main-shell">
   <h2 class="mb-1"><%= duplicateOf ? 'Duplicate Workout' : 'Add Workout' %></h2>
-  <p class="text-secondary mb-4">
+  <p class="text-secondary mb-3">
     <%= duplicateOf ? 'Start from an existing workout and tweak anything you need.' : 'Log a new workout session.' %>
   </p>
+
+  <div class="mb-4">
+    <a href="/workouts/quick" class="btn btn-outline-light w-100">
+      Quick Log (Templates)
+    </a>
+  </div>
 
   <form action="<%= formAction %>" method="POST" class="glass-card p-4">
     <div class="row g-3">
@@ -24,33 +30,15 @@
         <label class="form-label">Category</label>
         <select name="category" class="form-select">
           <% const dupCat = duplicateOf ? (duplicateOf.category || '') : ''; %>
-          <option value="Upper Body" <%= dupCat === 'Upper Body' ? 'selected' : '' %>>
-            Upper Body
-          </option>
-          <option value="Lower Body" <%= dupCat === 'Lower Body' ? 'selected' : '' %>>
-            Lower Body
-          </option>
-          <option value="Push" <%= dupCat === 'Push' ? 'selected' : '' %>>
-            Push
-          </option>
-          <option value="Pull" <%= dupCat === 'Pull' ? 'selected' : '' %>>
-            Pull
-          </option>
-          <option value="Legs" <%= dupCat === 'Legs' ? 'selected' : '' %>>
-            Legs
-          </option>
-          <option value="Full Body" <%= dupCat === 'Full Body' ? 'selected' : '' %>>
-            Full Body
-          </option>
-          <option value="Cardio" <%= dupCat === 'Cardio' ? 'selected' : '' %>>
-            Cardio
-          </option>
-          <option value="Core" <%= dupCat === 'Core' ? 'selected' : '' %>>
-            Core
-          </option>
-          <option value="Other" <%= dupCat === 'Other' ? 'selected' : '' %>>
-            Other
-          </option>
+          <option value="Upper Body" <%= dupCat === 'Upper Body' ? 'selected' : '' %>>Upper Body</option>
+          <option value="Lower Body" <%= dupCat === 'Lower Body' ? 'selected' : '' %>>Lower Body</option>
+          <option value="Push" <%= dupCat === 'Push' ? 'selected' : '' %>>Push</option>
+          <option value="Pull" <%= dupCat === 'Pull' ? 'selected' : '' %>>Pull</option>
+          <option value="Legs" <%= dupCat === 'Legs' ? 'selected' : '' %>>Legs</option>
+          <option value="Full Body" <%= dupCat === 'Full Body' ? 'selected' : '' %>>Full Body</option>
+          <option value="Cardio" <%= dupCat === 'Cardio' ? 'selected' : '' %>>Cardio</option>
+          <option value="Core" <%= dupCat === 'Core' ? 'selected' : '' %>>Core</option>
+          <option value="Other" <%= dupCat === 'Other' ? 'selected' : '' %>>Other</option>
         </select>
       </div>
 
@@ -126,7 +114,6 @@
         </div>
       </div>
 
-      <!-- Live volume display (MVP stat) -->
       <div class="col-12 mt-2">
         <small class="text-secondary">
           Estimated volume:
@@ -146,8 +133,6 @@
 </div>
 
 <script>
-  // Simple front-end helper for MVP:
-  // live volume = sets * reps * weight
   document.addEventListener('DOMContentLoaded', () => {
     const setsInput = document.getElementById('setsInput');
     const repsInput = document.getElementById('repsInput');
@@ -158,7 +143,6 @@
       const sets = parseInt(setsInput.value, 10) || 0;
       const reps = parseInt(repsInput.value, 10) || 0;
       const weight = parseFloat(weightInput.value) || 0;
-
       const volume = sets * reps * weight;
       volumeDisplay.textContent = volume.toLocaleString();
     }
@@ -169,7 +153,6 @@
       weightInput.addEventListener(evt, updateVolume);
     });
 
-    // initialize on load
     updateVolume();
   });
 </script>
