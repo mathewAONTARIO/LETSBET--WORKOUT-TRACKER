@@ -57,14 +57,6 @@ function startOfWeekMonday(d) {
   return x;
 }
 
-function endOfWeekMonday(d) {
-  const start = startOfWeekMonday(d);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  end.setHours(0, 0, 0, 0);
-  return end;
-}
-
 async function getWeeklyGoalForUser(userId) {
   try {
     const s = await Settings.findOne({ user: userId }).lean();
@@ -74,6 +66,24 @@ async function getWeeklyGoalForUser(userId) {
   } catch (e) {
     return 5;
   }
+}
+
+function getScope(req) {
+  const scope = String(req.query.scope || '').toLowerCase();
+  return scope === 'all' ? 'all' : 'day';
+}
+
+function getPickedDate(req) {
+  const q = typeof req.query.date === 'string' ? req.query.date : '';
+  if (q && /^\d{4}-\d{2}-\d{2}$/.test(q)) return toDateOrToday(q);
+  return new Date();
+}
+
+function dayRange(d) {
+  const start = startOfDay(d);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
 }
 
 /* -------------------- QUICK LOG (TEMPLATES) -------------------- */
@@ -156,27 +166,42 @@ exports.createQuickLog = async (req, res) => {
   }
 };
 
-/* -------------------- EXISTING CONTROLLER ACTIONS -------------------- */
+/* -------------------- LIST (DEFAULT = TODAY) -------------------- */
 
 exports.getWorkouts = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).sort({ date: -1 });
+    const scope = getScope(req);
+    const picked = getPickedDate(req);
+    const { start, end } = dayRange(picked);
+
+    const query =
+      scope === 'all'
+        ? { user: userId }
+        : { user: userId, date: { $gte: start, $lt: end } };
+
+    const workouts = await Workout.find(query).sort({ date: -1 });
 
     res.render('workouts/list', {
       workouts,
-      currentPath: '/workouts'
+      currentPath: '/workouts',
+      scope,
+      selectedDate: ymd(picked)
     });
   } catch (err) {
     console.error('getWorkouts error:', err);
     res.render('workouts/list', {
       workouts: [],
-      currentPath: '/workouts'
+      currentPath: '/workouts',
+      scope: 'day',
+      selectedDate: new Date().toISOString().slice(0, 10)
     });
   }
 };
+
+/* -------------------- CRUD -------------------- */
 
 exports.showNewForm = (req, res) => {
   const userId = getUserId(req);
@@ -365,20 +390,17 @@ exports.deleteWorkout = async (req, res) => {
   }
 };
 
-/* ==========================================================
-   ✅ FIX: streak + weekly should NOT count future workouts
-========================================================== */
+/* -------------------- STREAK (IGNORE FUTURE) -------------------- */
+
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // ✅ ignore future workouts
     const workouts = await Workout.find({
       user: userId,
       date: { $lt: tomorrow }
@@ -389,16 +411,16 @@ exports.getStreak = async (req, res) => {
     const daySet = new Set();
     for (const w of workouts) {
       if (!w.date) continue;
-      const d = new Date(w.date);
+      const d = startOfDay(new Date(w.date));
       if (d >= tomorrow) continue;
-      daySet.add(d.toISOString().slice(0, 10));
+      daySet.add(ymd(d));
     }
 
     const days = Array.from(daySet).sort();
 
     let currentStreak = 0;
     let cursor = new Date(today);
-    while (daySet.has(cursor.toISOString().slice(0, 10))) {
+    while (daySet.has(ymd(cursor))) {
       currentStreak++;
       cursor.setDate(cursor.getDate() - 1);
     }
@@ -418,7 +440,6 @@ exports.getStreak = async (req, res) => {
     }
 
     const weekStart = startOfWeekMonday(today);
-    // const weekEnd = endOfWeekMonday(today); // not needed for “completed” count
 
     const workoutsThisWeekDocs = await Workout.find({
       user: userId,
@@ -459,16 +480,14 @@ exports.getStreak = async (req, res) => {
   }
 };
 
-/* ==========================================================
-   ✅ FIX: stats should NOT count future workouts
-========================================================== */
+/* -------------------- STATS (IGNORE FUTURE) -------------------- */
+
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -509,7 +528,14 @@ exports.getPRs = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).lean();
+    const today = startOfDay(new Date());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const workouts = await Workout.find({
+      user: userId,
+      date: { $lt: tomorrow }
+    }).lean();
 
     res.render('workouts/prs', {
       prs: workouts.filter(w => w.isPR),
@@ -527,6 +553,8 @@ exports.getPRs = async (req, res) => {
 exports.getLibrary = (req, res) => {
   res.render('workouts/library', { currentPath: '/workouts/library' });
 };
+
+/* -------------------- CALENDAR + DAY -------------------- */
 
 exports.getCalendar = async (req, res) => {
   try {
@@ -619,11 +647,7 @@ exports.getDaySummary = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const picked = toDateOrToday(req.params.date);
-
-    const start = new Date(picked);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const { start, end } = dayRange(picked);
 
     const workouts = await Workout.find({
       user: userId,
