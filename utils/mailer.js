@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const EmailLog = require('../models/EmailLog');
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 const MAIL_FROM = process.env.MAIL_FROM || 'LETSBETFit <letsbetfitapp@gmail.com>';
@@ -97,26 +98,55 @@ function verificationEmailTemplate({ name, verifyUrl }) {
 </html>`;
 }
 
-async function sendMail({ to, subject, html, text }) {
-  await transporter.sendMail({
-    from: MAIL_FROM,
-    to,
-    subject,
-    html,
-    text
-  });
+async function sendMail({ to, subject, html, text, userId, type = 'other', meta = {} }) {
+  const toNorm = String(to || '').toLowerCase().trim();
+
+  try {
+    await transporter.sendMail({
+      from: MAIL_FROM,
+      to: toNorm,
+      subject,
+      html,
+      text
+    });
+
+    await EmailLog.create({
+      user: userId || undefined,
+      to: toNorm,
+      type,
+      subject: subject || '',
+      status: 'sent',
+      meta
+    });
+
+    return true;
+  } catch (err) {
+    await EmailLog.create({
+      user: userId || undefined,
+      to: toNorm,
+      type,
+      subject: subject || '',
+      status: 'failed',
+      error: String(err && err.message ? err.message : err),
+      meta
+    });
+
+    throw err;
+  }
 }
 
-async function sendVerifyEmail({ to, name, token }) {
+async function sendVerifyEmail({ to, name, token, userId }) {
   if (!APP_URL) throw new Error('APP_URL is missing');
 
   const verifyUrl = `${APP_URL}/auth/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}`;
   const html = verificationEmailTemplate({ name, verifyUrl });
 
-  await sendMail({
+  return sendMail({
     to,
     subject: 'Verify your LETSBETFit email',
-    html
+    html,
+    userId,
+    type: 'verify'
   });
 }
 

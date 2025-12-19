@@ -1,36 +1,77 @@
 const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
+
 const User = require('../models/User');
+const EmailLog = require('../models/EmailLog');
 const { sendMail, sendVerifyEmail } = require('../utils/mailer');
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 
+function normalizeEmail(email) {
+  return String(email || '').toLowerCase().trim();
+}
+
+function maskEmail(email) {
+  const e = normalizeEmail(email);
+  const [u, d] = e.split('@');
+  if (!u || !d) return e;
+  const head = u.slice(0, 2);
+  return `${head}${'*'.repeat(Math.max(u.length - 2, 1))}@${d}`;
+}
+
+async function canSendVerification(email) {
+  const last = await EmailLog.findOne({ email, type: 'verify' }).sort({ sentAt: -1 }).lean();
+  if (!last) return true;
+  return Date.now() - new Date(last.sentAt).getTime() > 60 * 1000;
+}
+
+async function logEmail({ userId, email, type, req }) {
+  try {
+    await EmailLog.create({
+      user: userId || null,
+      email,
+      type,
+      sentAt: new Date(),
+      ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim(),
+      userAgent: String(req.headers['user-agent'] || '')
+    });
+  } catch (e) {}
+}
+
 router.get('/login', (req, res) => {
-  res.render('auth/login', { error: null });
+  res.render('auth/login', { error: null, info: null, email: '' });
 });
 
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const password = String(req.body.password || '');
 
   try {
-    const normalizedEmail = (email || '').toLowerCase().trim();
-    const user = await User.findOne({ email: normalizedEmail });
+    const user = await User.findOne({ email });
 
-    if (!user) return res.render('auth/login', { error: 'Invalid email or password.' });
+    if (!user) {
+      return res.render('auth/login', { error: 'Invalid email or password.', info: null, email });
+    }
 
     const ok = await user.comparePassword(password);
-    if (!ok) return res.render('auth/login', { error: 'Invalid email or password.' });
+    if (!ok) {
+      return res.render('auth/login', { error: 'Invalid email or password.', info: null, email });
+    }
 
     if (!user.emailVerified) {
-      return res.render('auth/login', { error: 'Please verify your email before logging in.' });
+      return res.render('auth/login', {
+        error: 'Email not verified. Please verify your email to log in.',
+        info: 'You can resend the verification email below.',
+        email
+      });
     }
 
     req.session.userId = user._id;
     res.redirect('/workouts');
   } catch (err) {
     console.error(err);
-    res.render('auth/login', { error: 'Something went wrong. Try again.' });
+    res.render('auth/login', { error: 'Something went wrong. Try again.', info: null, email });
   }
 });
 
@@ -39,23 +80,31 @@ router.get('/register', (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { email, displayName, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const displayName = String(req.body.displayName || '').trim();
+  const password = String(req.body.password || '');
 
   try {
-    if (!email || !password || password.length < 6) {
+    if (!email) return res.render('auth/register', { error: 'Email is required.' });
+    if (!password || password.length < 6) {
       return res.render('auth/register', { error: 'Password must be at least 6 characters.' });
     }
 
-    const normalizedEmail = String(email).toLowerCase().trim();
-
-    const existing = await User.findOne({ email: normalizedEmail });
+    const existing = await User.findOne({ email });
     if (existing) {
+      if (!existing.emailVerified) {
+        return res.render('auth/login', {
+          error: 'That email already has an account but it’s not verified yet.',
+          info: 'Resend the verification email below.',
+          email
+        });
+      }
       return res.render('auth/register', { error: 'An account with that email already exists.' });
     }
 
     const user = new User({
-      email: normalizedEmail,
-      displayName: (displayName || '').trim(),
+      email,
+      displayName,
       password
     });
 
@@ -66,19 +115,21 @@ router.post('/register', async (req, res) => {
     user.emailVerifyTokenHash = tokenHash;
     user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
-    user.emailVerificationSentAt = new Date();
-    user.emailVerificationSendCount = (user.emailVerificationSendCount || 0) + 1;
-
     await user.save();
 
     await sendVerifyEmail({
       to: user.email,
       name: user.displayName || user.email,
-      token,
-      userId: user._id
+      token
     });
 
-    res.render('auth/login', { error: 'Check your email to verify your account, then log in.' });
+    await logEmail({ userId: user._id, email: user.email, type: 'verify', req });
+
+    res.render('auth/login', {
+      error: null,
+      info: `Verification sent to ${maskEmail(user.email)}. Check inbox/spam, then log in.`,
+      email: user.email
+    });
   } catch (err) {
     console.error(err);
     res.render('auth/register', { error: 'Something went wrong. Try again.' });
@@ -88,7 +139,7 @@ router.post('/register', async (req, res) => {
 router.get('/verify-email', async (req, res) => {
   try {
     const token = String(req.query.token || '');
-    const email = String(req.query.email || '').toLowerCase().trim();
+    const email = normalizeEmail(req.query.email);
 
     if (!token || !email) return res.status(400).send('Invalid verification link.');
 
@@ -116,35 +167,38 @@ router.get('/verify-email', async (req, res) => {
 });
 
 router.get('/resend-verification', (req, res) => {
-  res.render('auth/resend-verification', { error: null, sent: false, message: null });
+  res.render('auth/resend-verification', { error: null, info: null, email: normalizeEmail(req.query.email) });
 });
 
 router.post('/resend-verification', async (req, res) => {
-  try {
-    const email = String(req.body.email || '').toLowerCase().trim();
-    const genericMsg = 'If that email exists, we sent a new verification link.';
+  const email = normalizeEmail(req.body.email);
 
-    if (!email) {
-      return res.render('auth/resend-verification', { error: 'Enter your email.', sent: false, message: null });
-    }
+  try {
+    if (!email) return res.render('auth/resend-verification', { error: 'Enter your email.', info: null, email });
 
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res.render('auth/resend-verification', { error: null, sent: true, message: genericMsg });
+      return res.render('auth/resend-verification', {
+        error: null,
+        info: `If an account exists for ${maskEmail(email)}, we sent a verification email.`,
+        email
+      });
     }
 
     if (user.emailVerified) {
-      return res.render('auth/resend-verification', { error: null, sent: true, message: 'Your email is already verified. You can log in.' });
+      return res.render('auth/login', {
+        error: null,
+        info: 'Your email is already verified. You can log in now.',
+        email
+      });
     }
 
-    const last = user.emailVerificationSentAt ? new Date(user.emailVerificationSentAt).getTime() : 0;
-    const now = Date.now();
-    if (last && now - last < 60 * 1000) {
+    const ok = await canSendVerification(email);
+    if (!ok) {
       return res.render('auth/resend-verification', {
-        error: 'Wait 1 minute before requesting another email.',
-        sent: false,
-        message: null
+        error: 'Wait 60 seconds before resending.',
+        info: null,
+        email
       });
     }
 
@@ -153,23 +207,24 @@ router.post('/resend-verification', async (req, res) => {
 
     user.emailVerifyTokenHash = tokenHash;
     user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
-
-    user.emailVerificationSentAt = new Date();
-    user.emailVerificationSendCount = (user.emailVerificationSendCount || 0) + 1;
-
     await user.save();
 
     await sendVerifyEmail({
       to: user.email,
       name: user.displayName || user.email,
-      token,
-      userId: user._id
+      token
     });
 
-    return res.render('auth/resend-verification', { error: null, sent: true, message: genericMsg });
+    await logEmail({ userId: user._id, email: user.email, type: 'verify', req });
+
+    return res.render('auth/login', {
+      error: null,
+      info: `Verification sent to ${maskEmail(user.email)}. Check inbox/spam, then log in.`,
+      email: user.email
+    });
   } catch (err) {
     console.error(err);
-    return res.render('auth/resend-verification', { error: 'Something went wrong. Try again.', sent: false, message: null });
+    return res.render('auth/resend-verification', { error: 'Something went wrong. Try again.', info: null, email });
   }
 });
 
@@ -179,7 +234,7 @@ router.get('/forgot', (req, res) => {
 
 router.post('/forgot', async (req, res) => {
   try {
-    const email = String(req.body.email || '').toLowerCase().trim();
+    const email = normalizeEmail(req.body.email);
     const user = await User.findOne({ email });
 
     if (user) {
@@ -268,6 +323,8 @@ router.post('/forgot', async (req, res) => {
   </body>
 </html>`
       });
+
+      await logEmail({ userId: user._id, email: user.email, type: 'reset', req });
     }
 
     res.render('auth/forgot', { error: null, sent: true });
@@ -287,7 +344,7 @@ router.get('/reset', (req, res) => {
 
 router.post('/reset', async (req, res) => {
   try {
-    const email = String(req.body.email || '').toLowerCase().trim();
+    const email = normalizeEmail(req.body.email);
     const token = String(req.body.token || '');
     const password = String(req.body.password || '');
 
