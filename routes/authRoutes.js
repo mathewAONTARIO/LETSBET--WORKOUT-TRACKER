@@ -2,7 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const router = express.Router();
 const User = require('../models/User');
-const { sendMail } = require('../utils/mailer');
+const { sendMail, sendVerifyEmail } = require('../utils/mailer');
 
 const APP_URL = (process.env.APP_URL || '').replace(/\/$/, '');
 
@@ -46,7 +46,7 @@ router.post('/register', async (req, res) => {
       return res.render('auth/register', { error: 'Password must be at least 6 characters.' });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = String(email).toLowerCase().trim();
 
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
@@ -68,31 +68,10 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    const verifyLink = `${APP_URL}/auth/verify-email?token=${token}&email=${encodeURIComponent(
-      user.email
-    )}`;
-
-    await sendMail({
+    await sendVerifyEmail({
       to: user.email,
-      subject: 'Verify your LETSBETFit email',
-      html: `
-        <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5;">
-          <h2 style="margin:0 0 12px;">Welcome to LETSBETFit 👋</h2>
-          <p style="margin:0 0 16px;">Please verify your email to activate your account.</p>
-          <p style="margin:0 0 18px;">
-            <a href="${verifyLink}"
-               style="display:inline-block;padding:10px 14px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600;">
-              Verify email
-            </a>
-          </p>
-          <p style="margin:0;color:#64748b;font-size:12px;">
-            If the button doesn’t work, copy and paste this into your browser:
-          </p>
-          <p style="margin:6px 0 0;color:#0f172a;font-size:12px;word-break:break-all;">
-            ${verifyLink}
-          </p>
-        </div>
-      `
+      name: user.displayName || user.email,
+      token
     });
 
     res.render('auth/login', { error: 'Check your email to verify your account, then log in.' });
@@ -150,29 +129,82 @@ router.post('/forgot', async (req, res) => {
 
       await user.save();
 
-      const link = `${APP_URL}/auth/reset?token=${token}&email=${encodeURIComponent(user.email)}`;
+      const link = `${APP_URL}/auth/reset?token=${encodeURIComponent(token)}&email=${encodeURIComponent(user.email)}`;
 
       await sendMail({
         to: user.email,
         subject: 'Reset your LETSBETFit password',
-        html: `
-          <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5;">
-            <h2 style="margin:0 0 12px;">Reset your password</h2>
-            <p style="margin:0 0 16px;">Click the button below to reset your password. This link expires in 30 minutes.</p>
-            <p style="margin:0 0 18px;">
-              <a href="${link}"
-                 style="display:inline-block;padding:10px 14px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600;">
-                Reset password
-              </a>
-            </p>
-            <p style="margin:0;color:#64748b;font-size:12px;">
-              If the button doesn’t work, copy and paste this into your browser:
-            </p>
-            <p style="margin:6px 0 0;color:#0f172a;font-size:12px;word-break:break-all;">
-              ${link}
-            </p>
-          </div>
-        `
+        html: `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Reset your LETSBETFit password</title>
+  </head>
+  <body style="margin:0;padding:0;background:#0b1220;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#e5e7eb;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0b1220;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:18px 20px;background:rgba(2,6,23,.6);border-bottom:1px solid rgba(148,163,184,.18);">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:34px;height:34px;border-radius:10px;background:#111827;border:1px solid rgba(148,163,184,.25);display:flex;align-items:center;justify-content:center;">
+                    <span style="font-weight:800;letter-spacing:.08em;color:#22c55e;">LB</span>
+                  </div>
+                  <div style="line-height:1;">
+                    <div style="font-weight:800;letter-spacing:.12em;font-size:12px;color:#f9fafb;">LETSBET<span style="color:#22c55e;">Fit</span></div>
+                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Reset your password</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:22px 20px 10px;">
+                <div style="font-size:18px;font-weight:800;color:#f9fafb;margin-bottom:6px;">Reset your password</div>
+                <div style="font-size:14px;line-height:1.6;color:#cbd5f5;">
+                  Tap the button below to reset your password. This link expires in 30 minutes.
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:14px 20px 18px;">
+                <a href="${link}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 16px;border-radius:999px;font-size:14px;">
+                  Reset password
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:0 20px 18px;">
+                <div style="font-size:12px;color:#94a3b8;line-height:1.6;">
+                  If the button doesn’t work, copy and paste this link:
+                  <div style="word-break:break-all;margin-top:6px;">
+                    <a href="${link}" style="color:#93c5fd;text-decoration:none;">${link}</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:14px 20px;background:rgba(2,6,23,.6);border-top:1px solid rgba(148,163,184,.18);">
+                <div style="font-size:12px;color:#94a3b8;line-height:1.6;">
+                  If you didn’t request this, you can ignore this email.
+                </div>
+                <div style="font-size:12px;color:#64748b;margin-top:10px;letter-spacing:.10em;text-transform:uppercase;">
+                  LETSBETFit
+                </div>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`
       });
     }
 

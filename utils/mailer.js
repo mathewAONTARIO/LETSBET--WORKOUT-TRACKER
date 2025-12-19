@@ -17,6 +17,7 @@ function escapeHtml(s = '') {
   return String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
+    .replace(/>/g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
@@ -99,16 +100,27 @@ function verificationEmailTemplate({ name, verifyUrl }) {
 </html>`;
 }
 
+async function sendMail({ to, subject, html, text }) {
+  await transporter.sendMail({
+    from: MAIL_FROM,
+    to,
+    subject,
+    html,
+    text
+  });
+}
+
 async function sendVerifyEmail({ to, name, token }) {
+  if (!APP_URL) throw new Error('APP_URL is missing');
+
   const verifyUrl = `${APP_URL}/auth/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}`;
   const html = verificationEmailTemplate({ name, verifyUrl });
 
-  await transporter.sendMail({
-    from: MAIL_FROM,
+  await sendMail({
     to,
     subject: 'Verify your LETSBETFit email',
     html
   });
 }
 
-module.exports = { sendVerifyEmail };
+module.exports = { sendMail, sendVerifyEmail };
