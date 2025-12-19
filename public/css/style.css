@@ -1522,3 +1522,59 @@ body.theme-light .progress {
     padding: 12px 12px;
   }
 }
+
+/* ✅ Light mode navbar branding */
+body.theme-light .navbar-brand,
+body.theme-light .brand-wordmark,
+body.theme-light .brand-text-main {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+body.theme-light .navbar-brand:hover {
+  color: #0f172a !important;
+  text-decoration: none;
+}
+
+/* ✅ Light mode mobile drawer (your #mainNav fixed panel) */
+@media (max-width: 991.98px) {
+  body.theme-light #mainNav.collapse,
+  body.theme-light #mainNav.navbar-collapse {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-left: 1px solid rgba(15, 23, 42, 0.12) !important;
+  }
+
+  body.theme-light #mainNav .dropdown-menu {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  }
+
+  body.theme-light #mainNav .nav-link {
+    color: #0f172a !important;
+    opacity: 0.85;
+  }
+
+  body.theme-light #mainNav .nav-link.active,
+  body.theme-light #mainNav .nav-link:hover {
+    opacity: 1;
+  }
+}
+
+/* ✅ Auth buttons in mobile nav */
+@media (max-width: 991.98px) {
+  #mainNav .btn {
+    min-height: 44px;
+    font-weight: 700;
+  }
+
+  #mainNav .btn-outline-light {
+    background: rgba(15, 23, 42, 0.55);
+    border-color: rgba(148, 163, 184, 0.55);
+  }
+
+  body.theme-light #mainNav .btn-outline-light {
+    background: rgba(15, 23, 42, 0.04);
+    border-color: rgba(15, 23, 42, 0.18);
+    color: #0f172a;
+  }
+}
