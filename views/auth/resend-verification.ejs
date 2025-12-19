@@ -1,0 +1,27 @@
+<%- include('../partials/header', { currentPath: '/auth/resend-verification' }) %>
+
+<div class="auth-card">
+  <h1 class="mb-2">Resend verification</h1>
+  <p class="text-secondary mb-3">Enter your email and we’ll send a new verification link.</p>
+
+  <% if (error) { %>
+    <div class="alert alert-danger"><%= error %></div>
+  <% } %>
+
+  <% if (sent) { %>
+    <div class="alert alert-success"><%= message || 'Sent.' %></div>
+  <% } %>
+
+  <form method="POST" action="/auth/resend-verification">
+    <label class="form-label">Email</label>
+    <input name="email" type="email" class="form-control mb-3" required />
+
+    <button class="btn btn-primary w-100" type="submit">Send link</button>
+  </form>
+
+  <div class="mt-3 text-center">
+    <a href="/auth/login">Back to login</a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -66,12 +66,16 @@ router.post('/register', async (req, res) => {
     user.emailVerifyTokenHash = tokenHash;
     user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
 
+    user.emailVerificationSentAt = new Date();
+    user.emailVerificationSendCount = (user.emailVerificationSendCount || 0) + 1;
+
     await user.save();
 
     await sendVerifyEmail({
       to: user.email,
       name: user.displayName || user.email,
-      token
+      token,
+      userId: user._id
     });
 
     res.render('auth/login', { error: 'Check your email to verify your account, then log in.' });
@@ -108,6 +112,64 @@ router.get('/verify-email', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Something went wrong.');
+  }
+});
+
+router.get('/resend-verification', (req, res) => {
+  res.render('auth/resend-verification', { error: null, sent: false, message: null });
+});
+
+router.post('/resend-verification', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').toLowerCase().trim();
+    const genericMsg = 'If that email exists, we sent a new verification link.';
+
+    if (!email) {
+      return res.render('auth/resend-verification', { error: 'Enter your email.', sent: false, message: null });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.render('auth/resend-verification', { error: null, sent: true, message: genericMsg });
+    }
+
+    if (user.emailVerified) {
+      return res.render('auth/resend-verification', { error: null, sent: true, message: 'Your email is already verified. You can log in.' });
+    }
+
+    const last = user.emailVerificationSentAt ? new Date(user.emailVerificationSentAt).getTime() : 0;
+    const now = Date.now();
+    if (last && now - last < 60 * 1000) {
+      return res.render('auth/resend-verification', {
+        error: 'Wait 1 minute before requesting another email.',
+        sent: false,
+        message: null
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    user.emailVerifyTokenHash = tokenHash;
+    user.emailVerifyTokenExpires = new Date(Date.now() + 1000 * 60 * 60 * 24);
+
+    user.emailVerificationSentAt = new Date();
+    user.emailVerificationSendCount = (user.emailVerificationSendCount || 0) + 1;
+
+    await user.save();
+
+    await sendVerifyEmail({
+      to: user.email,
+      name: user.displayName || user.email,
+      token,
+      userId: user._id
+    });
+
+    return res.render('auth/resend-verification', { error: null, sent: true, message: genericMsg });
+  } catch (err) {
+    console.error(err);
+    return res.render('auth/resend-verification', { error: 'Something went wrong. Try again.', sent: false, message: null });
   }
 });
 
