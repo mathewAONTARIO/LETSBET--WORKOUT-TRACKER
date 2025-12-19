@@ -2888,3 +2888,59 @@ body.theme-light .progress {
   transition: width 0.35s ease;
 }
 .fit-green { color: #22c55e; font-weight: 800; }
+
+@media (max-width: 991.98px) {
+
+  #mainNav.collapse.show {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(88vw, 360px);
+    background: rgba(2, 6, 23, 0.98);
+    border-left: 1px solid rgba(148, 163, 184, 0.20);
+    padding: 18px 16px 22px;
+    z-index: 2000;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .navbar .navbar-toggler {
+    position: relative;
+    z-index: 2100;
+  }
+
+  #mainNav .navbar-nav {
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  #mainNav .nav-link {
+    padding: 12px 12px;
+    border-radius: 12px;
+  }
+
+  #mainNav .d-flex.align-items-center.gap-2 {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-top: 12px;
+  }
+
+  #mainNav .btn {
+    width: 100%;
+  }
+
+  #mainNav .dropdown-menu {
+    position: static !important;
+    float: none !important;
+    width: 100%;
+    margin-top: 8px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(148, 163, 184, 0.20);
+  }
+
+  #mainNav .dropdown-item {
+    padding: 12px 12px;
+  }
+}
