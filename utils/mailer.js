@@ -17,7 +17,6 @@ function escapeHtml(s = '') {
   return String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
@@ -26,6 +25,7 @@ function escapeHtml(s = '') {
 function verificationEmailTemplate({ name, verifyUrl }) {
   const safeName = escapeHtml(name || 'athlete');
   const safeUrl = escapeHtml(verifyUrl);
+  const logoUrl = `${APP_URL}/img/logo/logo-email.png`;
 
   return `<!doctype html>
 <html>
@@ -34,56 +34,82 @@ function verificationEmailTemplate({ name, verifyUrl }) {
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Verify your LETSBETFit email</title>
   </head>
+
   <body style="margin:0;padding:0;background:#0b1220;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#e5e7eb;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0b1220;padding:32px 12px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1220;padding:32px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:16px;overflow:hidden;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#0f172a;border-radius:16px;border:1px solid rgba(148,163,184,.25);overflow:hidden;">
+
+            <!-- HEADER -->
             <tr>
-              <td style="padding:18px 20px;background:rgba(2,6,23,.6);border-bottom:1px solid rgba(148,163,184,.18);">
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:34px;height:34px;border-radius:10px;background:#111827;border:1px solid rgba(148,163,184,.25);display:flex;align-items:center;justify-content:center;">
-                    <span style="font-weight:800;letter-spacing:.08em;color:#22c55e;">LB</span>
-                  </div>
-                  <div style="line-height:1;">
-                    <div style="font-weight:800;letter-spacing:.12em;font-size:12px;color:#f9fafb;">LETSBET<span style="color:#22c55e;">Fit</span></div>
-                    <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Verify your email</div>
-                  </div>
-                </div>
+              <td style="padding:18px 20px;background:#020617;border-bottom:1px solid rgba(148,163,184,.18);">
+                <table cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align:middle;padding-right:12px;">
+                      <img
+                        src="${logoUrl}"
+                        width="36"
+                        height="36"
+                        alt="LETSBETFit"
+                        style="display:block;border-radius:8px;"
+                      />
+                    </td>
+                    <td style="vertical-align:middle;">
+                      <div style="font-weight:800;font-size:13px;letter-spacing:.12em;color:#f9fafb;">
+                        LETSBET<span style="color:#22c55e;">Fit</span>
+                      </div>
+                      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
+                        Verify your email
+                      </div>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
 
+            <!-- BODY -->
             <tr>
               <td style="padding:22px 20px 10px;">
-                <div style="font-size:18px;font-weight:800;color:#f9fafb;margin-bottom:6px;">Welcome, ${safeName} 👋</div>
+                <div style="font-size:18px;font-weight:800;color:#f9fafb;margin-bottom:6px;">
+                  Welcome, ${safeName} 👋
+                </div>
                 <div style="font-size:14px;line-height:1.6;color:#cbd5f5;">
                   Please confirm your email address to activate your LETSBETFit account.
                 </div>
               </td>
             </tr>
 
+            <!-- BUTTON -->
             <tr>
               <td style="padding:14px 20px 18px;">
-                <a href="${safeUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 16px;border-radius:999px;font-size:14px;">
+                <a
+                  href="${safeUrl}"
+                  style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:999px;font-size:14px;"
+                >
                   Verify email
                 </a>
               </td>
             </tr>
 
+            <!-- FALLBACK LINK -->
             <tr>
               <td style="padding:0 20px 18px;">
                 <div style="font-size:12px;color:#94a3b8;line-height:1.6;">
                   If the button doesn’t work, copy and paste this link:
                   <div style="word-break:break-all;margin-top:6px;">
-                    <a href="${safeUrl}" style="color:#93c5fd;text-decoration:none;">${safeUrl}</a>
+                    <a href="${safeUrl}" style="color:#93c5fd;text-decoration:none;">
+                      ${safeUrl}
+                    </a>
                   </div>
                 </div>
               </td>
             </tr>
 
+            <!-- FOOTER -->
             <tr>
-              <td style="padding:14px 20px;background:rgba(2,6,23,.6);border-top:1px solid rgba(148,163,184,.18);">
-                <div style="font-size:12px;color:#94a3b8;line-height:1.6;">
+              <td style="padding:14px 20px;background:#020617;border-top:1px solid rgba(148,163,184,.18);">
+                <div style="font-size:12px;color:#94a3b8;">
                   If you didn’t create this account, you can ignore this email.
                 </div>
                 <div style="font-size:12px;color:#64748b;margin-top:10px;letter-spacing:.10em;text-transform:uppercase;">
@@ -113,7 +139,10 @@ async function sendMail({ to, subject, html, text }) {
 async function sendVerifyEmail({ to, name, token }) {
   if (!APP_URL) throw new Error('APP_URL is missing');
 
-  const verifyUrl = `${APP_URL}/auth/verify-email?token=${encodeURIComponent(token)}&email=${encodeURIComponent(to)}`;
+  const verifyUrl = `${APP_URL}/auth/verify-email?token=${encodeURIComponent(
+    token
+  )}&email=${encodeURIComponent(to)}`;
+
   const html = verificationEmailTemplate({ name, verifyUrl });
 
   await sendMail({
