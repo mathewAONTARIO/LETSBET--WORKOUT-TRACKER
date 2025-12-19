@@ -1,12 +1,11 @@
-// controllers/workoutController.js
 const mongoose = require('mongoose');
 const Workout = require('../models/Workout');
+const Settings = require('../models/Settings');
 
 function getUserId(req) {
   return req.session && req.session.userId;
 }
 
-// Helper: make date safe (accepts "YYYY-MM-DD" or Date)
 function toDateOrToday(value) {
   if (!value) return new Date();
 
@@ -39,8 +38,36 @@ function monthParamFromDate(d) {
 }
 
 function monthLabelFromDate(d) {
-  // Example: "December 2025"
   return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+function startOfWeekMonday(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = x.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfWeekMonday(d) {
+  const start = startOfWeekMonday(d);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  end.setHours(0, 0, 0, 0);
+  return end;
+}
+
+async function getWeeklyGoalForUser(userId) {
+  try {
+    const s = await Settings.findOne({ user: userId }).lean();
+    const goal = Number(s && (s.weeklyGoal ?? s.weekly_workout_goal ?? s.goal));
+    if (Number.isFinite(goal) && goal > 0) return goal;
+    return 5;
+  } catch (e) {
+    return 5;
+  }
 }
 
 exports.getWorkouts = async (req, res) => {
@@ -69,7 +96,6 @@ exports.showNewForm = (req, res) => {
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
-  // ✅ REQUIRED by new.ejs
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: todayStr,
@@ -91,7 +117,7 @@ exports.createWorkout = async (req, res) => {
       sets: sets ? Number(sets) : undefined,
       reps: reps ? Number(reps) : undefined,
       weight: weight ? Number(weight) : undefined,
-      date: toDateOrToday(date), // ✅ date-safe
+      date: toDateOrToday(date),
       notes,
       isPR: isPR === 'on',
       user: userId
@@ -110,7 +136,6 @@ exports.showNewFormForDate = (req, res) => {
 
   const dateStr = req.params.date;
 
-  // ✅ REQUIRED by new.ejs
   res.render('workouts/new', {
     currentPath: '/workouts/new',
     today: dateStr,
@@ -133,7 +158,7 @@ exports.createWorkoutForDate = async (req, res) => {
       sets: sets ? Number(sets) : undefined,
       reps: reps ? Number(reps) : undefined,
       weight: weight ? Number(weight) : undefined,
-      date: toDateOrToday(forcedDate), // ✅ date-safe
+      date: toDateOrToday(forcedDate),
       notes,
       isPR: isPR === 'on',
       user: userId
@@ -152,13 +177,10 @@ exports.duplicateWorkout = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const original = await Workout.findOne({ _id: req.params.id, user: userId }).lean();
-
     if (!original) return res.redirect('/workouts?toast=error&type=error');
 
     const todayStr = new Date().toISOString().slice(0, 10);
 
-    // Optional: If you ever want a "duplicate -> edit before saving" flow,
-    // this makes your existing new.ejs work perfectly.
     res.render('workouts/new', {
       currentPath: '/workouts/new',
       today: todayStr,
@@ -177,7 +199,6 @@ exports.showEditForm = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({ _id: req.params.id, user: userId });
-
     if (!workout) return res.redirect('/workouts');
 
     res.render('workouts/edit', {
@@ -205,7 +226,7 @@ exports.updateWorkout = async (req, res) => {
         sets: sets ? Number(sets) : undefined,
         reps: reps ? Number(reps) : undefined,
         weight: weight ? Number(weight) : undefined,
-        date: toDateOrToday(date), // ✅ date-safe
+        date: toDateOrToday(date),
         notes,
         isPR: isPR === 'on'
       }
@@ -224,7 +245,6 @@ exports.showDeleteConfirm = async (req, res) => {
     if (!userId) return res.redirect('/auth/login');
 
     const workout = await Workout.findOne({ _id: req.params.id, user: userId });
-
     if (!workout) return res.redirect('/workouts');
 
     res.render('workouts/delete', {
@@ -262,46 +282,57 @@ exports.getStreak = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).sort({ date: 1 });
+    const workouts = await Workout.find({ user: userId }).sort({ date: 1 }).lean();
 
     const daySet = new Set();
-    workouts.forEach(w => {
-      if (!w.date) return;
+    for (const w of workouts) {
+      if (!w.date) continue;
       daySet.add(new Date(w.date).toISOString().slice(0, 10));
-    });
+    }
 
     const days = Array.from(daySet).sort();
-
-    let currentStreak = 0;
-    let longestStreak = 0;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    let currentStreak = 0;
     let cursor = new Date(today);
     while (daySet.has(cursor.toISOString().slice(0, 10))) {
       currentStreak++;
       cursor.setDate(cursor.getDate() - 1);
     }
 
-    let temp = 1;
-    for (let i = 1; i < days.length; i++) {
-      const diff = (new Date(days[i]) - new Date(days[i - 1])) / (1000 * 60 * 60 * 24);
-      if (diff === 1) temp++;
-      else {
-        longestStreak = Math.max(longestStreak, temp);
-        temp = 1;
+    let longestStreak = 0;
+    if (days.length > 0) {
+      let temp = 1;
+      for (let i = 1; i < days.length; i++) {
+        const diff = (new Date(days[i]) - new Date(days[i - 1])) / (1000 * 60 * 60 * 24);
+        if (diff === 1) temp++;
+        else {
+          longestStreak = Math.max(longestStreak, temp);
+          temp = 1;
+        }
       }
+      longestStreak = Math.max(longestStreak, temp);
     }
-    longestStreak = Math.max(longestStreak, temp);
+
+    const weekStart = startOfWeekMonday(today);
+    const weekEnd = endOfWeekMonday(today);
+
+    const workoutsThisWeek = await Workout.countDocuments({
+      user: userId,
+      date: { $gte: weekStart, $lt: weekEnd }
+    });
+
+    const weeklyGoal = await getWeeklyGoalForUser(userId);
 
     res.render('workouts/streak', {
       currentStreak,
       longestStreak,
       totalDays: days.length,
-      lastWorkoutDate: days.at(-1),
-      workoutsThisWeek: 0,
-      weeklyGoal: 0,
+      lastWorkoutDate: days.length ? days.at(-1) : null,
+      workoutsThisWeek,
+      weeklyGoal,
       currentPath: '/workouts/streak'
     });
   } catch (err) {
@@ -323,7 +354,7 @@ exports.getStats = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId });
+    const workouts = await Workout.find({ user: userId }).lean();
 
     const totalWorkouts = workouts.length;
     const totalWeight = workouts.reduce(
@@ -357,7 +388,7 @@ exports.getPRs = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId });
+    const workouts = await Workout.find({ user: userId }).lean();
 
     res.render('workouts/prs', {
       prs: workouts.filter(w => w.isPR),
@@ -381,7 +412,6 @@ exports.getCalendar = async (req, res) => {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    // month query: YYYY-MM
     const monthParam = typeof req.query.month === 'string' ? req.query.month : '';
     let base = new Date();
     base.setDate(1);
@@ -396,33 +426,30 @@ exports.getCalendar = async (req, res) => {
     const prev = new Date(base.getFullYear(), base.getMonth() - 1, 1);
     const next = new Date(base.getFullYear(), base.getMonth() + 1, 1);
 
-    // Month range for workouts lookup
     const monthStart = new Date(base.getFullYear(), base.getMonth(), 1);
     monthStart.setHours(0, 0, 0, 0);
     const monthEnd = new Date(base.getFullYear(), base.getMonth() + 1, 1);
     monthEnd.setHours(0, 0, 0, 0);
 
-    // Pull workouts in this month (for hasWorkout)
     const workouts = await Workout.find({
       user: userId,
       date: { $gte: monthStart, $lt: monthEnd }
     }).select('date weight sets reps').lean();
 
     const workoutDays = new Set();
-    workouts.forEach(w => {
-      if (!w.date) return;
+    for (const w of workouts) {
+      if (!w.date) continue;
       workoutDays.add(new Date(w.date).toISOString().slice(0, 10));
-    });
+    }
 
-    // Build calendar grid (Sunday-start)
     const firstDayOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
     const startGrid = new Date(firstDayOfMonth);
-    startGrid.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay()); // back to Sunday
+    startGrid.setDate(firstDayOfMonth.getDate() - firstDayOfMonth.getDay());
     startGrid.setHours(0, 0, 0, 0);
 
     const lastDayOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
     const endGrid = new Date(lastDayOfMonth);
-    endGrid.setDate(lastDayOfMonth.getDate() + (6 - lastDayOfMonth.getDay())); // forward to Saturday
+    endGrid.setDate(lastDayOfMonth.getDate() + (6 - lastDayOfMonth.getDay()));
     endGrid.setHours(0, 0, 0, 0);
 
     const today = new Date();
@@ -439,11 +466,9 @@ exports.getCalendar = async (req, res) => {
       const isFuture = cursor > today;
       const hasWorkout = workoutDays.has(key);
 
-      // you had "intensity" in EJS; keep it simple for now
-      // (you can later calculate intensity based on volume)
       days.push({
-        label: key,            // "YYYY-MM-DD"
-        day: cursor.getDate(), // number
+        label: key,
+        day: cursor.getDate(),
         inMonth,
         isToday,
         isFuture,
@@ -458,8 +483,8 @@ exports.getCalendar = async (req, res) => {
       currentPath: '/workouts/calendar',
       prevMonthParam: monthParamFromDate(prev),
       nextMonthParam: monthParamFromDate(next),
-      monthLabel: monthLabelFromDate(base), // ✅ REQUIRED by calendar.ejs
-      days                                // ✅ REQUIRED by calendar.ejs
+      monthLabel: monthLabelFromDate(base),
+      days
     });
   } catch (err) {
     console.error('getCalendar error:', err);
