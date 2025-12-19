@@ -1,9 +1,8 @@
-// routes/index.js
 const express = require('express');
 const router = express.Router();
 
 const Workout = require('../models/Workout');
-const Meal = require('../models/Meal'); // make sure this file exists
+const Meal = require('../models/Meal');
 
 function startOfDay(d) {
   const x = new Date(d);
@@ -25,6 +24,15 @@ function dayKey(d) {
   return `${y}-${m}-${dd}`;
 }
 
+function startOfWeekMonday(d) {
+  const x = startOfDay(d);
+  const day = x.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
 router.get('/', async (req, res) => {
   const currentUser = res.locals.currentUser;
   const isLoggedIn = !!currentUser;
@@ -35,31 +43,25 @@ router.get('/', async (req, res) => {
     todayWorkoutCount: 0,
     todayVolume: 0,
     todayCalories: 0,
-
-    // ✅ these now represent "days", not workout items
     weeklyWorkouts: 0,
     weeklyWorkoutsCount: 0,
-    weeklyGoal: isLoggedIn ? (currentUser.weeklyGoal || 4) : 4,
+    weeklyGoal: isLoggedIn ? (Number(currentUser.weeklyGoal) || 4) : 4,
     weeklyProgressPercent: 0,
-
-    // ✅ streak should be in days
     streakDays: 0,
-
     workoutOfDay: null
   };
 
-  if (!isLoggedIn) {
-    return res.render('home', baseProps);
-  }
+  if (!isLoggedIn) return res.render('home', baseProps);
 
   try {
     const today = startOfDay(new Date());
     const tomorrow = addDays(today, 1);
 
-    const weekStart = addDays(today, -6); // last 7 days incl today
-    const lookbackStart = addDays(today, -60); // for streak calc
+    const weekStart = startOfWeekMonday(today);
+    const weekEnd = addDays(weekStart, 7);
 
-    // ----- today’s workouts -----
+    const lookbackStart = addDays(today, -60);
+
     const todayWorkouts = await Workout.find({
       user: currentUser._id,
       date: { $gte: today, $lt: tomorrow }
@@ -68,24 +70,22 @@ router.get('/', async (req, res) => {
     const todayWorkoutCount = todayWorkouts.length;
 
     const todayVolume = todayWorkouts.reduce((sum, w) => {
-      const sets = w.sets || 0;
-      const reps = w.reps || 0;
-      const weight = w.weight || 0;
+      const sets = Number(w.sets || 0);
+      const reps = Number(w.reps || 0);
+      const weight = Number(w.weight || 0);
       return sum + sets * reps * weight;
     }, 0);
 
-    // ----- today’s meals -----
     const todayMeals = await Meal.find({
       user: currentUser._id,
       date: { $gte: today, $lt: tomorrow }
     }).sort({ date: -1 });
 
-    const todayCalories = todayMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+    const todayCalories = todayMeals.reduce((sum, m) => sum + Number(m.calories || 0), 0);
 
-    // ----- weekly workouts: count UNIQUE DAYS -----
     const weeklyWorkoutsDocs = await Workout.find({
       user: currentUser._id,
-      date: { $gte: weekStart, $lt: tomorrow }
+      date: { $gte: weekStart, $lt: weekEnd }
     }).sort({ date: 1 });
 
     const weeklyWorkoutsCount = weeklyWorkoutsDocs.length;
@@ -93,11 +93,12 @@ router.get('/', async (req, res) => {
     const weeklyDaySet = new Set();
     for (const w of weeklyWorkoutsDocs) weeklyDaySet.add(dayKey(w.date));
 
-    const weeklyWorkouts = weeklyDaySet.size; // ✅ days active (what your UI wants)
-    const weeklyGoal = currentUser.weeklyGoal || 4;
-    const weeklyProgressPercent = Math.min(Math.round((weeklyWorkouts / weeklyGoal) * 100), 100);
+    const weeklyWorkouts = weeklyDaySet.size;
+    const weeklyGoal = Number(currentUser.weeklyGoal) || 4;
 
-    // ----- streak: consecutive UNIQUE DAYS ending today -----
+    const weeklyProgressPercent =
+      weeklyGoal > 0 ? Math.min(Math.round((weeklyWorkouts / weeklyGoal) * 100), 100) : 0;
+
     const streakDocs = await Workout.find({
       user: currentUser._id,
       date: { $gte: lookbackStart, $lt: tomorrow }
@@ -121,14 +122,11 @@ router.get('/', async (req, res) => {
       todayWorkoutCount,
       todayVolume,
       todayCalories,
-
-      weeklyWorkouts, // ✅ days
-      weeklyWorkoutsCount, // optional (raw workout count)
+      weeklyWorkouts,
+      weeklyWorkoutsCount,
       weeklyGoal,
       weeklyProgressPercent,
-
-      streakDays, // ✅ days
-
+      streakDays,
       workoutOfDay
     });
   } catch (err) {
@@ -137,4 +135,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = router; 
