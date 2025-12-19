@@ -319,10 +319,20 @@ exports.getStreak = async (req, res) => {
     const weekStart = startOfWeekMonday(today);
     const weekEnd = endOfWeekMonday(today);
 
-    const workoutsThisWeek = await Workout.countDocuments({
+    const workoutsThisWeekDocs = await Workout.find({
       user: userId,
       date: { $gte: weekStart, $lt: weekEnd }
-    });
+    })
+      .select('date')
+      .lean();
+
+    const weekDaySet = new Set();
+    for (const w of workoutsThisWeekDocs) {
+      if (!w.date) continue;
+      weekDaySet.add(new Date(w.date).toISOString().slice(0, 10));
+    }
+
+    const workoutsThisWeek = weekDaySet.size;
 
     const weeklyGoal = await getWeeklyGoalForUser(userId);
 
@@ -449,14 +459,14 @@ exports.getCalendar = async (req, res) => {
 
     const lastDayOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
     const endGrid = new Date(lastDayOfMonth);
-    endGrid.setDate(lastDayOfMonth.getDate() + (6 - lastDayOfMonth.getDay()));
+    endGrid.setDate(endGrid.getDate() + (6 - endGrid.getDay()));
     endGrid.setHours(0, 0, 0, 0);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayKey = ymd(today);
 
-    const days = [];
+    const daysGrid = [];
     let cursor = new Date(startGrid);
 
     while (cursor <= endGrid) {
@@ -466,7 +476,7 @@ exports.getCalendar = async (req, res) => {
       const isFuture = cursor > today;
       const hasWorkout = workoutDays.has(key);
 
-      days.push({
+      daysGrid.push({
         label: key,
         day: cursor.getDate(),
         inMonth,
@@ -484,7 +494,7 @@ exports.getCalendar = async (req, res) => {
       prevMonthParam: monthParamFromDate(prev),
       nextMonthParam: monthParamFromDate(next),
       monthLabel: monthLabelFromDate(base),
-      days
+      days: daysGrid
     });
   } catch (err) {
     console.error('getCalendar error:', err);
