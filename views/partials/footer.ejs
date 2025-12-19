@@ -18,13 +18,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker
-            .register('/sw.js')
-            .catch(function (err) {
-              console.error('Service worker registration failed:', err);
-            });
+      const ENABLE_SW = "<%= process.env.ENABLE_SW || '0' %>";
+      if (ENABLE_SW === "1" && "serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("/sw.js").catch(function (err) {
+            console.error("Service worker registration failed:", err);
+          });
         });
       }
 
@@ -108,18 +107,11 @@
 
       function attachLoadingHandlers() {
         document
-          .querySelectorAll(
-            'a.nav-link, a.btn, a[href^="/workouts"], a[href^="/meals"]'
-          )
+          .querySelectorAll('a.nav-link, a.btn, a[href^="/workouts"], a[href^="/meals"]')
           .forEach(function (link) {
             link.addEventListener('click', function (e) {
               const href = link.getAttribute('href') || '';
-              if (
-                href.startsWith('#') ||
-                href.startsWith('mailto:') ||
-                href.startsWith('tel:')
-              )
-                return;
+              if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
               if (e.ctrlKey || e.metaKey || e.shiftKey) return;
               showLoader();
             });
@@ -149,12 +141,8 @@
           row.addEventListener('touchmove', function (e) {
             if (!activeRow) return;
             const deltaX = e.touches[0].clientX - startX;
-            if (deltaX < -25) {
-              activeRow.classList.add('swiped-left');
-            }
-            if (deltaX > 25) {
-              activeRow.classList.remove('swiped-left');
-            }
+            if (deltaX < -25) activeRow.classList.add('swiped-left');
+            if (deltaX > 25) activeRow.classList.remove('swiped-left');
           });
 
           row.addEventListener('touchend', function () {
@@ -169,7 +157,6 @@
         let startY = 0;
         let pulling = false;
         let pulledEnough = false;
-
         const threshold = 60;
 
         window.addEventListener('touchstart', function (e) {
@@ -184,9 +171,7 @@
           if (!pulling) return;
           const currentY = e.touches[0].clientY;
           const delta = currentY - startY;
-          if (delta > threshold) {
-            pulledEnough = true;
-          }
+          if (delta > threshold) pulledEnough = true;
         });
 
         window.addEventListener('touchend', function () {
