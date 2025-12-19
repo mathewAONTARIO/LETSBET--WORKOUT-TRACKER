@@ -23,6 +23,11 @@ function escapeHtml(s = '') {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * ✅ Email client “dark mode” note:
+ * Some clients (esp. iOS Mail) auto-invert colors. These meta tags + background-image
+ * help reduce how aggressively it flips your dark theme.
+ */
 function verificationEmailTemplate({ name, verifyUrl }) {
   const safeName = escapeHtml(name || 'athlete');
   const safeUrl = escapeHtml(verifyUrl);
@@ -32,13 +37,28 @@ function verificationEmailTemplate({ name, verifyUrl }) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
     <title>Verify your LETSBETFit email</title>
   </head>
-  <body style="margin:0;padding:0;background:#0b1220;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#e5e7eb;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0b1220;padding:32px 12px;">
+
+  <body
+    style="margin:0;padding:0;
+      background:#0b1220;
+      background-image:linear-gradient(#0b1220,#0b1220);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+      color:#e5e7eb;
+      -webkit-text-size-adjust:100%;
+    "
+  >
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+      bgcolor="#0b1220"
+      style="background:#0b1220;background-image:linear-gradient(#0b1220,#0b1220);padding:32px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:16px;overflow:hidden;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+            bgcolor="#0f172a"
+            style="max-width:560px;background:#0f172a;border:1px solid rgba(148,163,184,.25);border-radius:16px;overflow:hidden;">
             <tr>
               <td style="padding:18px 20px;background:rgba(2,6,23,.6);border-bottom:1px solid rgba(148,163,184,.18);">
                 <div style="display:flex;align-items:center;gap:10px;">

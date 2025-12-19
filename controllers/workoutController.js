@@ -365,23 +365,36 @@ exports.deleteWorkout = async (req, res) => {
   }
 };
 
+/* ==========================================================
+   ✅ FIX: streak + weekly should NOT count future workouts
+========================================================== */
 exports.getStreak = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).sort({ date: 1 }).lean();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // ✅ ignore future workouts
+    const workouts = await Workout.find({
+      user: userId,
+      date: { $lt: tomorrow }
+    })
+      .sort({ date: 1 })
+      .lean();
 
     const daySet = new Set();
     for (const w of workouts) {
       if (!w.date) continue;
-      daySet.add(new Date(w.date).toISOString().slice(0, 10));
+      const d = new Date(w.date);
+      if (d >= tomorrow) continue;
+      daySet.add(d.toISOString().slice(0, 10));
     }
 
     const days = Array.from(daySet).sort();
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     let currentStreak = 0;
     let cursor = new Date(today);
@@ -405,11 +418,11 @@ exports.getStreak = async (req, res) => {
     }
 
     const weekStart = startOfWeekMonday(today);
-    const weekEnd = endOfWeekMonday(today);
+    // const weekEnd = endOfWeekMonday(today); // not needed for “completed” count
 
     const workoutsThisWeekDocs = await Workout.find({
       user: userId,
-      date: { $gte: weekStart, $lt: weekEnd }
+      date: { $gte: weekStart, $lt: tomorrow }
     })
       .select('date')
       .lean();
@@ -446,12 +459,23 @@ exports.getStreak = async (req, res) => {
   }
 };
 
+/* ==========================================================
+   ✅ FIX: stats should NOT count future workouts
+========================================================== */
 exports.getStats = async (req, res) => {
   try {
     const userId = getUserId(req);
     if (!userId) return res.redirect('/auth/login');
 
-    const workouts = await Workout.find({ user: userId }).lean();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const workouts = await Workout.find({
+      user: userId,
+      date: { $lt: tomorrow }
+    }).lean();
 
     const totalWorkouts = workouts.length;
     const totalWeight = workouts.reduce(

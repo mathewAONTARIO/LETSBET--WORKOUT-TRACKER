@@ -58,10 +58,11 @@ router.get('/', async (req, res) => {
     const tomorrow = addDays(today, 1);
 
     const weekStart = startOfWeekMonday(today);
-    const weekEnd = addDays(weekStart, 7);
+    // const weekEnd = addDays(weekStart, 7); // keep if you want, but don’t use it for “completed”
 
     const lookbackStart = addDays(today, -60);
 
+    // ✅ TODAY (already correct)
     const todayWorkouts = await Workout.find({
       user: currentUser._id,
       date: { $gte: today, $lt: tomorrow }
@@ -83,9 +84,10 @@ router.get('/', async (req, res) => {
 
     const todayCalories = todayMeals.reduce((sum, m) => sum + Number(m.calories || 0), 0);
 
+    // ✅ THIS WEEK = only up to TODAY (so future scheduled doesn’t count)
     const weeklyWorkoutsDocs = await Workout.find({
       user: currentUser._id,
-      date: { $gte: weekStart, $lt: weekEnd }
+      date: { $gte: weekStart, $lt: tomorrow }
     }).sort({ date: 1 });
 
     const weeklyWorkoutsCount = weeklyWorkoutsDocs.length;
@@ -99,6 +101,7 @@ router.get('/', async (req, res) => {
     const weeklyProgressPercent =
       weeklyGoal > 0 ? Math.min(Math.round((weeklyWorkouts / weeklyGoal) * 100), 100) : 0;
 
+    // ✅ STREAK = only consider days up to TODAY
     const streakDocs = await Workout.find({
       user: currentUser._id,
       date: { $gte: lookbackStart, $lt: tomorrow }
@@ -115,7 +118,8 @@ router.get('/', async (req, res) => {
     }
 
     const workoutOfDay =
-      todayWorkouts[0] || (weeklyWorkoutsDocs.length ? weeklyWorkoutsDocs[weeklyWorkoutsDocs.length - 1] : null);
+      todayWorkouts[0] ||
+      (weeklyWorkoutsDocs.length ? weeklyWorkoutsDocs[weeklyWorkoutsDocs.length - 1] : null);
 
     return res.render('home', {
       ...baseProps,
@@ -135,4 +139,4 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
