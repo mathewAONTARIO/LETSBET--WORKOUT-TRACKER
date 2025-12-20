@@ -25,25 +25,36 @@ const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(req, file, cb) {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error());
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Invalid file type'));
     cb(null, true);
   }
 });
 
-const normalize = (s) => s.replace(/[’‘]/g, "'");
+const normalize = (s) => String(s || '').replace(/[’‘]/g, "'").trim();
 
-router.get('/settings', requireLogin, async (req, res) => {
+/* -----------------------------------------
+   ROUTES
+------------------------------------------ */
+
+// ✅ Keep old URL working, but redirect to new canonical
+router.get('/settings', requireLogin, (req, res) => {
+  return res.redirect(302, '/account/profile');
+});
+
+// ✅ New canonical Profile page
+router.get('/profile', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
 
   res.render('workouts/settings', {
-    currentPath: '/account/settings',
+    currentPath: '/account/profile',
     currentUser: user,
     profileSaved: req.query.saved === '1',
     reminderSaved: req.query.reminder === '1'
   });
 });
 
+// ✅ Save profile (and optional avatar upload) in one endpoint
 router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
@@ -67,34 +78,17 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
       if (!Number.isNaN(ageNum)) user.age = ageNum;
     }
 
-    if (typeof req.body.height === 'string') {
-      user.heightValue = normalize(req.body.height.trim());
-    }
-    if (typeof req.body.heightUnit === 'string') {
-      user.heightUnit = req.body.heightUnit;
-    }
+    if (typeof req.body.height === 'string') user.heightValue = normalize(req.body.height);
+    if (typeof req.body.heightUnit === 'string') user.heightUnit = req.body.heightUnit;
 
-    if (typeof req.body.weight === 'string') {
-      user.weightValue = req.body.weight.trim();
-    }
-    if (typeof req.body.weightUnit === 'string') {
-      user.weightUnit = req.body.weightUnit;
-    }
+    if (typeof req.body.weight === 'string') user.weightValue = normalize(req.body.weight);
+    if (typeof req.body.weightUnit === 'string') user.weightUnit = req.body.weightUnit;
 
-    if (typeof req.body.targetWeight === 'string') {
-      user.targetWeightValue = req.body.targetWeight.trim();
-    }
-    if (typeof req.body.targetWeightUnit === 'string') {
-      user.targetWeightUnit = req.body.targetWeightUnit;
-    }
+    if (typeof req.body.targetWeight === 'string') user.targetWeightValue = normalize(req.body.targetWeight);
+    if (typeof req.body.targetWeightUnit === 'string') user.targetWeightUnit = req.body.targetWeightUnit;
 
-    if (typeof req.body.primaryGoal === 'string') {
-      user.primaryGoal = req.body.primaryGoal;
-    }
-
-    if (typeof req.body.trainingExperience === 'string') {
-      user.trainingExperience = req.body.trainingExperience;
-    }
+    if (typeof req.body.primaryGoal === 'string') user.primaryGoal = req.body.primaryGoal;
+    if (typeof req.body.trainingExperience === 'string') user.trainingExperience = req.body.trainingExperience;
 
     if (req.file) {
       user.profilePhotoUrl = `/uploads/avatars/${req.file.filename}`;
@@ -123,18 +117,23 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
       reminderTime: user.reminderTime
     };
 
-    res.redirect('/account/settings?saved=1');
+    return res.redirect('/account/profile?saved=1');
   } catch (err) {
-    res.redirect('/account/settings?toast=error&type=error');
+    console.error('profile save error:', err);
+    return res.redirect('/account/profile?toast=error&type=error');
   }
 });
 
+// ✅ Save reminders (accept BOTH naming styles: old + new)
 router.post('/reminder', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
 
-  user.dailyReminderEnabled = req.body.reminderEnabled === 'true' || req.body.reminderEnabled === 'on';
-  user.reminderTime = req.body.reminderTime || '18:00';
+  const enabledRaw = req.body.reminderEnabled ?? req.body.enabled;
+  const timeRaw = req.body.reminderTime ?? req.body.time;
+
+  user.dailyReminderEnabled = enabledRaw === 'true' || enabledRaw === 'on' || enabledRaw === true;
+  user.reminderTime = String(timeRaw || '18:00');
 
   await user.save();
 
@@ -144,7 +143,7 @@ router.post('/reminder', requireLogin, async (req, res) => {
     reminderTime: user.reminderTime
   };
 
-  res.redirect('/account/settings?reminder=1');
+  return res.redirect('/account/profile?reminder=1');
 });
 
 router.post('/theme', requireLogin, async (req, res) => {
@@ -155,7 +154,7 @@ router.post('/theme', requireLogin, async (req, res) => {
   await user.save();
 
   req.session.user = { ...(req.session.user || {}), theme: user.theme };
-  res.redirect(req.get('referer') || '/');
+  return res.redirect(req.get('referer') || '/');
 });
 
 router.post('/delete', requireLogin, async (req, res) => {
