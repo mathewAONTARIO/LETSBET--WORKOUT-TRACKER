@@ -7,6 +7,9 @@ const { requireLogin } = require('../middleware/auth');
 
 const router = express.Router();
 
+/* =========================
+   AVATAR UPLOAD SETUP
+========================= */
 const AVATAR_DIR = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
 
 const storage = multer.diskStorage({
@@ -25,23 +28,18 @@ const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter(req, file, cb) {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error('Invalid file type'));
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Invalid file type'));
+    }
     cb(null, true);
   }
 });
 
-const normalize = (s) => String(s || '').replace(/[’‘]/g, "'").trim();
+const normalize = (s) => String(s || '').replace(/[’‘]/g, "'");
 
-/* -----------------------------------------
-   ROUTES
------------------------------------------- */
-
-// ✅ Keep old URL working, but redirect to new canonical
-router.get('/settings', requireLogin, (req, res) => {
-  return res.redirect(302, '/account/profile');
-});
-
-// ✅ New canonical Profile page
+/* =========================
+   ✅ PROFILE PAGE (REAL ROUTE)
+========================= */
 router.get('/profile', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
@@ -54,13 +52,25 @@ router.get('/profile', requireLogin, async (req, res) => {
   });
 });
 
-// ✅ Save profile (and optional avatar upload) in one endpoint
+/* =========================
+   🔁 LEGACY SETTINGS → PROFILE
+========================= */
+router.get('/settings', requireLogin, (req, res) => {
+  const qs = req.originalUrl.includes('?')
+    ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
+    : '';
+  res.redirect(`/account/profile${qs}`);
+});
+
+/* =========================
+   SAVE PROFILE
+========================= */
 router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
     if (!user) return res.redirect('/auth/login');
 
-    if (typeof req.body.displayName === 'string' && req.body.displayName.trim()) {
+    if (req.body.displayName?.trim()) {
       user.displayName = req.body.displayName.trim();
     }
 
@@ -69,26 +79,24 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
       if (!Number.isNaN(wg)) user.weeklyGoal = wg;
     }
 
-    if (typeof req.body.gender === 'string' && req.body.gender) {
-      user.gender = req.body.gender;
-    }
+    if (req.body.gender) user.gender = req.body.gender;
 
     if (req.body.age) {
       const ageNum = parseInt(req.body.age, 10);
       if (!Number.isNaN(ageNum)) user.age = ageNum;
     }
 
-    if (typeof req.body.height === 'string') user.heightValue = normalize(req.body.height);
-    if (typeof req.body.heightUnit === 'string') user.heightUnit = req.body.heightUnit;
+    if (req.body.height) user.heightValue = normalize(req.body.height);
+    if (req.body.heightUnit) user.heightUnit = req.body.heightUnit;
 
-    if (typeof req.body.weight === 'string') user.weightValue = normalize(req.body.weight);
-    if (typeof req.body.weightUnit === 'string') user.weightUnit = req.body.weightUnit;
+    if (req.body.weight) user.weightValue = normalize(req.body.weight);
+    if (req.body.weightUnit) user.weightUnit = req.body.weightUnit;
 
-    if (typeof req.body.targetWeight === 'string') user.targetWeightValue = normalize(req.body.targetWeight);
-    if (typeof req.body.targetWeightUnit === 'string') user.targetWeightUnit = req.body.targetWeightUnit;
+    if (req.body.targetWeight) user.targetWeightValue = normalize(req.body.targetWeight);
+    if (req.body.targetWeightUnit) user.targetWeightUnit = req.body.targetWeightUnit;
 
-    if (typeof req.body.primaryGoal === 'string') user.primaryGoal = req.body.primaryGoal;
-    if (typeof req.body.trainingExperience === 'string') user.trainingExperience = req.body.trainingExperience;
+    if (req.body.primaryGoal) user.primaryGoal = req.body.primaryGoal;
+    if (req.body.trainingExperience) user.trainingExperience = req.body.trainingExperience;
 
     if (req.file) {
       user.profilePhotoUrl = `/uploads/avatars/${req.file.filename}`;
@@ -96,12 +104,11 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
 
     await user.save();
 
+    // keep session in sync
     req.session.user = {
-      _id: user._id,
-      email: user.email,
+      ...(req.session.user || {}),
       displayName: user.displayName,
       profilePhotoUrl: user.profilePhotoUrl,
-      theme: user.theme,
       weeklyGoal: user.weeklyGoal,
       gender: user.gender,
       age: user.age,
@@ -112,28 +119,28 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
       targetWeightValue: user.targetWeightValue,
       targetWeightUnit: user.targetWeightUnit,
       primaryGoal: user.primaryGoal,
-      trainingExperience: user.trainingExperience,
-      dailyReminderEnabled: user.dailyReminderEnabled,
-      reminderTime: user.reminderTime
+      trainingExperience: user.trainingExperience
     };
 
-    return res.redirect('/account/profile?saved=1');
+    res.redirect('/account/profile?saved=1');
   } catch (err) {
-    console.error('profile save error:', err);
-    return res.redirect('/account/profile?toast=error&type=error');
+    console.error(err);
+    res.redirect('/account/profile?error=1');
   }
 });
 
-// ✅ Save reminders (accept BOTH naming styles: old + new)
+/* =========================
+   SAVE REMINDER SETTINGS
+========================= */
 router.post('/reminder', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
 
-  const enabledRaw = req.body.reminderEnabled ?? req.body.enabled;
-  const timeRaw = req.body.reminderTime ?? req.body.time;
+  user.dailyReminderEnabled =
+    req.body.reminderEnabled === 'true' ||
+    req.body.reminderEnabled === 'on';
 
-  user.dailyReminderEnabled = enabledRaw === 'true' || enabledRaw === 'on' || enabledRaw === true;
-  user.reminderTime = String(timeRaw || '18:00');
+  user.reminderTime = req.body.reminderTime || '18:00';
 
   await user.save();
 
@@ -143,9 +150,12 @@ router.post('/reminder', requireLogin, async (req, res) => {
     reminderTime: user.reminderTime
   };
 
-  return res.redirect('/account/profile?reminder=1');
+  res.redirect('/account/profile?reminder=1');
 });
 
+/* =========================
+   THEME TOGGLE
+========================= */
 router.post('/theme', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
@@ -154,9 +164,12 @@ router.post('/theme', requireLogin, async (req, res) => {
   await user.save();
 
   req.session.user = { ...(req.session.user || {}), theme: user.theme };
-  return res.redirect(req.get('referer') || '/');
+  res.redirect(req.get('referer') || '/');
 });
 
+/* =========================
+   DELETE ACCOUNT
+========================= */
 router.post('/delete', requireLogin, async (req, res) => {
   await User.deleteOne({ _id: req.session.userId });
   req.session.destroy(() => res.redirect('/'));
