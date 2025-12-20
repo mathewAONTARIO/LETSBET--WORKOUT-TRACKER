@@ -1578,3 +1578,34 @@ body.theme-light .navbar-brand:hover {
     color: #0f172a;
   }
 }
+.profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  flex-shrink: 0;
+}
+
+.nav-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.9);
+  color: #f9fafb;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.nav-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

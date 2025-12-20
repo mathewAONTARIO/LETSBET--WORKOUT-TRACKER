@@ -18,7 +18,10 @@
       crossorigin="anonymous"
     />
 
-    <link rel="stylesheet" href="/css/style.css?v=<%= (process.env.ASSET_VERSION || '1') %>" />
+    <link
+      rel="stylesheet"
+      href="/css/style.css?v=<%= (process.env.ASSET_VERSION || '1') %>"
+    />
     <link rel="manifest" href="/manifest.json" />
   </head>
 
@@ -49,42 +52,101 @@
           <% if (currentUser) { %>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item">
-                <a class="nav-link <%= currentPath === '/' ? 'active' : '' %>" href="/">Home</a>
+                <a
+                  class="nav-link <%= currentPath === '/' ? 'active' : '' %>"
+                  href="/"
+                >Home</a>
               </li>
+
               <li class="nav-item">
-                <a class="nav-link <%= currentPath === '/workouts' ? 'active' : '' %>" href="/workouts">Workouts</a>
+                <a
+                  class="nav-link <%= currentPath === '/workouts' ? 'active' : '' %>"
+                  href="/workouts"
+                >Workouts</a>
               </li>
+
               <li class="nav-item">
-                <a class="nav-link <%= (currentPath || '').startsWith('/meals') ? 'active' : '' %>" href="/meals">Meals</a>
+                <a
+                  class="nav-link <%= (currentPath || '').startsWith('/meals') ? 'active' : '' %>"
+                  href="/meals"
+                >Meals</a>
               </li>
+
               <li class="nav-item">
-                <a class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>" href="/workouts/calendar">Calendar</a>
+                <a
+                  class="nav-link <%= currentPath === '/workouts/calendar' ? 'active' : '' %>"
+                  href="/workouts/calendar"
+                >Calendar</a>
               </li>
             </ul>
 
             <div class="d-flex align-items-center gap-2">
+              <!-- THEME TOGGLE -->
               <form action="/account/theme" method="POST" class="m-0">
-                <input type="hidden" name="theme" value="<%= currentTheme === 'light' ? 'dark' : 'light' %>" />
-                <input type="hidden" name="next" value="<%= currentPath || '/' %>" />
+                <input
+                  type="hidden"
+                  name="theme"
+                  value="<%= currentTheme === 'light' ? 'dark' : 'light' %>"
+                />
+                <input
+                  type="hidden"
+                  name="next"
+                  value="<%= currentPath || '/' %>"
+                />
                 <button type="submit" class="btn btn-outline-light btn-sm">
                   <%= currentTheme === 'light' ? '🌙' : '☀️' %>
                 </button>
               </form>
 
+              <!-- PROFILE DROPDOWN -->
               <div class="dropdown">
-                <button class="btn btn-outline-light btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-                  <%= currentUser.displayName || currentUser.email %>
+                <button
+                  class="btn btn-outline-light btn-sm dropdown-toggle profile-trigger"
+                  data-bs-toggle="dropdown"
+                >
+                  <% if (currentUser.profilePhotoUrl) { %>
+                    <img
+                      src="<%= currentUser.profilePhotoUrl %>"
+                      alt="Avatar"
+                      class="nav-avatar"
+                    />
+                  <% } else { %>
+                    <span class="nav-avatar nav-avatar-fallback">
+                      <%= (currentUser.displayName || currentUser.email || 'U')
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase() %>
+                    </span>
+                  <% } %>
+
+                  <span class="nav-name">
+                    <%= currentUser.displayName || currentUser.email %>
+                  </span>
                 </button>
+
                 <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item" href="/workouts/streak">Streak</a></li>
-                  <li><a class="dropdown-item" href="/workouts/stats">Stats</a></li>
-                  <li><a class="dropdown-item" href="/workouts/library">Library</a></li>
-                  <li><a class="dropdown-item" href="/insights">Insights</a></li>
-                  <li><a class="dropdown-item" href="/account/profile">Profile</a></li>
+                  <li>
+                    <a class="dropdown-item" href="/workouts/streak">Streak</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/workouts/stats">Stats</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/workouts/library">Library</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/insights">Insights</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="/account/profile">Profile</a>
+                  </li>
                   <li><hr class="dropdown-divider" /></li>
                   <li>
                     <form action="/auth/logout" method="POST" class="m-0">
-                      <button class="dropdown-item text-danger" type="submit">Log out</button>
+                      <button
+                        class="dropdown-item text-danger"
+                        type="submit"
+                      >Log out</button>
                     </form>
                   </li>
                 </ul>
@@ -92,8 +154,12 @@
             </div>
           <% } else { %>
             <div class="ms-auto d-flex gap-2">
-              <a href="/auth/login" class="btn btn-outline-light btn-sm">Log In</a>
-              <a href="/auth/register" class="btn btn-primary btn-sm">Sign Up</a>
+              <a href="/auth/login" class="btn btn-outline-light btn-sm">
+                Log In
+              </a>
+              <a href="/auth/register" class="btn btn-primary btn-sm">
+                Sign Up
+              </a>
             </div>
           <% } %>
         </div>
