@@ -1640,3 +1640,61 @@ body.theme-light .navbar-brand:hover {
 .nav-avatar-ring .nav-avatar {
   border: none;
 }
+/* ✅ Completed workout visuals */
+.workout-card.is-completed {
+  opacity: 0.72;
+}
+
+.workout-card.is-completed .workout-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(148, 163, 184, 0.55);
+}
+
+.workout-completed-meta {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #cbd5f5;
+  opacity: 0.9;
+}
+
+/* ✅ Complete button */
+.complete-btn {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.complete-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+  transform: translateY(-1px);
+}
+
+.complete-btn--done {
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+/* ✅ Light theme tweaks */
+body.theme-light .complete-btn {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(15, 23, 42, 0.04);
+}
+
+body.theme-light .complete-btn:hover {
+  background: rgba(15, 23, 42, 0.07);
+}
+
+body.theme-light .complete-btn--done {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: rgba(22, 163, 74, 0.10);
+}
+
+body.theme-light .workout-completed-meta {
+  color: #475569;
+}

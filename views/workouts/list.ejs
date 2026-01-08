@@ -15,25 +15,6 @@
   }
 %>
 
-<style>
-  .workout-card.completed {
-    opacity: 0.75;
-  }
-  .workout-card.completed .workout-title {
-    text-decoration: line-through;
-  }
-  .complete-btn {
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(255,255,255,0.06);
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-  }
-  .complete-btn:hover {
-    background: rgba(255,255,255,0.10);
-  }
-</style>
-
 <div class="main-shell">
   <section class="mb-4">
     <h1 class="mb-1">Workouts</h1>
@@ -68,7 +49,7 @@
   <% if (workouts && workouts.length > 0) { %>
     <% workouts.forEach(function (workout) { %>
       <div
-        class="workout-card swipeable <%= workout.completed ? 'completed' : '' %>"
+        class="workout-card swipeable <%= workout.completed ? 'is-completed' : '' %>"
         data-exercise="<%= (workout.exercise || '').toLowerCase() %>"
         data-notes="<%= (workout.notes || '').toLowerCase() %>"
         data-category="<%= (workout.category || 'other').toLowerCase() %>"
@@ -77,14 +58,12 @@
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <!-- ✅ Toggle complete -->
             <form action="/workouts/<%= workout._id %>/toggle" method="POST" class="m-0">
-              <button type="submit" class="complete-btn">
+              <button type="submit" class="complete-btn <%= workout.completed ? 'complete-btn--done' : '' %>">
                 <%= workout.completed ? '✅ Done' : '⬜ Mark done' %>
               </button>
             </form>
 
-            <span class="workout-title">
-              <%= workout.exercise || 'Untitled' %>
-            </span>
+            <span class="workout-title"><%= workout.exercise || 'Untitled' %></span>
 
             <% if (workout.category) { %>
               <span class="badge-category <%= badgeClass(workout.category) %>">
@@ -99,12 +78,8 @@
 
           <div class="workout-meta">
             <%= workout.sets || '-' %> x <%= workout.reps || '-' %>
-            <% if (workout.weight) { %>
-              · <%= workout.weight %> lb
-            <% } %>
-            <% if (workout.date) { %>
-              · <%= workout.date.toLocaleDateString('en-CA') %>
-            <% } %>
+            <% if (workout.weight) { %> · <%= workout.weight %> lb <% } %>
+            <% if (workout.date) { %> · <%= workout.date.toLocaleDateString('en-CA') %> <% } %>
           </div>
 
           <% if (workout.notes) { %>
@@ -112,7 +87,7 @@
           <% } %>
 
           <% if (workout.completed && workout.completedAt) { %>
-            <div class="text-secondary" style="font-size:0.85rem;">
+            <div class="workout-completed-meta">
               Completed: <%= new Date(workout.completedAt).toLocaleString('en-CA') %>
             </div>
           <% } %>
@@ -120,9 +95,7 @@
 
         <div class="workout-actions">
           <form action="/workouts/<%= workout._id %>/duplicate" method="POST">
-            <button type="submit" class="btn btn-sm btn-outline-light btn-pill">
-              Duplicate
-            </button>
+            <button type="submit" class="btn btn-sm btn-outline-light btn-pill">Duplicate</button>
           </form>
 
           <a href="/workouts/<%= workout._id %>/edit" class="btn btn-sm btn-outline-light btn-pill">
@@ -134,9 +107,7 @@
             method="POST"
             onsubmit="return confirm('Delete this workout?');"
           >
-            <button type="submit" class="btn btn-sm btn-danger btn-pill">
-              Delete
-            </button>
+            <button type="submit" class="btn btn-sm btn-danger btn-pill">Delete</button>
           </form>
         </div>
       </div>
@@ -154,9 +125,7 @@
     const searchInput = document.getElementById('workoutSearch');
     const categoryFilter = document.getElementById('categoryFilter');
 
-    function norm(v) {
-      return (v || '').toLowerCase();
-    }
+    function norm(v) { return (v || '').toLowerCase(); }
 
     function applyFilters() {
       const q = norm(searchInput && searchInput.value);
