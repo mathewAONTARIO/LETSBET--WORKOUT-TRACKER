@@ -3,6 +3,12 @@
 <h1 class="mb-2">Profile</h1>
 <p class="text-secondary mb-4">Update your profile, goals, and reminder preferences.</p>
 
+<% if (typeof need !== 'undefined' && need === 'gender') { %>
+  <div class="alert alert-warning py-2 mb-3" role="alert">
+    Please set your gender before continuing.
+  </div>
+<% } %>
+
 <div class="row g-4">
 
   <!-- PROFILE CARD -->
@@ -10,7 +16,6 @@
     <div class="glass-card p-4 h-100">
       <h5 class="mb-3">Profile</h5>
 
-      <!-- Upload + details saved together -->
       <form action="/account/profile" method="POST" enctype="multipart/form-data" class="mb-2">
         <div class="d-flex align-items-center gap-3">
           <img
@@ -52,12 +57,12 @@
         <div class="row mt-2">
           <div class="col-md-4 mb-3">
             <label class="form-label">Gender</label>
-            <select name="gender" class="form-select">
+            <select name="gender" class="form-select" required>
               <option value="">Not set</option>
               <option value="male" <%= currentUser.gender === 'male' ? 'selected' : '' %>>Male</option>
               <option value="female" <%= currentUser.gender === 'female' ? 'selected' : '' %>>Female</option>
               <option value="other" <%= currentUser.gender === 'other' ? 'selected' : '' %>>Other</option>
-              <option value="prefer_not_say" <%= currentUser.gender === 'prefer_not_say' ? 'selected' : '' %>>Prefer not to say</option>
+              <option value="prefer-not-to-say" <%= currentUser.gender === 'prefer-not-to-say' ? 'selected' : '' %>>Prefer not to say</option>
             </select>
           </div>
 
@@ -178,13 +183,24 @@
       <h5 class="mb-3">Workout reminders</h5>
       <form action="/account/reminder" method="POST">
         <div class="form-check form-switch mb-3">
-          <input class="form-check-input" type="checkbox" id="reminderEnabled" name="enabled" <%= currentUser.dailyReminderEnabled ? 'checked' : '' %> />
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="reminderEnabled"
+            name="reminderEnabled"
+            <%= currentUser.dailyReminderEnabled ? 'checked' : '' %>
+          />
           <label class="form-check-label" for="reminderEnabled">Enable daily reminder</label>
         </div>
 
         <div class="mb-2">
           <label class="form-label">Reminder time</label>
-          <input type="time" name="time" class="form-control" value="<%= currentUser.reminderTime || '18:00' %>" />
+          <input
+            type="time"
+            name="reminderTime"
+            class="form-control"
+            value="<%= currentUser.reminderTime || '18:00' %>"
+          />
         </div>
 
         <small class="text-secondary">This just stores your preferred time — notifications can be a future feature.</small>

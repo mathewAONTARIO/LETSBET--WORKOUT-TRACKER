@@ -38,9 +38,28 @@ const upload = multer({
 const normalize = (s) => String(s || '').replace(/[’‘]/g, "'");
 
 /* =========================
-   ✅ PROFILE PAGE (REAL ROUTE)
+   ✅ PROFILE SUMMARY PAGE
+   GET /account/profile
 ========================= */
 router.get('/profile', requireLogin, async (req, res) => {
+  const user = await User.findById(req.session.userId).lean();
+  if (!user) return res.redirect('/auth/login');
+
+  res.render('account/profile', {
+    currentPath: '/account/profile',
+    user,
+    currentUser: user, // optional fallback if your header uses currentUser
+    saved: req.query.saved === '1',
+    error: req.query.error === '1',
+    reminder: req.query.reminder === '1'
+  });
+});
+
+/* =========================
+   ✅ SETTINGS EDIT PAGE
+   GET /account/settings
+========================= */
+router.get('/settings', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
   if (!user) return res.redirect('/auth/login');
 
@@ -53,17 +72,8 @@ router.get('/profile', requireLogin, async (req, res) => {
 });
 
 /* =========================
-   🔁 LEGACY SETTINGS → PROFILE
-========================= */
-router.get('/settings', requireLogin, (req, res) => {
-  const qs = req.originalUrl.includes('?')
-    ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
-    : '';
-  res.redirect(`/account/profile${qs}`);
-});
-
-/* =========================
    SAVE PROFILE
+   POST /account/profile
 ========================= */
 router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req, res) => {
   try {
@@ -122,15 +132,17 @@ router.post('/profile', requireLogin, upload.single('profilePhoto'), async (req,
       trainingExperience: user.trainingExperience
     };
 
-    res.redirect('/account/profile?saved=1');
+    // after saving, go back to profile summary
+    return res.redirect('/account/profile?saved=1');
   } catch (err) {
     console.error(err);
-    res.redirect('/account/profile?error=1');
+    return res.redirect('/account/profile?error=1');
   }
 });
 
 /* =========================
    SAVE REMINDER SETTINGS
+   POST /account/reminder
 ========================= */
 router.post('/reminder', requireLogin, async (req, res) => {
   const user = await User.findById(req.session.userId);
@@ -150,6 +162,7 @@ router.post('/reminder', requireLogin, async (req, res) => {
     reminderTime: user.reminderTime
   };
 
+  // after saving reminder, go back to profile
   res.redirect('/account/profile?reminder=1');
 });
 

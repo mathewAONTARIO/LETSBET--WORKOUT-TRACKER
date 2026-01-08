@@ -16,6 +16,16 @@
     </div>
   <% } %>
 
+  <% if (reminder) { %>
+    <div
+      class="alert alert-success py-2 mb-3"
+      role="alert"
+      style="background: rgba(22,163,74,0.16); border-color:#22c55e; color:#bbf7d0;"
+    >
+      Reminder settings updated.
+    </div>
+  <% } %>
+
   <% if (error) { %>
     <div
       class="alert alert-danger py-2 mb-3"
@@ -26,11 +36,7 @@
     </div>
   <% } %>
 
-  <!-- Top card: avatar + name + weekly goal + Edit button -->
-  <div
-    class="glass-card p-4 mb-4 d-flex flex-column flex-md-row align-items-start gap-4"
-  >
-    <!-- Left: avatar + name -->
+  <div class="glass-card p-4 mb-4 d-flex flex-column flex-md-row align-items-start gap-4">
     <div class="d-flex flex-column align-items-center text-center">
       <% if (u && u.profilePhotoUrl) { %>
         <img
@@ -56,19 +62,16 @@
           <strong><%= (u && u.weeklyGoal) || 4 %> workouts</strong>
         </p>
 
-        <!-- Edit profile goes to the settings screen -->
         <a href="/account/settings" class="btn btn-outline-light btn-sm mt-1">
           Edit profile
         </a>
       </div>
     </div>
 
-    <!-- Right: athlete information -->
     <div class="flex-grow-1">
       <h5 class="mb-3">Athlete information</h5>
 
       <div class="row g-3">
-        <!-- Gender -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Gender</div>
           <div>
@@ -86,13 +89,11 @@
           </div>
         </div>
 
-        <!-- Age -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Age</div>
           <div><%= (u && typeof u.age === 'number') ? u.age : '—' %></div>
         </div>
 
-        <!-- Height -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Height</div>
           <div>
@@ -104,7 +105,6 @@
           </div>
         </div>
 
-        <!-- Weight -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Weight</div>
           <div>
@@ -116,7 +116,6 @@
           </div>
         </div>
 
-        <!-- Primary goal -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Primary goal</div>
           <div>
@@ -138,7 +137,6 @@
           </div>
         </div>
 
-        <!-- Training experience -->
         <div class="col-sm-6">
           <div class="text-secondary" style="font-size: 0.8rem;">Training experience</div>
           <div>
@@ -157,7 +155,6 @@
     </div>
   </div>
 
-  <!-- Optional reminder summary, just read-only -->
   <div class="glass-card p-4 mb-4">
     <h5 class="mb-2">Workout reminders</h5>
     <p class="text-secondary" style="font-size: 0.9rem;">

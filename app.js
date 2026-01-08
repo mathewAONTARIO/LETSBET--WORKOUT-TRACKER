@@ -16,6 +16,7 @@ const insightsRoutes = require('./routes/insightsRoutes');
 
 const { attachUser } = require('./middleware/auth');
 const setTheme = require('./middleware/setTheme');
+const requireProfileComplete = require('./middleware/requireProfileComplete'); // ✅ NEW
 
 const app = express();
 
@@ -87,8 +88,14 @@ app.use(
   })
 );
 
+// ✅ your user/session locals
 app.use(attachUser);
+
+// ✅ theme
 app.use(setTheme);
+
+// ✅ NEW: force profile completion (gender) before using app
+app.use(requireProfileComplete);
 
 app.use('/', indexRoutes);
 app.use('/', insightsRoutes);
