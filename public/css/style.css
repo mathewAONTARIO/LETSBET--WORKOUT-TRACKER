@@ -1609,3 +1609,34 @@ body.theme-light .navbar-brand:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Avatar streak ring */
+.nav-avatar-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 2px; /* ring thickness */
+  flex-shrink: 0;
+}
+
+.nav-avatar-ring.ring-0 {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.nav-avatar-ring.ring-1 {
+  background: rgba(59, 130, 246, 0.75);
+}
+
+.nav-avatar-ring.ring-3 {
+  background: rgba(249, 115, 22, 0.85);
+}
+
+.nav-avatar-ring.ring-7 {
+  background: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+}
+
+/* Make sure the avatar sits clean inside the ring */
+.nav-avatar-ring .nav-avatar {
+  border: none;
+}

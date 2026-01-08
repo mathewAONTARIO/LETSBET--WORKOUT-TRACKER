@@ -104,20 +104,30 @@
                   class="btn btn-outline-light btn-sm dropdown-toggle profile-trigger"
                   data-bs-toggle="dropdown"
                 >
-                  <% if (currentUser.profilePhotoUrl) { %>
-                    <img
-                      src="<%= currentUser.profilePhotoUrl %>"
-                      alt="Avatar"
-                      class="nav-avatar"
-                    />
-                  <% } else { %>
-                    <span class="nav-avatar nav-avatar-fallback">
-                      <%= (currentUser.displayName || currentUser.email || 'U')
-                        .trim()
-                        .charAt(0)
-                        .toUpperCase() %>
-                    </span>
-                  <% } %>
+                  <%
+                    const streakDays = Number(currentUser.streakDays || currentUser.currentStreak || 0);
+                    const ringClass =
+                      streakDays >= 7 ? 'ring-7' :
+                      streakDays >= 3 ? 'ring-3' :
+                      streakDays >= 1 ? 'ring-1' : 'ring-0';
+                  %>
+
+                  <span class="nav-avatar-ring <%= ringClass %>" title="<%= streakDays %> day streak">
+                    <% if (currentUser.profilePhotoUrl) { %>
+                      <img
+                        src="<%= currentUser.profilePhotoUrl %>"
+                        alt="Avatar"
+                        class="nav-avatar"
+                      />
+                    <% } else { %>
+                      <span class="nav-avatar nav-avatar-fallback">
+                        <%= (currentUser.displayName || currentUser.email || 'U')
+                          .trim()
+                          .charAt(0)
+                          .toUpperCase() %>
+                      </span>
+                    <% } %>
+                  </span>
 
                   <span class="nav-name">
                     <%= currentUser.displayName || currentUser.email %>

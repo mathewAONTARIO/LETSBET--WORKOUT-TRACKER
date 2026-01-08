@@ -40,7 +40,7 @@ async function logEmail({ userId, email, type, req }) {
 }
 
 router.get('/login', (req, res) => {
-  res.render('auth/login', { error: null, info: null, email: '' });
+  res.render('auth/login', { error: null, info: null, email: '', showResend: false });
 });
 
 router.post('/login', async (req, res) => {
@@ -51,19 +51,30 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.render('auth/login', { error: 'Invalid email or password.', info: null, email });
+      return res.render('auth/login', {
+        error: 'Invalid email or password.',
+        info: null,
+        email,
+        showResend: false
+      });
     }
 
     const ok = await user.comparePassword(password);
     if (!ok) {
-      return res.render('auth/login', { error: 'Invalid email or password.', info: null, email });
+      return res.render('auth/login', {
+        error: 'Invalid email or password.',
+        info: null,
+        email,
+        showResend: false
+      });
     }
 
     if (!user.emailVerified) {
       return res.render('auth/login', {
         error: 'Email not verified. Please verify your email to log in.',
         info: 'You can resend the verification email below.',
-        email
+        email,
+        showResend: true
       });
     }
 
@@ -71,7 +82,12 @@ router.post('/login', async (req, res) => {
     res.redirect('/workouts');
   } catch (err) {
     console.error(err);
-    res.render('auth/login', { error: 'Something went wrong. Try again.', info: null, email });
+    res.render('auth/login', {
+      error: 'Something went wrong. Try again.',
+      info: null,
+      email,
+      showResend: false
+    });
   }
 });
 
@@ -96,7 +112,8 @@ router.post('/register', async (req, res) => {
         return res.render('auth/login', {
           error: 'That email already has an account but it’s not verified yet.',
           info: 'Resend the verification email below.',
-          email
+          email,
+          showResend: true
         });
       }
       return res.render('auth/register', { error: 'An account with that email already exists.' });
@@ -128,7 +145,8 @@ router.post('/register', async (req, res) => {
     res.render('auth/login', {
       error: null,
       info: `Verification sent to ${maskEmail(user.email)}. Check inbox/spam, then log in.`,
-      email: user.email
+      email: user.email,
+      showResend: true
     });
   } catch (err) {
     console.error(err);
@@ -167,7 +185,11 @@ router.get('/verify-email', async (req, res) => {
 });
 
 router.get('/resend-verification', (req, res) => {
-  res.render('auth/resend-verification', { error: null, info: null, email: normalizeEmail(req.query.email) });
+  res.render('auth/resend-verification', {
+    error: null,
+    info: null,
+    email: normalizeEmail(req.query.email)
+  });
 });
 
 router.post('/resend-verification', async (req, res) => {
@@ -189,7 +211,8 @@ router.post('/resend-verification', async (req, res) => {
       return res.render('auth/login', {
         error: null,
         info: 'Your email is already verified. You can log in now.',
-        email
+        email,
+        showResend: false
       });
     }
 
@@ -220,7 +243,8 @@ router.post('/resend-verification', async (req, res) => {
     return res.render('auth/login', {
       error: null,
       info: `Verification sent to ${maskEmail(user.email)}. Check inbox/spam, then log in.`,
-      email: user.email
+      email: user.email,
+      showResend: true
     });
   } catch (err) {
     console.error(err);
