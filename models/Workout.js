@@ -10,6 +10,9 @@ const workoutSchema = new mongoose.Schema({
   notes: String,
   isPR: Boolean,
 
+  completed: { type: Boolean, default: false },
+  completedAt: { type: Date, default: null },
+
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

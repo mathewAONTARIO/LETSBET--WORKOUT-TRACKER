@@ -1,33 +1,44 @@
 const express = require('express');
 const router = express.Router();
+
 const workoutController = require('../controllers/workoutController');
-const { requireLogin, requireGender } = require('../middleware/auth');
+const { requireLogin } = require('../middleware/auth');
 
-// ✅ Apply to all workout routes
-const gate = [requireLogin, requireGender];
+// QUICK LOG
+router.get('/quick', requireLogin, workoutController.showQuickLog);
+router.post('/quick', requireLogin, workoutController.createQuickLog);
 
-router.get('/', gate, workoutController.getWorkouts);
+// STREAK / STATS / LIBRARY / CALENDAR
+router.get('/streak', requireLogin, workoutController.getStreak);
+router.get('/stats', requireLogin, workoutController.getStats);
+router.get('/stats/prs', requireLogin, workoutController.getPRs);
+router.get('/library', requireLogin, workoutController.getLibrary);
 
-router.get('/quick', gate, workoutController.showQuickLog);
-router.post('/quick', gate, workoutController.createQuickLog);
+router.get('/calendar', requireLogin, workoutController.getCalendar);
+router.get('/day/:date', requireLogin, workoutController.getDaySummary);
 
-router.get('/new', gate, workoutController.showNewForm);
-router.post('/new', gate, workoutController.createWorkout);
+// NEW WORKOUT
+router.get('/new', requireLogin, workoutController.showNewForm);
+router.post('/new', requireLogin, workoutController.createWorkout);
 
-router.get('/streak', gate, workoutController.getStreak);
-router.get('/stats', gate, workoutController.getStats);
-router.get('/stats/prs', gate, workoutController.getPRs);
-router.get('/library', gate, workoutController.getLibrary);
-router.get('/calendar', gate, workoutController.getCalendar);
+router.get('/day/:date/new', requireLogin, workoutController.showNewFormForDate);
+router.post('/day/:date/new', requireLogin, workoutController.createWorkoutForDate);
 
-router.get('/day/:date', gate, workoutController.getDaySummary);
-router.get('/day/:date/new', gate, workoutController.showNewFormForDate);
-router.post('/day/:date/new', gate, workoutController.createWorkoutForDate);
+// DUPLICATE
+router.get('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
 
-router.post('/:id/duplicate', gate, workoutController.duplicateWorkout);
-router.get('/:id/edit', gate, workoutController.showEditForm);
-router.post('/:id/edit', gate, workoutController.updateWorkout);
-router.get('/:id/delete', gate, workoutController.showDeleteConfirm);
-router.post('/:id/delete', gate, workoutController.deleteWorkout);
+// ✅ TOGGLE COMPLETE (PUT BEFORE edit/delete)
+router.post('/:id/toggle', requireLogin, workoutController.toggleComplete);
+
+// EDIT / UPDATE
+router.get('/:id/edit', requireLogin, workoutController.showEditForm);
+router.post('/:id/edit', requireLogin, workoutController.updateWorkout);
+
+// DELETE
+router.get('/:id/delete', requireLogin, workoutController.showDeleteConfirm);
+router.post('/:id/delete', requireLogin, workoutController.deleteWorkout);
+
+// LIST (default)
+router.get('/', requireLogin, workoutController.getWorkouts);
 
 module.exports = router;

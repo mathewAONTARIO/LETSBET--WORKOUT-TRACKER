@@ -63,7 +63,7 @@ async function getWeeklyGoalForUser(userId) {
     const goal = Number(s && (s.weeklyGoal ?? s.weekly_workout_goal ?? s.goal));
     if (Number.isFinite(goal) && goal > 0) return goal;
     return 5;
-  } catch (e) {
+  } catch {
     return 5;
   }
 }
@@ -154,7 +154,11 @@ exports.createQuickLog = async (req, res) => {
       weight: 0,
       date: startOfDay(pickedDate),
       notes: '',
-      isPR: false
+      isPR: false,
+
+      // ✅ NEW
+      completed: false,
+      completedAt: null
     }));
 
     await Workout.insertMany(docs);
@@ -182,7 +186,8 @@ exports.getWorkouts = async (req, res) => {
         ? { user: userId }
         : { user: userId, date: { $gte: start, $lt: end } };
 
-    const workouts = await Workout.find(query).sort({ date: -1 });
+    // ✅ incomplete first, then newest
+    const workouts = await Workout.find(query).sort({ completed: 1, date: -1 });
 
     res.render('workouts/list', {
       workouts,
@@ -198,6 +203,40 @@ exports.getWorkouts = async (req, res) => {
       scope: 'day',
       selectedDate: new Date().toISOString().slice(0, 10)
     });
+  }
+};
+
+/* -------------------- ✅ TOGGLE COMPLETE -------------------- */
+
+exports.toggleComplete = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.redirect('/auth/login');
+
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.redirect(req.get('referer') || '/workouts');
+    }
+
+    const w = await Workout.findOne({ _id: id, user: userId }).select('completed').lean();
+    if (!w) return res.redirect(req.get('referer') || '/workouts');
+
+    const nextCompleted = !w.completed;
+
+    await Workout.updateOne(
+      { _id: id, user: userId },
+      {
+        $set: {
+          completed: nextCompleted,
+          completedAt: nextCompleted ? new Date() : null
+        }
+      }
+    );
+
+    return res.redirect(req.get('referer') || '/workouts');
+  } catch (err) {
+    console.error('toggleComplete error:', err);
+    return res.redirect(req.get('referer') || '/workouts');
   }
 };
 
@@ -233,7 +272,11 @@ exports.createWorkout = async (req, res) => {
       date: toDateOrToday(date),
       notes,
       isPR: isPR === 'on',
-      user: userId
+      user: userId,
+
+      // ✅ NEW
+      completed: false,
+      completedAt: null
     });
 
     res.redirect('/workouts?toast=workout-saved&type=success');
@@ -274,7 +317,11 @@ exports.createWorkoutForDate = async (req, res) => {
       date: toDateOrToday(forcedDate),
       notes,
       isPR: isPR === 'on',
-      user: userId
+      user: userId,
+
+      // ✅ NEW
+      completed: false,
+      completedAt: null
     });
 
     res.redirect(`/workouts/day/${forcedDate}?toast=workout-saved&type=success`);
@@ -317,6 +364,7 @@ exports.showEditForm = async (req, res) => {
     res.render('workouts/edit', {
       workout,
       currentPath: '/workouts'
+
     });
   } catch (err) {
     console.error('showEditForm error:', err);
@@ -652,7 +700,7 @@ exports.getDaySummary = async (req, res) => {
     const workouts = await Workout.find({
       user: userId,
       date: { $gte: start, $lt: end }
-    }).sort({ date: -1 });
+    }).sort({ completed: 1, date: -1 });
 
     res.render('workouts/day', {
       workouts,
