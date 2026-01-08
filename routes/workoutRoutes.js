@@ -24,11 +24,12 @@ router.post('/new', requireLogin, workoutController.createWorkout);
 router.get('/day/:date/new', requireLogin, workoutController.showNewFormForDate);
 router.post('/day/:date/new', requireLogin, workoutController.createWorkoutForDate);
 
-// DUPLICATE
-router.get('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
-
-// ✅ TOGGLE COMPLETE (PUT BEFORE edit/delete)
+// ✅ TOGGLE COMPLETE (must be before :id/edit etc.)
 router.post('/:id/toggle', requireLogin, workoutController.toggleComplete);
+
+// DUPLICATE (support BOTH GET + POST so your UI can be either)
+router.get('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
+router.post('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
 
 // EDIT / UPDATE
 router.get('/:id/edit', requireLogin, workoutController.showEditForm);

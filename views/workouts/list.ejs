@@ -1,4 +1,4 @@
-<%- include('../partials/header', { title: 'Workouts' }) %>
+<%- include('../partials/header', { currentPath: '/workouts' }) %>
 
 <%
   function badgeClass(category) {
@@ -15,12 +15,29 @@
   }
 %>
 
+<style>
+  .workout-card.completed {
+    opacity: 0.75;
+  }
+  .workout-card.completed .workout-title {
+    text-decoration: line-through;
+  }
+  .complete-btn {
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+  }
+  .complete-btn:hover {
+    background: rgba(255,255,255,0.10);
+  }
+</style>
+
 <div class="main-shell">
   <section class="mb-4">
     <h1 class="mb-1">Workouts</h1>
-    <p class="text-secondary mb-3">
-      All workouts logged for your account.
-    </p>
+    <p class="text-secondary mb-3">All workouts logged for your account.</p>
 
     <div class="workout-filters mb-3">
       <input
@@ -44,22 +61,27 @@
         <option value="other">Other</option>
       </select>
 
-      <a href="/workouts/new" class="btn btn-primary btn-pill">
-        Add Workout
-      </a>
+      <a href="/workouts/new" class="btn btn-primary btn-pill">Add Workout</a>
     </div>
   </section>
 
   <% if (workouts && workouts.length > 0) { %>
     <% workouts.forEach(function (workout) { %>
       <div
-        class="workout-card swipeable"
+        class="workout-card swipeable <%= workout.completed ? 'completed' : '' %>"
         data-exercise="<%= (workout.exercise || '').toLowerCase() %>"
         data-notes="<%= (workout.notes || '').toLowerCase() %>"
         data-category="<%= (workout.category || 'other').toLowerCase() %>"
       >
         <div class="workout-main">
-          <div class="d-flex align-items-center gap-2">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- ✅ Toggle complete -->
+            <form action="/workouts/<%= workout._id %>/toggle" method="POST" class="m-0">
+              <button type="submit" class="complete-btn">
+                <%= workout.completed ? '✅ Done' : '⬜ Mark done' %>
+              </button>
+            </form>
+
             <span class="workout-title">
               <%= workout.exercise || 'Untitled' %>
             </span>
@@ -76,8 +98,7 @@
           </div>
 
           <div class="workout-meta">
-            <%= workout.sets || '-' %> x
-            <%= workout.reps || '-' %>
+            <%= workout.sets || '-' %> x <%= workout.reps || '-' %>
             <% if (workout.weight) { %>
               · <%= workout.weight %> lb
             <% } %>
@@ -89,25 +110,22 @@
           <% if (workout.notes) { %>
             <div class="workout-meta"><%= workout.notes %></div>
           <% } %>
+
+          <% if (workout.completed && workout.completedAt) { %>
+            <div class="text-secondary" style="font-size:0.85rem;">
+              Completed: <%= new Date(workout.completedAt).toLocaleString('en-CA') %>
+            </div>
+          <% } %>
         </div>
 
         <div class="workout-actions">
-          <form
-            action="/workouts/<%= workout._id %>/duplicate"
-            method="POST"
-          >
-            <button
-              type="submit"
-              class="btn btn-sm btn-outline-light btn-pill"
-            >
+          <form action="/workouts/<%= workout._id %>/duplicate" method="POST">
+            <button type="submit" class="btn btn-sm btn-outline-light btn-pill">
               Duplicate
             </button>
           </form>
 
-          <a
-            href="/workouts/<%= workout._id %>/edit"
-            class="btn btn-sm btn-outline-light btn-pill"
-          >
+          <a href="/workouts/<%= workout._id %>/edit" class="btn btn-sm btn-outline-light btn-pill">
             Edit
           </a>
 
@@ -142,7 +160,7 @@
 
     function applyFilters() {
       const q = norm(searchInput && searchInput.value);
-      const cat = norm(categoryFilter && categoryFilter.value || 'all');
+      const cat = norm((categoryFilter && categoryFilter.value) || 'all');
 
       cards.forEach(card => {
         const ex = card.dataset.exercise || '';
