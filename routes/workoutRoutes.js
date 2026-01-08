@@ -1,30 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const workoutController = require('../controllers/workoutController');
-const { requireLogin } = require('../middleware/auth');
+const { requireLogin, requireGender } = require('../middleware/auth');
 
-router.get('/', requireLogin, workoutController.getWorkouts);
+// ✅ Apply to all workout routes
+const gate = [requireLogin, requireGender];
 
-router.get('/quick', requireLogin, workoutController.showQuickLog);
-router.post('/quick', requireLogin, workoutController.createQuickLog);
+router.get('/', gate, workoutController.getWorkouts);
 
-router.get('/new', requireLogin, workoutController.showNewForm);
-router.post('/new', requireLogin, workoutController.createWorkout);
+router.get('/quick', gate, workoutController.showQuickLog);
+router.post('/quick', gate, workoutController.createQuickLog);
 
-router.get('/streak', requireLogin, workoutController.getStreak);
-router.get('/stats', requireLogin, workoutController.getStats);
-router.get('/stats/prs', requireLogin, workoutController.getPRs);
-router.get('/library', requireLogin, workoutController.getLibrary);
-router.get('/calendar', requireLogin, workoutController.getCalendar);
+router.get('/new', gate, workoutController.showNewForm);
+router.post('/new', gate, workoutController.createWorkout);
 
-router.get('/day/:date', requireLogin, workoutController.getDaySummary);
-router.get('/day/:date/new', requireLogin, workoutController.showNewFormForDate);
-router.post('/day/:date/new', requireLogin, workoutController.createWorkoutForDate);
+router.get('/streak', gate, workoutController.getStreak);
+router.get('/stats', gate, workoutController.getStats);
+router.get('/stats/prs', gate, workoutController.getPRs);
+router.get('/library', gate, workoutController.getLibrary);
+router.get('/calendar', gate, workoutController.getCalendar);
 
-router.post('/:id/duplicate', requireLogin, workoutController.duplicateWorkout);
-router.get('/:id/edit', requireLogin, workoutController.showEditForm);
-router.post('/:id/edit', requireLogin, workoutController.updateWorkout);
-router.get('/:id/delete', requireLogin, workoutController.showDeleteConfirm);
-router.post('/:id/delete', requireLogin, workoutController.deleteWorkout);
+router.get('/day/:date', gate, workoutController.getDaySummary);
+router.get('/day/:date/new', gate, workoutController.showNewFormForDate);
+router.post('/day/:date/new', gate, workoutController.createWorkoutForDate);
+
+router.post('/:id/duplicate', gate, workoutController.duplicateWorkout);
+router.get('/:id/edit', gate, workoutController.showEditForm);
+router.post('/:id/edit', gate, workoutController.updateWorkout);
+router.get('/:id/delete', gate, workoutController.showDeleteConfirm);
+router.post('/:id/delete', gate, workoutController.deleteWorkout);
 
 module.exports = router;
