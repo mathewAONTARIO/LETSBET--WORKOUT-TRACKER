@@ -1,0 +1,48 @@
+<%- include('../partials/header', { currentPath: '/exercises' }) %>
+
+<div class="main-shell">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="mb-1">Exercise Library</h1>
+      <p class="text-secondary mb-0">Add instructions + photos once, reuse everywhere.</p>
+    </div>
+    <a class="btn btn-primary btn-pill" href="/exercises/new">Add Exercise</a>
+  </div>
+
+  <form class="d-flex gap-2 mb-3" method="GET" action="/exercises">
+    <input class="form-control" name="q" placeholder="Search exercises..." value="<%= q || '' %>"/>
+    <button class="btn btn-outline-light btn-pill" type="submit">Search</button>
+  </form>
+
+  <% if (exercises.length) { %>
+    <% exercises.forEach(ex => { %>
+      <div class="workout-card">
+        <div class="workout-main">
+          <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="workout-title"><%= ex.name %></span>
+            <span class="badge-category badge-other"><%= (ex.category || 'Other').toUpperCase() %></span>
+          </div>
+          <div class="workout-meta">
+            <% if (ex.instructions && ex.instructions.length) { %>
+              <%= ex.instructions.length %> steps
+            <% } else { %>
+              No steps yet
+            <% } %>
+            <% if (ex.imageUrl) { %> · Has image <% } %>
+          </div>
+        </div>
+
+        <div class="workout-actions">
+          <a class="btn btn-sm btn-outline-light btn-pill" href="/exercises/<%= ex._id %>/edit">Edit</a>
+          <form method="POST" action="/exercises/<%= ex._id %>/delete" onsubmit="return confirm('Delete this exercise?');">
+            <button class="btn btn-sm btn-danger btn-pill" type="submit">Delete</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p class="text-secondary">No exercises yet.</p>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

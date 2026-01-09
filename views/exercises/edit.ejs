@@ -1,0 +1,41 @@
+<%- include('../partials/header', { currentPath: '/exercises' }) %>
+
+<div class="main-shell">
+  <h1 class="mb-3">Edit Exercise</h1>
+
+  <form method="POST" action="/exercises/<%= ex._id %>/edit" class="glass-card p-3">
+    <label class="form-label">Name</label>
+    <input class="form-control mb-3" name="name" required value="<%= ex.name %>" />
+
+    <label class="form-label">Category</label>
+    <input class="form-control mb-3" name="category" value="<%= ex.category || 'Other' %>" />
+
+    <label class="form-label">Muscles (comma separated)</label>
+    <input class="form-control mb-3" name="muscles" value="<%= (ex.muscles || []).join(', ') %>" />
+
+    <label class="form-label">Instructions (one step per line)</label>
+    <textarea class="form-control mb-3" name="instructions" rows="6"><%= (ex.instructions || []).join('\n') %></textarea>
+
+    <label class="form-label">Tips (one per line)</label>
+    <textarea class="form-control mb-3" name="tips" rows="4"><%= (ex.tips || []).join('\n') %></textarea>
+
+    <label class="form-label">Image URL</label>
+    <input class="form-control mb-3" name="imageUrl" value="<%= ex.imageUrl || '' %>" />
+
+    <label class="form-label">Video URL</label>
+    <input class="form-control mb-3" name="videoUrl" value="<%= ex.videoUrl || '' %>" />
+
+    <label class="form-label">Equipment (comma separated)</label>
+    <input class="form-control mb-3" name="equipment" value="<%= (ex.equipment || []).join(', ') %>" />
+
+    <label class="form-label">Difficulty</label>
+    <input class="form-control mb-3" name="difficulty" value="<%= ex.difficulty || 'Beginner' %>" />
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary btn-pill" type="submit">Update</button>
+      <a class="btn btn-outline-light btn-pill" href="/exercises">Back</a>
+    </div>
+  </form>
+</div>
+
+<%- include('../partials/footer') %>

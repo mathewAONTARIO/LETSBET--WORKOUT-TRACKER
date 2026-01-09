@@ -1,0 +1,65 @@
+<%- include('../partials/header', { currentPath: '/exercises' }) %>
+
+<div class="main-shell">
+  <a class="text-secondary" href="/exercises">← Back</a>
+
+  <div class="glass-card p-3 mt-2">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <div>
+        <h1 class="mb-1"><%= ex.name %></h1>
+        <div class="text-secondary"><%= ex.category || 'Other' %> · <%= ex.difficulty || 'Beginner' %></div>
+      </div>
+    </div>
+
+    <% if (ex.imageUrl) { %>
+      <img src="<%= ex.imageUrl %>" alt="" style="width:100%;max-height:360px;object-fit:cover;border-radius:16px;margin-top:12px;" />
+    <% } %>
+
+    <% if (ex.muscles && ex.muscles.length) { %>
+      <div class="mt-3">
+        <div class="settings-section-title">Muscles</div>
+        <div class="text-secondary"><%= ex.muscles.join(', ') %></div>
+      </div>
+    <% } %>
+
+    <% if (ex.equipment && ex.equipment.length) { %>
+      <div class="mt-3">
+        <div class="settings-section-title">Equipment</div>
+        <div class="text-secondary"><%= ex.equipment.join(', ') %></div>
+      </div>
+    <% } %>
+
+    <% if (ex.instructions && ex.instructions.length) { %>
+      <div class="mt-3">
+        <div class="settings-section-title">Instructions</div>
+        <ol class="mt-2">
+          <% ex.instructions.forEach(step => { %>
+            <li class="mb-2"><%= step %></li>
+          <% }) %>
+        </ol>
+      </div>
+    <% } %>
+
+    <% if (ex.tips && ex.tips.length) { %>
+      <div class="mt-3">
+        <div class="settings-section-title">Tips</div>
+        <ul class="mt-2">
+          <% ex.tips.forEach(t => { %>
+            <li class="mb-2"><%= t %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <% if (ex.videoUrl) { %>
+      <div class="mt-3">
+        <div class="settings-section-title">Video</div>
+        <a class="btn btn-outline-light btn-pill mt-2" href="<%= ex.videoUrl %>" target="_blank" rel="noreferrer">
+          Watch
+        </a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

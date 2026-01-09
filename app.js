@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 
 const indexRoutes = require('./routes/index');
 const workoutRoutes = require('./routes/workoutRoutes');
+const exerciseRoutes = require('./routes/exerciseRoutes'); // ✅ NEW
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const mealRoutes = require('./routes/mealRoutes');
@@ -94,12 +95,14 @@ app.use(attachUser);
 // ✅ theme
 app.use(setTheme);
 
-// ✅ NEW: force profile completion (gender) before using app
+// ✅ force profile completion
 app.use(requireProfileComplete);
 
+// ROUTES
 app.use('/', indexRoutes);
 app.use('/', insightsRoutes);
 app.use('/workouts', workoutRoutes);
+app.use('/exercises', exerciseRoutes); // ✅ NEW
 app.use('/meals', mealRoutes);
 app.use('/auth', authRoutes);
 app.use('/account', profileRoutes);
